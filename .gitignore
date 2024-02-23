@@ -1,0 +1,11 @@
+*
+
+!deps
+!deps/**
+!.gitignore
+!.gitmodules
+!*.h
+!*.cpp
+!CMakeLists.txt
+!mackowski_aggregates
+!mackowski_aggregates/**
