@@ -68,9 +68,9 @@ std::vector<Eigen::Vector3d> load_mackowski_aggregate(std::string const & path, 
 int main() {
     // General simulation parameters
     const double dt = 1e-13;
-    const double t_tot = 5.0e-7;
+    const double t_tot = 8.0e-7;
     const auto n_steps = size_t(t_tot / dt);
-    const size_t n_dumps = 300;
+    const size_t n_dumps = 500;
     const size_t dump_period = n_steps / n_dumps;
     const size_t n_thermo_dumps = 10000;
     const size_t thermo_dump_period = n_steps / n_thermo_dumps;
@@ -105,40 +105,38 @@ int main() {
 
     // Substrate vertices
     const std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d> substrate_vertices {
-        {-15.0 * r_part, -15.0 * r_part, 0.0},
-        {15.0 * r_part, -15.0 * r_part, 0.0},
-        {15.0 * r_part, 15.0 * r_part, 0.0},
-        {-15.0 * r_part, 15.0 * r_part, 0.0}
+        {-25.0 * r_part, -25.0 * r_part, 0.0},
+        {25.0 * r_part, -25.0 * r_part, 0.0},
+        {25.0 * r_part, 25.0 * r_part, 0.0},
+        {-25.0 * r_part, 25.0 * r_part, 0.0}
     };
 
     // Afm tip base vertices
     const std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d> afm_base_vertices {
-        {2.0 * r_part, -3.0 * r_part, 25.0 * r_part},
-        {8.0 * r_part, -3.0 * r_part, 25.0 * r_part},
-        {5.0 * r_part, 3.0 * r_part, 25.0 * r_part}
+        {2.0 * r_part, -3.0 * r_part, 30.0 * r_part},
+        {8.0 * r_part, -3.0 * r_part, 30.0 * r_part},
+        {5.0 * r_part, 3.0 * r_part, 30.0 * r_part}
     };
 
     // Afm tip peak vertex
     const Eigen::Vector3d afm_peak_vertex {
-        5.0 * r_part, 0, 20.0 * r_part
+        5.0 * r_part, 0, 25.0 * r_part
     };
 
     // Afm tip initial velocity
     const double afm_tip_t_max = 1.8e-07;
     auto afm_tip_v = [t_tot, afm_tip_t_max] (double t) -> Eigen::Vector3d {
-        if (t < afm_tip_t_max)
-            return {0, 0, -1.0};
-        else
-            return {0, 0, 1.0};
+        return Eigen::Vector3d{0, 0, -1.0} + Eigen::Vector3d{0, 0, 2.0}
+            * (0.5 + 0.5 * tanh(100000000.0 * (t - afm_tip_t_max)));
     };
 
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
 
-    x0 = load_mackowski_aggregate("../mackowski_aggregates/aggregate_1.txt", r_part);
+    x0 = load_mackowski_aggregate("../mackowski_aggregates/aggregate_2.txt", r_part);
 
     std::transform(x0.begin(), x0.end(), x0.begin(), [r_part] (auto const & x) {
-        return x + Eigen::Vector3d::UnitZ() * 10.0 * r_part;
+        return x + Eigen::Vector3d::UnitZ() * 14.0 * r_part;
     });
 
     // Fill the remaining buffers with zeros
