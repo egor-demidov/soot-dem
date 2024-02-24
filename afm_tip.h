@@ -60,7 +60,7 @@ struct afm_tip {
             {n_part, k, gamma_n, k_t, gamma_t, mu_s, phi_d, k_r, gamma_r, mu_r, phi_r, k_o, gamma_o, mu_o, phi_o, r_part, mass, inertia, dt, field_zero, real_zero},
             {A, h0, r_part, mass, field_zero, real_zero}
         }
-    }, r_part {r_part}, facets {
+    }, r_part {r_part}, mass {mass}, facets {
        facet_t {
             tip_velocity, {std::get<0>(base_vertices), std::get<1>(base_vertices), peak_vertex}, force_functors_facets[0].first, force_functors_facets[0].second
         }, facet_t {
@@ -68,7 +68,18 @@ struct afm_tip {
         }, facet_t {
             tip_velocity, {std::get<2>(base_vertices), std::get<0>(base_vertices), peak_vertex}, force_functors_facets[2].first, force_functors_facets[2].second
         }
-    } {}
+    }, force_accumulator {real_zero}, accumulate_forces {false} {
+
+        field_value_t u = std::get<1>(base_vertices) - std::get<0>(base_vertices);
+        field_value_t v = std::get<2>(base_vertices) - std::get<0>(base_vertices);
+
+        force_normal_dir = u.cross(v).normalized();
+    }
+
+    bool toggle_force_accumulation() {
+        accumulate_forces = !accumulate_forces;
+        return accumulate_forces;
+    }
 
     std::pair<field_value_t, field_value_t> operator () (size_t i,
                                                          std::vector<field_value_t> const & x,
@@ -80,6 +91,10 @@ struct afm_tip {
         auto result = facets[0](i, x, v, theta, omega, t);
         result += facets[1](i, x, v, theta, omega, t);
         result += facets[2](i, x, v, theta, omega, t);
+
+        if (accumulate_forces) {
+            force_accumulator += result.first.dot(force_normal_dir) * mass;
+        }
 
         return result;
     }
@@ -126,11 +141,15 @@ struct afm_tip {
         }
     }
 
+    real_t force_accumulator;
+
 private:
     // 7 facets total
     std::array<std::pair<surface_contact_force_t, surface_hamaker_t>, 3> force_functors_facets;
-    const real_t r_part;
+    const real_t r_part, mass;
     std::array<facet_t, 3> facets;
+    field_value_t force_normal_dir;
+    bool accumulate_forces;
 };
 
 #endif //SOOT_AFM_AFM_TIP_H

@@ -80,9 +80,15 @@ struct aggregate {
              std::vector<field_value_t> const & omega,
              real_t t) {
 
+
         auto result = sinter_model(i, j, x, v, theta, omega, t);
         result += hamaker_model(i, j, x, v, theta, omega, t);
         return result;
+    }
+
+    [[nodiscard]]
+    std::vector<bool> const & get_bonded_contacts() const {
+        return sinter_model.bonded_contacts;
     }
 
 private:
