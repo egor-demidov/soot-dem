@@ -11,6 +11,7 @@
 #include "aggregate.h"
 #include "afm_tip.h"
 #include "writer.h"
+#include "energy.h"
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
 using rect_substrate_model_t = rect_substrate<Eigen::Vector3d, double>;
@@ -50,8 +51,8 @@ std::vector<Eigen::Vector3d> load_mackowski_aggregate(std::string const & path, 
 
 int main() {
     // General simulation parameters
-    const double dt = 1e-13;
-    const double t_tot = 5.0e-7;
+    const double dt = 1e-14;
+    const double t_tot = 3.0e-7;
     const auto n_steps = size_t(t_tot / dt);
     const size_t n_dumps = 300;
     const size_t dump_period = n_steps / n_dumps;
@@ -75,7 +76,7 @@ int main() {
     const double gamma_o = 0.05 * gamma_n;
 
     // Parameters for the bonded contact model
-    const double k_bond = 1000.0;
+    const double k_bond = 100000.0;
     const double gamma_n_bond = 2.0*sqrt(2.0*mass*k_bond);
     const double gamma_t_bond = 0.2 * gamma_n_bond;
     const double gamma_r_bond = 0.05 * gamma_n_bond;
@@ -96,14 +97,14 @@ int main() {
 
     // Afm tip base vertices
     const std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d> afm_base_vertices {
-        {-4.0 * r_part, -3.0 * r_part, 25.0 * r_part},
-        {1.0 * r_part, -3.0 * r_part, 25.0 * r_part},
-        {-2.0 * r_part, 3.0 * r_part, 25.0 * r_part}
+        {-6.0 * r_part, -3.0 * r_part, 25.0 * r_part},
+        {6.0 * r_part, -3.0 * r_part, 25.0 * r_part},
+        {0.0, 6.0 * r_part, 25.0 * r_part}
     };
 
     // Afm tip peak vertex
     const Eigen::Vector3d afm_peak_vertex {
-        -2.0 * r_part, 0, 20.0 * r_part
+        0.0, 0, 20.0 * r_part
     };
 
     // Afm tip initial velocity
@@ -142,7 +143,7 @@ int main() {
     // Create an instance of afm tip model
     afm_tip_model_t afm_tip_model {afm_base_vertices, afm_peak_vertex, afm_tip_v(0.0), x0.size(), k, gamma_n, k,
         gamma_t, mu, phi, k, gamma_r, mu_o, phi, k, gamma_o,
-        mu_o, phi, A*10.0, h0, r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0};
+        mu_o, phi, A, h0, r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0};
 
 
     binary_force_container_t binary_force_functors {aggregate_model};

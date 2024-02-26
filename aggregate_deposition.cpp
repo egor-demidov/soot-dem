@@ -15,6 +15,7 @@
 #include "rect_substrate.h"
 #include "aggregate.h"
 #include "writer.h"
+#include "energy.h"
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
 using rect_substrate_model_t = rect_substrate<Eigen::Vector3d, double>;
@@ -107,7 +108,7 @@ int main() {
         center_of_mass += x;
     }
     center_of_mass /= double(x0.size());
-    Eigen::Matrix3d rot = Eigen::AngleAxis(M_PI / 4.0, Eigen::Vector3d::UnitX()).toRotationMatrix();
+    Eigen::Matrix3d rot = Eigen::AngleAxis(/*M_PI / 4.0*/ 0.0, Eigen::Vector3d::UnitX()).toRotationMatrix();
     std::transform(x0.begin(), x0.end(), x0.begin(), [&center_of_mass, &rot] (auto const & x) -> Eigen::Vector3d {
         return rot * (x - center_of_mass) + center_of_mass;
     });
@@ -150,7 +151,9 @@ int main() {
 
     for (size_t n = 0; n < n_steps; n ++) {
         if (n % dump_period == 0) {
-            std::cout << "Dump " << n / dump_period << "/" << n_dumps << std::endl;
+            std::cout << "Dump " << n / dump_period << "/" << n_dumps
+                << " E: " << compute_ke(system.get_v(), system.get_omega(), mass, inertia) << std::endl;
+
             dump_particles("run", n / dump_period, system.get_x(), r_part);
             dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part);
             substrate_model.dump_mesh("run", n / dump_period);
