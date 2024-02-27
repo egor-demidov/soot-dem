@@ -1,6 +1,7 @@
 //
-// Created by egor on 2/24/24.
+// Created by egor on 2/26/24.
 //
+
 
 #include <iostream>
 #include <fstream>
@@ -12,20 +13,22 @@
 #include <libgran/hamaker_force/hamaker_force.h>
 #include <libgran/granular_system/granular_system.h>
 
-#include "rect_substrate.h"
 #include "aggregate.h"
 #include "writer.h"
 #include "energy.h"
 #include "reader.h"
+#include "central_force.h"
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
-using rect_substrate_model_t = rect_substrate<Eigen::Vector3d, double>;
 
 using binary_force_container_t =
         binary_force_functor_container<Eigen::Vector3d, double, aggregate_model_t>;
 
+using central_force_model_t =
+        central_force_functor<Eigen::Vector3d, double>;
+
 using unary_force_container_t =
-        unary_force_functor_container<Eigen::Vector3d, double, rect_substrate_model_t>;
+        unary_force_functor_container<Eigen::Vector3d, double, central_force_model_t>;
 
 using granular_system_t = granular_system<Eigen::Vector3d, double, rotational_velocity_verlet_half,
         rotational_step_handler, binary_force_container_t, unary_force_container_t>;
@@ -68,42 +71,19 @@ int main() {
     const double A = 1.0e-19;
     const double h0 = 1.0e-9;
 
-    // Substrate vertices
-    const std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d> substrate_vertices {
-            {-25.0 * r_part, -25.0 * r_part, 0.0},
-            {25.0 * r_part, -25.0 * r_part, 0.0},
-            {25.0 * r_part, 25.0 * r_part, 0.0},
-            {-25.0 * r_part, 25.0 * r_part, 0.0}
-    };
+    // Parameter for the central force model
+    const double k_central = 8.0e-6;
 
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
 
     x0 = load_mackowski_aggregate("../mackowski_aggregates/aggregate_3.txt", r_part);
 
-    Eigen::Vector3d center_of_mass = Eigen::Vector3d::Zero();
-    for (auto const & x : x0) {
-        center_of_mass += x;
-    }
-    center_of_mass /= double(x0.size());
-    Eigen::Matrix3d rot = Eigen::AngleAxis(/*M_PI / 4.0*/ 0.0, Eigen::Vector3d::UnitX()).toRotationMatrix();
-    std::transform(x0.begin(), x0.end(), x0.begin(), [&center_of_mass, &rot] (auto const & x) -> Eigen::Vector3d {
-        return rot * (x - center_of_mass) + center_of_mass;
-    });
-
-    double z_min = (*std::min_element(x0.begin(), x0.end(), [](auto const & x1, auto const & x2) -> bool {
-        return x1[2] < x2[2];
-    }))[2];
-
-    std::transform(x0.begin(), x0.end(), x0.begin(), [r_part, z_min] (auto const & x) {
-        return x + Eigen::Vector3d::UnitZ() * (-z_min + 1.1 * r_part);
-    });
-
     // Fill the remaining buffers with zeros
     v0.resize(x0.size());
     theta0.resize(x0.size());
     omega0.resize(x0.size());
-    std::fill(v0.begin(), v0.end(), Eigen::Vector3d {0, 0, -1.0});
+    std::fill(v0.begin(), v0.end(), Eigen::Vector3d::Zero());
     std::fill(theta0.begin(), theta0.end(), Eigen::Vector3d::Zero());
     std::fill(omega0.begin(), omega0.end(), Eigen::Vector3d::Zero());
 
@@ -111,14 +91,11 @@ int main() {
                                       mu_o, phi, k_bond, gamma_n_bond, k_bond, gamma_t_bond, k_bond, gamma_r_bond, k_bond, gamma_o_bond,
                                       d_crit, A, h0, x0, x0.size(), r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0);
 
-    // Create an instance of rectangular substrate model
-    rect_substrate_model_t substrate_model {substrate_vertices, x0.size(), k, gamma_n, k,
-                                            gamma_t, mu, phi, k, gamma_r, mu_o, phi, k, gamma_o,
-                                            mu_o, phi, A, h0, r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0};
+    central_force_model_t central_model(x0, k, mass, Eigen::Vector3d::Zero());
 
     binary_force_container_t binary_force_functors {aggregate_model};
 
-    unary_force_container_t unary_force_functors {substrate_model};
+    unary_force_container_t unary_force_functors {central_model};
 
     rotational_step_handler<std::vector<Eigen::Vector3d>, Eigen::Vector3d>
             step_handler_instance;
@@ -129,15 +106,10 @@ int main() {
 
     for (size_t n = 0; n < n_steps; n ++) {
         if (n % dump_period == 0) {
-            std::cout << "Dump " << n / dump_period << "/" << n_dumps
-                << " E: " << compute_ke(system.get_v(), system.get_omega(), mass, inertia) << std::endl;
-
-            dump_particles("run", n / dump_period, system.get_x(), r_part);
-            dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part);
-            substrate_model.dump_mesh("run", n / dump_period);
+            std::cout << "Dump " << n / dump_period << "/" << n_dumps << std::endl;
         }
-
         system.do_step(dt);
+        central_model.update_center_of_mass(system.get_x());
     }
 
     return 0;

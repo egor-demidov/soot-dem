@@ -11,5 +11,8 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -flto=auto -O3 -march=native -fopenmp")
 
 add_compile_definitions(LIBGRAN_USE_OMP)
 
-add_executable(soot_afm main.cpp writer.cpp energy.cpp)
-add_executable(aggregate_deposition aggregate_deposition.cpp writer.cpp energy.cpp)
+set(CMAKE_UTILITY_SOURCES energy.cpp writer.cpp reader.cpp)
+
+add_executable(soot_afm main.cpp ${CMAKE_UTILITY_SOURCES})
+add_executable(aggregate_deposition aggregate_deposition.cpp ${CMAKE_UTILITY_SOURCES})
+add_executable(restructuring restructuring.cpp ${CMAKE_UTILITY_SOURCES})
