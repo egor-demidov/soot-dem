@@ -93,7 +93,7 @@ int main() {
 
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
-
+  
     x0 = load_mackowski_aggregate("../mackowski_aggregates/aggregate_2.txt", r_part);
 
     // Fill the remaining buffers with zeros
@@ -138,5 +138,3 @@ int main() {
 
     return 0;
 }
-
-

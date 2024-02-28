@@ -1,6 +1,4 @@
-//
 // Created by egor on 2/28/24.
-//
 
 #ifndef SOOT_AFM_CENTRAL_FORCE_H
 #define SOOT_AFM_CENTRAL_FORCE_H
@@ -36,6 +34,5 @@ private:
     const field_value_t zero_field;
     field_value_t center_of_mass;
 };
-
 
 #endif //SOOT_AFM_CENTRAL_FORCE_H
