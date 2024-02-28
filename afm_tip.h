@@ -143,6 +143,10 @@ struct afm_tip {
 
     real_t force_accumulator;
 
+    field_value_t const & get_tip_position() const {
+        return std::get<2>(facets[0].get_vertices());
+    }
+
 private:
     // 7 facets total
     std::array<std::pair<surface_contact_force_t, surface_hamaker_t>, 3> force_functors_facets;

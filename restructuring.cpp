@@ -6,6 +6,8 @@
 #include <fstream>
 #include <vector>
 #include <random>
+#include <chrono>
+#include <iomanip>
 
 #include <Eigen/Eigen>
 
@@ -52,7 +54,7 @@ void break_random_neck(std::vector<bool> & bonded_contacts, size_t n_part) {
 
 int main() {
     // General simulation parameters
-    const double dt = 1e-14;
+    const double dt = 3e-14;
     const double t_tot = 5.0e-7;
     const auto n_steps = size_t(t_tot / dt);
     const size_t n_dumps = 500;
@@ -94,7 +96,7 @@ int main() {
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
   
-    x0 = load_mackowski_aggregate("../mackowski_aggregates/aggregate_2.txt", r_part);
+    x0 = load_mackowski_aggregate("../mackowski_aggregates/aggregate_3.txt", r_part);
 
     // Fill the remaining buffers with zeros
     v0.resize(x0.size());
@@ -121,13 +123,28 @@ int main() {
                              v0, theta0, omega0, 0.0, Eigen::Vector3d::Zero(), 0.0,
                              step_handler_instance, binary_force_functors, unary_force_functors);
 
+    auto prev_time = std::chrono::high_resolution_clock::now();
+    long mean_time_per_step = 0;
+
     for (size_t n = 0; n < n_steps; n ++) {
         if (n % dump_period == 0) {
             if (n / dump_period > 0 && n / dump_period % 10 == 0)
                 break_random_neck(aggregate_model.get_bonded_contacts(), x0.size());
 
+            auto curr_time = std::chrono::high_resolution_clock::now();
+
+            auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(curr_time - prev_time).count();
+
+            mean_time_per_step = (mean_time_per_step * n / dump_period + time_elapsed) * dump_period / (n + dump_period);
+
+            size_t remaining_steps = n_dumps - n / dump_period;
+            auto remaining_time_minutes = remaining_steps * mean_time_per_step / 1000 / 60;
+            auto remaining_time_seconds = remaining_steps * mean_time_per_step / 1000 % 60;
+            prev_time = curr_time;
+
             std::cout << "Dump " << n / dump_period << "/" << n_dumps
-                      << " E: " << compute_ke(system.get_v(), system.get_omega(), mass, inertia) << std::endl;
+                      << " E: " << compute_ke(system.get_v(), system.get_omega(), mass, inertia) << " remaining: " <<
+                      remaining_time_minutes << ":" << std::setfill('0') << std::setw(2) << remaining_time_seconds << std::endl;
 
             dump_particles("run", n / dump_period, system.get_x(), r_part);
             dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part);
