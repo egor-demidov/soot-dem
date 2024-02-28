@@ -12,6 +12,7 @@
 #include "afm_tip.h"
 #include "writer.h"
 #include "energy.h"
+#include "reader.h"
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
 using rect_substrate_model_t = rect_substrate<Eigen::Vector3d, double>;
@@ -25,29 +26,6 @@ using unary_force_container_t =
 
 using granular_system_t = granular_system<Eigen::Vector3d, double, rotational_velocity_verlet_half,
     rotational_step_handler, binary_force_container_t, unary_force_container_t>;
-
-std::vector<Eigen::Vector3d> load_mackowski_aggregate(std::string const & path, double r_part) {
-    std::ifstream ifs(path);
-
-    if (!ifs.good()) {
-        std::cerr << "Unable to read the aggregate file: " << path << std::endl;
-        exit(EXIT_FAILURE);
-    }
-
-    std::string line;
-    std::vector<Eigen::Vector3d> x0;
-
-    while (getline(ifs, line)) {
-        if (!line.empty()) {
-            std::istringstream oss(line);
-            double _, x, y, z;
-            oss >> _ >> x >> y >> z;
-            x0.emplace_back(x * r_part, y * r_part, z * r_part);
-        }
-    }
-
-    return x0;
-}
 
 int main() {
     // General simulation parameters

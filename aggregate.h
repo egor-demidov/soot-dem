@@ -91,6 +91,11 @@ struct aggregate {
         return sinter_model.bonded_contacts;
     }
 
+    [[deprecated]] // TODO: Later needs to be replaced with high level functions that handle neck breakage
+    std::vector<bool> & get_bonded_contacts() {
+        return sinter_model.bonded_contacts;
+    }
+
 private:
 
     /*void load_mackowski_aggregate(std::string const & path) {
