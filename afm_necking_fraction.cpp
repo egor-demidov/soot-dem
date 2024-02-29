@@ -31,9 +31,9 @@ using granular_system_t = granular_system<Eigen::Vector3d, double, rotational_ve
 int main() {
     // General simulation parameters
     const double dt = 5e-14;
-    const double t_tot = 3.0e-7;
+    const double t_tot = 10.0e-7;
     const auto n_steps = size_t(t_tot / dt);
-    const size_t n_dumps = 300;
+    const size_t n_dumps = 1000;
     const size_t dump_period = n_steps / n_dumps;
     const size_t n_thermo_dumps = 10000;
     const size_t thermo_dump_period = n_steps / n_thermo_dumps;
