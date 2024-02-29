@@ -32,10 +32,10 @@ using granular_system_t = granular_system<Eigen::Vector3d, double, rotational_ve
 
 int main() {
     // General simulation parameters
-    const double dt = 1e-14;
-    const double t_tot = 3.0e-7;
+    const double dt = 5e-14;
+    const double t_tot = 5.0e-7;
     const auto n_steps = size_t(t_tot / dt);
-    const size_t n_dumps = 300;
+    const size_t n_dumps = 500;
     const size_t dump_period = n_steps / n_dumps;
     const size_t n_thermo_dumps = 10000;
     const size_t thermo_dump_period = n_steps / n_thermo_dumps;
@@ -79,14 +79,15 @@ int main() {
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
 
-    x0 = load_mackowski_aggregate("../mackowski_aggregates/aggregate_3.txt", r_part);
+    x0 = load_mackowski_aggregate("../mackowski_aggregates/aggregate_4.txt", r_part);
 
     Eigen::Vector3d center_of_mass = Eigen::Vector3d::Zero();
     for (auto const & x : x0) {
         center_of_mass += x;
     }
     center_of_mass /= double(x0.size());
-    Eigen::Matrix3d rot = Eigen::AngleAxis(/*M_PI / 4.0*/ 0.0, Eigen::Vector3d::UnitX()).toRotationMatrix();
+    Eigen::Matrix3d rot = Eigen::AngleAxis(90.0 / 180.0 * M_PI, Eigen::Vector3d::UnitX()).toRotationMatrix()
+                          * Eigen::AngleAxis((180.0-30.0) / 180.0 * M_PI, Eigen::Vector3d::UnitY());
     std::transform(x0.begin(), x0.end(), x0.begin(), [&center_of_mass, &rot] (auto const & x) -> Eigen::Vector3d {
         return rot * (x - center_of_mass) + center_of_mass;
     });
