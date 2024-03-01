@@ -16,6 +16,7 @@
 #include "energy.h"
 #include "reader.h"
 #include "break_neck.h"
+#include "main_loop.h"
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
 using rect_substrate_model_t = rect_substrate<Eigen::Vector3d, double>;
