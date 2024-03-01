@@ -72,7 +72,7 @@ int main() {
     const double omega_0_trs = 70.0e-3 * 2.0 * M_PI * 1e9;
 
     // Necking fraction
-    const double frac_necks = 0.95;
+    const double frac_necks = 0.92;
 
     // Substrate vertices
     const std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d> substrate_vertices {
