@@ -95,7 +95,7 @@ int main() {
     } + afm_tip_offset;
 
     // Afm tip initial velocity
-    const double afm_tip_t_max = /*2.0 * */t_tot * 0.08 /*2.1e-07*/;
+    const double afm_tip_t_max = /*2.0 * */t_tot * 0.04 /*2.1e-07*/;
     auto afm_tip_v = [t_tot, afm_tip_t_max] (double t) -> Eigen::Vector3d {
         return Eigen::Vector3d{0, 0, -1.5} + Eigen::Vector3d{0, 0, 3.0}
             * (0.5 + 0.5 * tanh(100000000.0 * (t - afm_tip_t_max)));
