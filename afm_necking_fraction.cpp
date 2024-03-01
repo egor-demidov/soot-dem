@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <chrono>
+#include <iomanip>
 
 #include <Eigen/Eigen>
 
@@ -70,7 +72,7 @@ int main() {
     const double omega_0_trs = 70.0e-3 * 2.0 * M_PI * 1e9;
 
     // Necking fraction
-    const double frac_necks = 0.9;
+    const double frac_necks = 0.95;
 
     // Substrate vertices
     const std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d> substrate_vertices {
@@ -157,6 +159,9 @@ int main() {
         break_random_neck(aggregate_model.get_bonded_contacts(), x0.size());
     }
 
+    auto prev_time = std::chrono::high_resolution_clock::now();
+    long mean_time_per_step = 0;
+
     double f_apprent  = 0.0;
     double df_apparent = 0.0;
 
@@ -164,7 +169,19 @@ int main() {
 
     for (size_t n = 0; n < n_steps; n ++) {
         if (n % dump_period == 0) {
-            std::cout << "Dump " << n / dump_period << "/" << n_dumps << std::endl;
+            auto curr_time = std::chrono::high_resolution_clock::now();
+
+            auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(curr_time - prev_time).count();
+
+            mean_time_per_step = (mean_time_per_step * n / dump_period + time_elapsed) * dump_period / (n + dump_period);
+
+            size_t remaining_steps = n_dumps - n / dump_period;
+            auto remaining_time_minutes = remaining_steps * mean_time_per_step / 1000 / 60;
+            auto remaining_time_seconds = remaining_steps * mean_time_per_step / 1000 % 60;
+            prev_time = curr_time;
+
+            std::cout << "Dump " << n / dump_period << "/" << n_dumps << " remaining " <<
+                                                          remaining_time_minutes << ":" << std::setfill('0') << std::setw(2) << remaining_time_seconds << std::endl;
             dump_particles("run", n / dump_period, system.get_x(), r_part);
             dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part);
             substrate_model.dump_mesh("run", n / dump_period);
