@@ -16,7 +16,6 @@
 #include "energy.h"
 #include "reader.h"
 #include "break_neck.h"
-#include "main_loop.h"
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
 using rect_substrate_model_t = rect_substrate<Eigen::Vector3d, double>;
@@ -73,7 +72,7 @@ int main() {
     const double omega_0_trs = 70.0e-3 * 2.0 * M_PI * 1e9;
 
     // Necking fraction
-    const double frac_necks = 0.92;
+    const double frac_necks = 0.98;
 
     // Substrate vertices
     const std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d> substrate_vertices {
@@ -83,7 +82,7 @@ int main() {
         {-25.0 * r_part, 25.0 * r_part, 0.0}
     };
 
-    const Eigen::Vector3d afm_tip_offset {4.0 * r_part, -10.0 * r_part, -8.0 * r_part};
+    const Eigen::Vector3d afm_tip_offset {1.0 * r_part, -14.0 * r_part, -8.0 * r_part};
 
     // Afm tip base vertices
     const std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d> afm_base_vertices {
@@ -98,7 +97,7 @@ int main() {
     } + afm_tip_offset;
 
     // Afm tip initial velocity
-    const double afm_tip_t_max = /*2.0 * */t_tot * 0.04 /*2.1e-07*/;
+    const double afm_tip_t_max = /*2.0 * */t_tot * 0.018 /*2.1e-07*/;
     auto afm_tip_v = [t_tot, afm_tip_t_max] (double t) -> Eigen::Vector3d {
         return Eigen::Vector3d{0, 0, -1.5} + Eigen::Vector3d{0, 0, 3.0}
             * (0.5 + 0.5 * tanh(100000000.0 * (t - afm_tip_t_max)));
@@ -112,7 +111,7 @@ int main() {
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
 
-    x0 = load_vtk_aggregate("../afm_indentation_necking_fraction/particles_init.vtk", r_part);
+    x0 = load_vtk_aggregate("../afm_indentation_necking_fraction/aggregate_5/particles_init.vtk", r_part);
 
     // Fill the remaining buffers with zeros
     v0.resize(x0.size());

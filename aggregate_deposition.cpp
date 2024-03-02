@@ -79,15 +79,15 @@ int main() {
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
 
-    x0 = load_mackowski_aggregate("../mackowski_aggregates/aggregate_4.txt", r_part);
+    x0 = load_mackowski_aggregate("../mackowski_aggregates/aggregate_5.txt", r_part);
 
     Eigen::Vector3d center_of_mass = Eigen::Vector3d::Zero();
     for (auto const & x : x0) {
         center_of_mass += x;
     }
     center_of_mass /= double(x0.size());
-    Eigen::Matrix3d rot = Eigen::AngleAxis(90.0 / 180.0 * M_PI, Eigen::Vector3d::UnitX()).toRotationMatrix()
-                          * Eigen::AngleAxis((180.0-30.0) / 180.0 * M_PI, Eigen::Vector3d::UnitY());
+    Eigen::Matrix3d rot = Eigen::AngleAxis(-45.0 / 180.0 * M_PI, Eigen::Vector3d::UnitX()).toRotationMatrix()
+                          * Eigen::AngleAxis(90.0 / 180.0 * M_PI, Eigen::Vector3d::UnitY());
     std::transform(x0.begin(), x0.end(), x0.begin(), [&center_of_mass, &rot] (auto const & x) -> Eigen::Vector3d {
         return rot * (x - center_of_mass) + center_of_mass;
     });
