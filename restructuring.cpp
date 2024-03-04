@@ -14,28 +14,28 @@
 #include <libgran/hamaker_force/hamaker_force.h>
 #include <libgran/granular_system/granular_system.h>
 
-#include "rect_substrate.h"
+#include "coating_force.h"
 #include "aggregate.h"
-#include "central_force.h"
 
 #include "writer.h"
 #include "energy.h"
 #include "writer.h"
 #include "reader.h"
 #include "break_neck.h"
+#include "remove_overlap.h"
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
-using central_force_model_t = central_force_functor<Eigen::Vector3d, double>;
+using coating_model_t = binary_coating_functor<Eigen::Vector3d, double>;
 
-using binary_force_container_t = binary_force_functor_container<Eigen::Vector3d, double, aggregate_model_t>;
-using unary_force_container_t = unary_force_functor_container<Eigen::Vector3d, double, central_force_model_t>;
+using binary_force_container_t = binary_force_functor_container<Eigen::Vector3d, double, aggregate_model_t, coating_model_t>;
+using unary_force_container_t = unary_force_functor_container<Eigen::Vector3d, double>;
 
 using granular_system_t = granular_system<Eigen::Vector3d, double, rotational_velocity_verlet_half,
     rotational_step_handler, binary_force_container_t, unary_force_container_t>;
 
 int main() {
     // General simulation parameters
-    const double dt = 3e-14;
+    const double dt = 5e-14;
     const double t_tot = 5.0e-7;
     const auto n_steps = size_t(t_tot / dt);
     const size_t n_dumps = 500;
@@ -71,13 +71,19 @@ int main() {
     const double A = 1.0e-19;
     const double h0 = 1.0e-9;
 
-    // Parameter for the central force model
-    const double k_central = 8.0e-6;
+    // Parameters for the coating model
+    const double f_coat_mag = 1e-14;
+    const double f_coat_cutoff = 4.0 * r_part;
+    const double f_coat_drop_rate = 10.0 / f_coat_cutoff;
+
+    // Necking fraction
+    const double frac_necks = 0.8;
 
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
   
-    x0 = load_mackowski_aggregate("../mackowski_aggregates/aggregate_3.txt", r_part);
+    x0 = load_mackowski_aggregate("../mackowski_aggregates/aggregate_4.txt", r_part);
+    remove_overlap(x0, r_part, d_crit, 1000);
 
     // Fill the remaining buffers with zeros
     v0.resize(x0.size());
@@ -91,11 +97,11 @@ int main() {
       mu_o, phi, k_bond, gamma_n_bond, k_bond, gamma_t_bond, k_bond, gamma_r_bond, k_bond, gamma_o_bond,
       d_crit, A, h0, x0, x0.size(), r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0);
 
-    central_force_model_t central_model(x0, k_central, mass, Eigen::Vector3d::Zero());
+    coating_model_t coating_model(f_coat_cutoff, f_coat_mag, f_coat_drop_rate, mass, Eigen::Vector3d::Zero());
 
-    binary_force_container_t binary_force_functors {aggregate_model};
+    binary_force_container_t binary_force_functors {aggregate_model, coating_model};
 
-    unary_force_container_t unary_force_functors {central_model};
+    unary_force_container_t unary_force_functors;
 
     rotational_step_handler<std::vector<Eigen::Vector3d>, Eigen::Vector3d>
             step_handler_instance;
@@ -104,14 +110,23 @@ int main() {
                              v0, theta0, omega0, 0.0, Eigen::Vector3d::Zero(), 0.0,
                              step_handler_instance, binary_force_functors, unary_force_functors);
 
+    // Count the number of necks
+    size_t n_necks = std::count(aggregate_model.get_bonded_contacts().begin(),
+                                aggregate_model.get_bonded_contacts().end(), true) / 2;
+
+    auto target_n_necks = size_t(double(n_necks) * frac_necks);
+
+    std::cout << "Breaking " << n_necks - target_n_necks << " necks ..." << std::endl;
+
+    for (size_t i = n_necks; i > target_n_necks; i --) {
+        break_random_neck(aggregate_model.get_bonded_contacts(), x0.size());
+    }
+
     auto prev_time = std::chrono::high_resolution_clock::now();
     long mean_time_per_step = 0;
 
     for (size_t n = 0; n < n_steps; n ++) {
         if (n % dump_period == 0) {
-            if (n / dump_period > 0 && n / dump_period % 10 == 0)
-                break_random_neck(aggregate_model.get_bonded_contacts(), x0.size());
-
             auto curr_time = std::chrono::high_resolution_clock::now();
 
             auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(curr_time - prev_time).count();
