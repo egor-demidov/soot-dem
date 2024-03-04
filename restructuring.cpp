@@ -23,6 +23,7 @@
 #include "reader.h"
 #include "break_neck.h"
 #include "remove_overlap.h"
+#include "aggregate_stats.h"
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
 using coating_model_t = binary_coating_functor<Eigen::Vector3d, double>;
@@ -72,12 +73,12 @@ int main() {
     const double h0 = 1.0e-9;
 
     // Parameters for the coating model
-    const double f_coat_mag = 1e-14;
-    const double f_coat_cutoff = 4.0 * r_part;
+    const double f_coat_mag = 1e-11;
+    const double f_coat_cutoff = 6.0 * r_part;
     const double f_coat_drop_rate = 10.0 / f_coat_cutoff;
 
     // Necking fraction
-    const double frac_necks = 0.8;
+    const double frac_necks = 0.80;
 
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
@@ -125,6 +126,9 @@ int main() {
     auto prev_time = std::chrono::high_resolution_clock::now();
     long mean_time_per_step = 0;
 
+    // Initial radius of gyration
+    double rg_0 = r_gyration(x0);
+
     for (size_t n = 0; n < n_steps; n ++) {
         if (n % dump_period == 0) {
             auto curr_time = std::chrono::high_resolution_clock::now();
@@ -148,6 +152,11 @@ int main() {
 
         system.do_step(dt);
     }
+
+    // Final radius of gyration
+    double rg_f = r_gyration(system.get_x());
+
+    std::cout << "Rg_0: " << rg_0 << " Rg_f: " << rg_f << " Rg_f/Rg_0: " << rg_f / rg_0 << std::endl;
 
     return 0;
 }

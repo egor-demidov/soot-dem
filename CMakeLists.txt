@@ -11,7 +11,7 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -flto=auto -O3 -march=native -fopenmp")
 
 add_compile_definitions(LIBGRAN_USE_OMP)
 
-set(CMAKE_UTIL_SOURCES writer.cpp energy.cpp reader.cpp break_neck.cpp remove_overlap.cpp)
+set(CMAKE_UTIL_SOURCES writer.cpp energy.cpp reader.cpp break_neck.cpp remove_overlap.cpp aggregate_stats.cpp)
 
 add_executable(soot_afm main.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(aggregate_deposition aggregate_deposition.cpp ${CMAKE_UTIL_SOURCES})
