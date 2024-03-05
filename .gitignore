@@ -9,11 +9,11 @@
 !CMakeLists.txt
 !mackowski_aggregates
 !mackowski_aggregates/**
-!afm_indentation_no_necks
-!afm_indentation_no_necks/**
-!afm_indentation_necking_fraction
-!afm_indentation_necking_fraction/**
-!restructuring
-!restructuring/**
+#!afm_indentation_no_necks
+#!afm_indentation_no_necks/**
+#!afm_indentation_necking_fraction
+#!afm_indentation_necking_fraction/**
+#!restructuring
+#!restructuring/**
 !flage_aggregates
 !flage_aggregates/**
