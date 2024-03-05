@@ -7,3 +7,6 @@
 [submodule "deps/eigne"]
 	path = deps/eigen
 	url = https://gitlab.com/libeigen/eigen.git
+[submodule "deps/tinyxml2"]
+	path = deps/tinyxml2
+	url = https://github.com/leethomason/tinyxml2.git

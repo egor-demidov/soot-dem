@@ -43,12 +43,14 @@ int main() {
     const size_t dump_period = n_steps / n_dumps;
     const size_t n_thermo_dumps = 10000;
     const size_t thermo_dump_period = n_steps / n_thermo_dumps;
+    const size_t neighbor_update_period = 20;
 
     // General parameters
     const double rho = 1700.0;
     const double r_part = 1.4e-8;
     const double mass = 4.0 / 3.0 * M_PI * pow(r_part, 3.0) * rho;
     const double inertia = 2.0 / 5.0 * mass * pow(r_part, 2.0);
+    const double r_verlet = 7.0 * r_part;
 
     // Parameters for the contact model
     const double k = 10000.0;
@@ -74,7 +76,7 @@ int main() {
 
     // Parameters for the coating model
     const double f_coat_mag = 1e-11;
-    const double f_coat_cutoff = 4.0 * r_part;
+    const double f_coat_cutoff = 6.0 * r_part;
     const double f_coat_drop_rate = 10.0 / f_coat_cutoff;
 
     // Necking fraction
@@ -83,8 +85,9 @@ int main() {
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
   
-    x0 = load_mackowski_aggregate("../mackowski_aggregates/aggregate_4.txt", r_part);
-    remove_overlap(x0, r_part, d_crit, 1000);
+//    x0 = load_mackowski_aggregate("../mackowski_aggregates/aggregate_8.txt", r_part);
+    x0 = load_flage_aggregate("../flage_aggregates/aggregate_2.xml", r_part);
+    remove_overlap(x0, r_part, d_crit, 1000000);
 
     // Fill the remaining buffers with zeros
     v0.resize(x0.size());
@@ -107,7 +110,7 @@ int main() {
     rotational_step_handler<std::vector<Eigen::Vector3d>, Eigen::Vector3d>
             step_handler_instance;
 
-    granular_system_t system(x0.size(), 5.0 * r_part, x0,
+    granular_system_t system(x0.size(), r_verlet, x0,
                              v0, theta0, omega0, 0.0, Eigen::Vector3d::Zero(), 0.0,
                              step_handler_instance, binary_force_functors, unary_force_functors);
 
@@ -130,7 +133,7 @@ int main() {
     double rg_0 = r_gyration(x0);
 
     for (size_t n = 0; n < n_steps; n ++) {
-        if (n % 20 == 0) {
+        if (n % neighbor_update_period == 0) {
             system.update_neighbor_list();
         }
         if (n % dump_period == 0) {

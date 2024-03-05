@@ -4,8 +4,38 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
+
+#include <tinyxml2/tinyxml2.h>
 
 #include "reader.h"
+
+std::vector<Eigen::Vector3d> load_flage_aggregate(std::string const & path, double r_part) {
+    tinyxml2::XMLDocument doc;
+    doc.LoadFile(path.c_str());
+
+    if (doc.Error()) {
+        std::cerr << "Unable to open file " << path << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    auto root = doc.FirstChildElement("geometry_complex");
+    auto aggregate = root->FirstChildElement("data_particle");
+
+    std::vector<Eigen::Vector3d> out;
+
+    // Iterate over monomers
+    for (auto monomer = aggregate->FirstChildElement("particle"); monomer != nullptr; monomer = monomer->NextSiblingElement("particle")) {
+        auto position_string = monomer->FirstChildElement("position")->GetText();
+        std::stringstream ss(position_string);
+        double x, y, z;
+        std::string _;
+        ss >> x >> _ >> y >> _ >> z;
+        out.emplace_back(Eigen::Vector3d{x, y, z} * r_part);
+    }
+
+    return out;
+}
 
 std::vector<Eigen::Vector3d> load_mackowski_aggregate(std::string const & path, double r_part) {
     std::ifstream ifs(path);
