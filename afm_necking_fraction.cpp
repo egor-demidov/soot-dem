@@ -7,7 +7,7 @@
 #include <Eigen/Eigen>
 
 #include <libgran/hamaker_force/hamaker_force.h>
-#include <libgran/granular_system/granular_system.h>
+#include <libgran/granular_system/granular_system_neighbor_list.h>
 
 #include "rect_substrate.h"
 #include "aggregate.h"
@@ -27,7 +27,7 @@ using binary_force_container_t =
 using unary_force_container_t =
     unary_force_functor_container<Eigen::Vector3d, double, rect_substrate_model_t, afm_tip_model_t>;
 
-using granular_system_t = granular_system<Eigen::Vector3d, double, rotational_velocity_verlet_half,
+using granular_system_t = granular_system_neighbor_list<Eigen::Vector3d, double, rotational_velocity_verlet_half,
     rotational_step_handler, binary_force_container_t, unary_force_container_t>;
 
 int main() {
@@ -39,12 +39,14 @@ int main() {
     const size_t dump_period = n_steps / n_dumps;
     const size_t n_thermo_dumps = 10000;
     const size_t thermo_dump_period = n_steps / n_thermo_dumps;
+    const size_t neighbor_list_update_period = 20;
 
     // General parameters
     const double rho = 1700.0;
     const double r_part = 1.4e-8;
     const double mass = 4.0 / 3.0 * M_PI * pow(r_part, 3.0) * rho;
     const double inertia = 2.0 / 5.0 * mass * pow(r_part, 2.0);
+    const double r_verlet = 3.0 * r_part;
 
     // Parameters for the contact model
     const double k = 10000.0;
@@ -143,7 +145,7 @@ int main() {
     rotational_step_handler<std::vector<Eigen::Vector3d>, Eigen::Vector3d>
         step_handler_instance;
 
-    granular_system_t system(x0,
+    granular_system_t system(x0.size(), r_verlet, x0,
         v0, theta0, omega0, 0.0, Eigen::Vector3d::Zero(), 0.0,
         step_handler_instance, binary_force_functors, unary_force_functors);
 
@@ -168,6 +170,9 @@ int main() {
     afm_tip_model.toggle_force_accumulation();
 
     for (size_t n = 0; n < n_steps; n ++) {
+        if (n % neighbor_list_update_period) {
+            system.update_neighbor_list();
+        }
         if (n % dump_period == 0) {
             auto curr_time = std::chrono::high_resolution_clock::now();
 

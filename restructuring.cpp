@@ -12,7 +12,7 @@
 #include <Eigen/Eigen>
 
 #include <libgran/hamaker_force/hamaker_force.h>
-#include <libgran/granular_system/granular_system.h>
+#include <libgran/granular_system/granular_system_neighbor_list.h>
 
 #include "coating_force.h"
 #include "aggregate.h"
@@ -31,7 +31,7 @@ using coating_model_t = binary_coating_functor<Eigen::Vector3d, double>;
 using binary_force_container_t = binary_force_functor_container<Eigen::Vector3d, double, aggregate_model_t, coating_model_t>;
 using unary_force_container_t = unary_force_functor_container<Eigen::Vector3d, double>;
 
-using granular_system_t = granular_system<Eigen::Vector3d, double, rotational_velocity_verlet_half,
+using granular_system_t = granular_system_neighbor_list<Eigen::Vector3d, double, rotational_velocity_verlet_half,
     rotational_step_handler, binary_force_container_t, unary_force_container_t>;
 
 int main() {
@@ -74,7 +74,7 @@ int main() {
 
     // Parameters for the coating model
     const double f_coat_mag = 1e-11;
-    const double f_coat_cutoff = 6.0 * r_part;
+    const double f_coat_cutoff = 4.0 * r_part;
     const double f_coat_drop_rate = 10.0 / f_coat_cutoff;
 
     // Necking fraction
@@ -107,7 +107,7 @@ int main() {
     rotational_step_handler<std::vector<Eigen::Vector3d>, Eigen::Vector3d>
             step_handler_instance;
 
-    granular_system_t system(x0,
+    granular_system_t system(x0.size(), 5.0 * r_part, x0,
                              v0, theta0, omega0, 0.0, Eigen::Vector3d::Zero(), 0.0,
                              step_handler_instance, binary_force_functors, unary_force_functors);
 
@@ -130,6 +130,9 @@ int main() {
     double rg_0 = r_gyration(x0);
 
     for (size_t n = 0; n < n_steps; n ++) {
+        if (n % 20 == 0) {
+            system.update_neighbor_list();
+        }
         if (n % dump_period == 0) {
             auto curr_time = std::chrono::high_resolution_clock::now();
 
