@@ -29,7 +29,7 @@ jobs:
       - name: Archive compiled artifact
         uses: actions/upload-artifact@v3
         with:
-          name: windows-x86_64
+          name: soot-dem-windows-x86_64
           path: |
             bin
 
@@ -56,6 +56,6 @@ jobs:
       - name: Archive compiled artifact
         uses: actions/upload-artifact@v3
         with:
-          name: linux-x86_64
+          name: soot-dem-linux-x86_64
           path: |
             bin
