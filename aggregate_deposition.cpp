@@ -31,8 +31,13 @@ using unary_force_container_t =
 using granular_system_t = granular_system_neighbor_list<Eigen::Vector3d, double, rotational_velocity_verlet_half,
         rotational_step_handler, binary_force_container_t, unary_force_container_t>;
 
-int main() {
-    auto parameter_store = load_parameters("../deposition_input.xml");
+int main(int argc, const char ** argv) {
+    if (argc < 2) {
+        std::cerr << "Path to the input file must be provided as an argument" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    auto parameter_store = load_parameters(argv[1]);
 
     print_header(parameter_store, "aggregate_deposition");
 
@@ -49,8 +54,6 @@ int main() {
     const long dump_period = n_steps / n_dumps;
     const long neighbor_update_period = get_integer_parameter(parameter_store, "neighbor_update_period");
     const double substrate_size = get_real_parameter(parameter_store, "substrate_size");
-    const std::string aggregate_type = get_string_parameter(parameter_store, "aggregate_type");
-    const std::string aggregate_path = get_string_parameter(parameter_store, "aggregate_path");
     const double vz0 = get_real_parameter(parameter_store, "vz0");
     const double rot_x = get_real_parameter(parameter_store, "rot_x");
     const double rot_y = get_real_parameter(parameter_store, "rot_y");
