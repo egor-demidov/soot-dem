@@ -34,7 +34,7 @@ jobs:
 #            result
 
   Compile-MacOS:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -52,7 +52,7 @@ jobs:
       - name: Archive compiled artifact
         uses: actions/upload-artifact@v3
         with:
-          name: linux-amd64
+          name: macos-universal
           path: |
             result
 
