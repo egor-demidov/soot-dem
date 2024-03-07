@@ -187,14 +187,15 @@ int main() {
                              v0, theta0, omega0, 0.0, Eigen::Vector3d::Zero(), 0.0,
                              step_handler_instance, binary_force_functors, unary_force_functors);
 
+    state_printer_t state_printer(system.get_x(), system.get_v(), system.get_theta(), system.get_omega(), mass, inertia, n_dumps);
+
     for (long n = 0; n < n_steps; n ++) {
         if (n & neighbor_update_period) {
             system.update_neighbor_list();
         }
 
         if (n % dump_period == 0) {
-            std::cout << "Dump " << n / dump_period << "/" << n_dumps
-                << " E: " << compute_ke(system.get_v(), system.get_omega(), mass, inertia) << std::endl;
+            std::cout << state_printer << std::endl;
 
             dump_particles("run", n / dump_period, system.get_x(), r_part);
             dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part);
