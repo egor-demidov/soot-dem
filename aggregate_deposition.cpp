@@ -13,8 +13,6 @@
 #include <libgran/hamaker_force/hamaker_force.h>
 #include <libgran/granular_system/granular_system_neighbor_list.h>
 
-#include "git.h"
-
 #include "parameter_loader.h"
 #include "rect_substrate.h"
 #include "aggregate.h"
@@ -40,10 +38,7 @@ int main() {
 
     auto parameter_store = load_parameters("../deposition_input.xml");
 
-    std::cout << "aggregate_deposition by Egor Demidov" << std::endl;
-    std::cout << "Build from git commit " << git::CommitSHA1() << " (" << git::Branch() << ")" << std::endl;
-    std::cout << "Uncommitted changes at compilation: " << (git::AnyUncommittedChanges() ? "true" : "false") << std::endl << std::endl;
-    std::cout << parameter_store << std::endl;
+    print_header(parameter_store, "aggregate_deposition");
 
     if (parameter_store.simulation_type != "deposition") {
         std::cerr << "Parameter file simulation type must be `deposition`" << std::endl;

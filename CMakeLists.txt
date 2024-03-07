@@ -19,6 +19,9 @@ FetchContent_MakeAvailable(cmake_git_version_tracking)
 
 add_compile_definitions(LIBGRAN_USE_OMP)
 
+add_compile_definitions("COMPILER_STRING=\"${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}\"")
+add_compile_definitions("SYSTEM_STRING=\"${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_VERSION}\"")
+
 set(CMAKE_UTIL_SOURCES writer.cpp energy.cpp reader.cpp break_neck.cpp remove_overlap.cpp aggregate_stats.cpp
         parameter_loader.cpp io_common.cpp deps/tinyxml2/tinyxml2.cpp)
 
