@@ -50,10 +50,10 @@ jobs:
           cmake --build .
           strip aggregate_deposition
           mv ./aggregate_deposition ../result/
-          cd ..
-          tar -czvf linux-x86_64.tar.gz result
-          sudo apt install sshpass
-          sshpass -p ${{ env.AFS_DEPLOY_PASS }} scp -o StrictHostKeyChecking=no linux-x86_64.tar.gz ed242@afsconnect1.njit.edu:~/public_html/soot-dem-binaries
+#          cd ..
+#          tar -czvf linux-x86_64.tar.gz result
+#          sudo apt install sshpass
+#          sshpass -p ${{ env.AFS_DEPLOY_PASS }} scp -o StrictHostKeyChecking=no linux-x86_64.tar.gz ed242@afsconnect1.njit.edu:~/public_html/soot-dem-binaries
       - name: Archive compiled artifact
         uses: actions/upload-artifact@v3
         with:
