@@ -8,16 +8,18 @@ include_directories(SYSTEM deps/libtimestep/include)
 include_directories(SYSTEM deps/eigen)
 include_directories(SYSTEM deps)
 
+add_compile_definitions(_USE_MATH_DEFINES)
+
 if (${MSVC})
     set(CMAKE_CXX_FLAGS "/O2 /openmp /EHsc /GL /fp:except /Wall")
 endif ()
 
 if (${CMAKE_COMPILER_IS_GNUCXX})
-    set(CMAKE_CXX_FLAGS "-Wall -Wextra -flto=auto -O3 -march=native -fopenmp")
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra -flto=auto -O3 -fopenmp")
 endif ()
 
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-    set(CMAKE_CXX_FLAGS "-Wall -Wextra -flto=auto -O3 -march=native -fopenmp")
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra -flto=auto -O3 -fopenmp")
 endif ()
 
 #if (${APPLE})

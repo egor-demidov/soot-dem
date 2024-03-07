@@ -6,8 +6,6 @@
 #include <fstream>
 #include <vector>
 
-#include <cfenv>
-
 #include <Eigen/Eigen>
 
 #include <libgran/hamaker_force/hamaker_force.h>
@@ -34,8 +32,6 @@ using granular_system_t = granular_system_neighbor_list<Eigen::Vector3d, double,
         rotational_step_handler, binary_force_container_t, unary_force_container_t>;
 
 int main() {
-    feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
-
     auto parameter_store = load_parameters("../deposition_input.xml");
 
     print_header(parameter_store, "aggregate_deposition");
