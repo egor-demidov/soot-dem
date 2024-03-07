@@ -8,63 +8,10 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  AFS_DEPLOY_PASS: ${{ secrets.AFS_DEPLOY_PASS }}
+
 jobs:
-#  Compile-MacOS:
-#    runs-on: macos-latest
-#    steps:
-#      - name: Checkout repository
-#        uses: actions/checkout@v3
-#      - name: Build
-#        run: |
-#          cd deps
-#          git clone https://gitlab.com/libeigen/eigen.git
-#          cd ..
-#          mkdir result
-#          mkdir cmake-build
-#          cd cmake-build
-#          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" ..
-#          cmake --build .
-#          strip soot_dem
-#          mv ./soot_dem ../result/
-#      - name: Archive compiled artifact
-#        uses: actions/upload-artifact@v3
-#        with:
-#          name: macos-universal
-#          path: |
-#            result
-
-  Compile-MacOS:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Build
-        run: |
-          brew install llvm libomp
-          export CC=/usr/local/opt/llvm/bin/clang
-          export CXX=/usr/local/opt/llvm/bin/clang++
-          export LD=/usr/local/opt/llvm/bin/ld64.lld
-          mkdir result
-          mkdir cmake-build-arm64
-          cd cmake-build-arm64
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64" ..
-          cmake --build .
-          strip aggregate_deposition
-          mkdir cmake-build-x86_64
-          cd cmake-build-x86_64
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="x86_64" ..
-          cmake --build .
-          strip aggregate_deposition
-          mv ./aggregate_deposition ../result/
-      - name: Archive compiled artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: macos-universal
-          path: |
-            result
-
   Compile-Windows:
     runs-on: windows-latest
     steps:
@@ -103,6 +50,9 @@ jobs:
           cmake --build .
           strip aggregate_deposition
           mv ./aggregate_deposition ../result/
+          cd ..
+          tar -czvf linux-x86_64.tar.gz result
+          sshpass -p ${{ env.AFS_DEPLOY_PASS }} scp linux-x86_64.tar.gz ed242@afsconnect1.njit.edu:~/public_html/soot-dem-binaries
       - name: Archive compiled artifact
         uses: actions/upload-artifact@v3
         with:
