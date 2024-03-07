@@ -16,11 +16,11 @@ endif ()
 
 if (${CMAKE_COMPILER_IS_GNUCXX})
     set(CMAKE_CXX_FLAGS "-Wall -Wextra -flto=auto -O3 -fopenmp")
-    set(LIBRARY_LIST "-lomp -flto")
 endif ()
 
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "-Wall -Wextra -flto=auto -O3 -fopenmp")
+    set(LIBRARY_LIST "-lomp -flto")
 endif ()
 
 #if (${APPLE})
