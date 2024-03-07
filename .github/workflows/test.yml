@@ -1,0 +1,83 @@
+name: Build, Test, Deploy
+
+run-name: ${{ github.actor }} triggered pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+#  Compile-MacOS:
+#    runs-on: macos-latest
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v3
+#      - name: Build
+#        run: |
+#          cd deps
+#          git clone https://gitlab.com/libeigen/eigen.git
+#          cd ..
+#          mkdir result
+#          mkdir cmake-build
+#          cd cmake-build
+#          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" ..
+#          cmake --build .
+#          strip soot_dem
+#          mv ./soot_dem ../result/
+#      - name: Archive compiled artifact
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: macos-universal
+#          path: |
+#            result
+
+  Compile-Windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Build
+        run: |
+          cd deps
+          git clone https://gitlab.com/libeigen/eigen.git
+          cd ..
+          mkdir result
+          mkdir cmake-build
+          cd cmake-build
+          cmake ..
+          cmake --build . --config Release
+          move ./Release/aggregate_deposition.exe ../result/
+      - name: Archive compiled artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-amd64
+          path: |
+            result
+
+  Compile-Linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Build
+        run: |
+          cd deps
+          git clone https://gitlab.com/libeigen/eigen.git
+          cd ..
+          mkdir result
+          mkdir cmake-build
+          cd cmake-build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake --build .
+          strip aggregate_deposition
+          mv ./aggregate_deposition ../result/
+      - name: Archive compiled artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-amd64
+          path: |
+            result

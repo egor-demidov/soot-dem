@@ -18,3 +18,5 @@
 !flage_aggregates
 !flage_aggregates/**
 !*.xml
+!.github
+!.github/**
