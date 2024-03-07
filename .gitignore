@@ -17,3 +17,4 @@
 !restructuring/**
 !flage_aggregates
 !flage_aggregates/**
+!*.xml
