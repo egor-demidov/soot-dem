@@ -1,10 +1,10 @@
 [submodule "deps/libgran"]
 	path = deps/libgran
-	url = git@github.com:egor-demidov/libgran.git
+	url = https://github.com/egor-demidov/libgran.git
 [submodule "deps/libtimestep"]
 	path = deps/libtimestep
-	url = git@github.com:egor-demidov/libtimestep.git
-[submodule "deps/eigne"]
+	url = https://github.com/egor-demidov/libtimestep.git
+[submodule "deps/eigen"]
 	path = deps/eigen
 	url = https://gitlab.com/libeigen/eigen.git
 [submodule "deps/tinyxml2"]
