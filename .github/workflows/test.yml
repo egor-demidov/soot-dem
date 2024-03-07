@@ -45,6 +45,7 @@ jobs:
           brew install llvm libomp
           export CC=/usr/local/opt/llvm/bin/clang
           export CXX=/usr/local/opt/llvm/bin/clang++
+          export LD=/usr/local/opt/llvm/bin/ld64.lld
           mkdir result
           mkdir cmake-build
           cd cmake-build

@@ -16,6 +16,7 @@ endif ()
 
 if (${CMAKE_COMPILER_IS_GNUCXX})
     set(CMAKE_CXX_FLAGS "-Wall -Wextra -flto=auto -O3 -fopenmp")
+    set(LIBRARY_LIST "-lomp -flto")
 endif ()
 
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
@@ -33,6 +34,8 @@ FetchContent_Declare(cmake_git_version_tracking
 )
 FetchContent_MakeAvailable(cmake_git_version_tracking)
 
+set(LIBRARY_LIST cmake_git_version_tracking ${LIBRARY_LIST})
+
 add_compile_definitions(LIBGRAN_USE_OMP)
 
 add_compile_definitions("COMPILER_STRING=\"${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}\"")
@@ -48,6 +51,6 @@ add_executable(restructuring restructuring.cpp ${CMAKE_UTIL_SOURCES})
 #add_executable(afm_no_necks afm_no_necks.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(afm_necking_fraction afm_necking_fraction.cpp ${CMAKE_UTIL_SOURCES})
 
-target_link_libraries(aggregate_deposition cmake_git_version_tracking)
-target_link_libraries(restructuring cmake_git_version_tracking)
-target_link_libraries(afm_necking_fraction cmake_git_version_tracking)
+target_link_libraries(aggregate_deposition ${LIBRARY_LIST})
+target_link_libraries(restructuring ${LIBRARY_LIST})
+target_link_libraries(afm_necking_fraction ${LIBRARY_LIST})
