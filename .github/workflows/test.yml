@@ -45,10 +45,16 @@ jobs:
           brew install llvm libomp
           export CC=/usr/local/opt/llvm/bin/clang
           export CXX=/usr/local/opt/llvm/bin/clang++
+          export LD=/usr/local/opt/llvm/bin/ld64.lld
           mkdir result
-          mkdir cmake-build
-          cd cmake-build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
+          mkdir cmake-build-arm64
+          cd cmake-build-arm64
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64" ..
+          cmake --build .
+          strip aggregate_deposition
+          mkdir cmake-build-x86_64
+          cd cmake-build-x86_64
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="x86_64" ..
           cmake --build .
           strip aggregate_deposition
           mv ./aggregate_deposition ../result/
@@ -77,7 +83,7 @@ jobs:
       - name: Archive compiled artifact
         uses: actions/upload-artifact@v3
         with:
-          name: windows-amd64
+          name: windows-x86_64
           path: |
             result
 
@@ -100,6 +106,6 @@ jobs:
       - name: Archive compiled artifact
         uses: actions/upload-artifact@v3
         with:
-          name: linux-amd64
+          name: linux-x86_64
           path: |
             result
