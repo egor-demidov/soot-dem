@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    SUMMARY: This is an example parameter file for an aggregate deposition simulation
+    SUMMARY: This is an example parameter file for an aggregate indentation simulation
 -->
 <!--
-    DESCRIPTION: A fully-necked aggregate is loaded, oriented, and positioned slightly above
-    a square substrate. The aggregate is given an initial velocity directed towards the substrate.
-    The aggregate collides with the substrate and adheres to it
+    DESCRIPTION: An aggregate that is deposited into the substrate at z=0 is loaded and fraction of the necks are removed.
+    AFM tip is positioned slightly above the aggregate. The tip indents the aggregate and reverses the direction of its motion.
  -->
 <!--
     BINARY MODELS: Bonded contact force, Hamaker attraction
  -->
 <!--
-    UNARY MODELS: Square substrate made of two triangular facets with friction and Hamaker attraction
+    UNARY MODELS: Square substrate made of two triangular facets with friction and Hamaker attraction.
+    Tetrahedral tip made of three triangular facets with friction and Hamaker attraction.
  -->
 
 <simulation type="afm_necking_fraction">

@@ -252,6 +252,8 @@ int main(int argc, const char ** argv) {
 
     afm_tip_model.toggle_force_accumulation();
 
+    std::filesystem::create_directory("run");
+
     for (size_t n = 0; n < n_steps; n ++) {
         if (n % neighbor_list_update_period) {
             system.update_neighbor_list();

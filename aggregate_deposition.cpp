@@ -192,6 +192,8 @@ int main(int argc, const char ** argv) {
 
     state_printer_t state_printer(system.get_x(), system.get_v(), system.get_theta(), system.get_omega(), mass, inertia, n_dumps);
 
+    std::filesystem::create_directory("run");
+
     for (long n = 0; n < n_steps; n ++) {
         if (n & neighbor_update_period) {
             system.update_neighbor_list();
