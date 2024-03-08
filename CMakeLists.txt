@@ -15,7 +15,10 @@ if (${MSVC})
 endif ()
 
 if (${CMAKE_COMPILER_IS_GNUCXX})
-    set(CMAKE_CXX_FLAGS "-Wall -Wextra -flto=auto -O3 -fopenmp")
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra -O3 -fopenmp")
+    if (NOT ${MINGW})
+        set(CMAKE_CXX_FLAGS "-flto=auto ${CMAKE_CXX_FLAGS}")
+    endif ()
 endif ()
 
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
