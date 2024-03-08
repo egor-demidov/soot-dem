@@ -62,7 +62,7 @@ jobs:
       - name: Archive compiled artifact
         uses: actions/upload-artifact@v3
         with:
-          name: soot-dem-windows-MSVC-x86_64
+          name: soot-dem-windows-MinGW-x86_64
           path: |
             bin
 
