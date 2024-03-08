@@ -47,10 +47,11 @@ jobs:
           platform: x64
       - name: Build
         run: |
+          where gcc
           mkdir bin
           mkdir cmake-build
           cd cmake-build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_GENERATOR="MinGW Makefiles" ..
           cmake --build .
           strip aggregate_deposition
           strip afm_necking_fraction
