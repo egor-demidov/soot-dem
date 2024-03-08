@@ -33,40 +33,40 @@ jobs:
           path: |
             bin
 
-  Compile-Windows-MinGW:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Set up MinGW
-        uses: egor-tensin/setup-mingw@v2.2.0
-        with:
-          version: 12.2.0
-          platform: x64
-      - name: Build
-        run: |
-          where gcc
-          mkdir bin
-          mkdir cmake-build
-          cd cmake-build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_GENERATOR="MinGW Makefiles" ..
-          cmake --build .
-          strip aggregate_deposition.exe
-          strip afm_necking_fraction.exe
-          strip restructuring.exe
-          move ./aggregate_deposition.exe ../bin/
-          move ./afm_necking_fraction.exe ../bin/
-          move ./restructuring.exe ../bin/
-      - name: Archive compiled artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: soot-dem-windows-MinGW-x86_64
-          path: |
-            bin
+#  Compile-Windows-MinGW:
+#    runs-on: windows-latest
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v3
+#        with:
+#          submodules: recursive
+#      - name: Set up MinGW
+#        uses: egor-tensin/setup-mingw@v2.2.0
+#        with:
+#          version: 12.2.0
+#          platform: x64
+#      - name: Build
+#        run: |
+#          where gcc
+#          mkdir bin
+#          mkdir cmake-build
+#          cd cmake-build
+#          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_GENERATOR="MinGW Makefiles" ..
+#          cmake --build .
+#          strip aggregate_deposition.exe
+#          strip afm_necking_fraction.exe
+#          strip restructuring.exe
+#          move ./aggregate_deposition.exe ../bin/
+#          move ./afm_necking_fraction.exe ../bin/
+#          move ./restructuring.exe ../bin/
+#      - name: Archive compiled artifact
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: soot-dem-windows-MinGW-x86_64
+#          path: |
+#            bin
 
-  Compile-Linux:
+  Compile-Linux-GNU:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -89,6 +89,6 @@ jobs:
       - name: Archive compiled artifact
         uses: actions/upload-artifact@v3
         with:
-          name: soot-dem-linux-x86_64
+          name: soot-dem-linux-gnu-x86_64
           path: |
             bin
