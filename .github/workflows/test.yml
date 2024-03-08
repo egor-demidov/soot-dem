@@ -9,7 +9,7 @@ on:
     branches: [ main ]
 
 jobs:
-  Compile-Windows:
+  Compile-Windows-MSVC:
     runs-on: windows-latest
     steps:
       - name: Checkout repository
@@ -29,7 +29,38 @@ jobs:
       - name: Archive compiled artifact
         uses: actions/upload-artifact@v3
         with:
-          name: soot-dem-windows-x86_64
+          name: soot-dem-windows-MSVC-x86_64
+          path: |
+            bin
+
+  Compile-Windows-MinGW:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Set up MinGW
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: x64
+      - name: Build
+        run: |
+          mkdir bin
+          mkdir cmake-build
+          cd cmake-build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake --build .
+          strip aggregate_deposition
+          strip afm_necking_fraction
+          strip restructuring
+          mv ./aggregate_deposition ../bin/
+          mv ./afm_necking_fraction ../bin/
+          mv ./restructuring ../bin/
+      - name: Archive compiled artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: soot-dem-windows-MSVC-x86_64
           path: |
             bin
 
