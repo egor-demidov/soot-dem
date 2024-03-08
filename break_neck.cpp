@@ -8,6 +8,10 @@
 
 static std::mt19937_64 mt(0);
 
+void seed_rng(long seed) {
+    mt.seed(seed);
+}
+
 void break_random_neck(std::vector<bool> & bonded_contacts, size_t n_part) {
     std::vector<std::pair<size_t, size_t>> necks;
     for (size_t i = 0; i < n_part - 1; i ++) {

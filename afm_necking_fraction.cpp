@@ -64,6 +64,7 @@ int main(int argc, const char ** argv) {
     const double tip_y0 = get_real_parameter(parameter_store, "tip_y0");
     const double tip_z0 = get_real_parameter(parameter_store, "tip_z0");
     const double t_reversal = get_real_parameter(parameter_store, "t_reversal");
+    const long rng_seed = get_integer_parameter(parameter_store, "rng_seed");
 
     // General parameters
     const double rho = get_real_parameter(parameter_store, "rho");
@@ -241,6 +242,8 @@ int main(int argc, const char ** argv) {
     auto target_n_necks = size_t(double(n_necks) * frac_necks);
 
     std::cout << "Breaking " << n_necks - target_n_necks << " necks ..." << std::endl;
+
+    seed_rng(rng_seed);
 
     for (size_t i = n_necks; i > target_n_necks; i --) {
         break_random_neck(aggregate_model.get_bonded_contacts(), x0.size());

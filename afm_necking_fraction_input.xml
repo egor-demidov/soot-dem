@@ -86,6 +86,8 @@
     <let id="mu_o" type="real">0.1</let>
     <!-- Torsion dynamic to static friction ratio -->
     <let id="phi_o" type="real">1.0</let>
+    <!-- Seed for the RNG (to determine which necks to break) -->
+    <let id="rng_seed" type="integer">1</let>
 
     <!-- PARTICLE-PARTICLE BOND PARAMETERS -->
 
