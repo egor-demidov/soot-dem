@@ -21,7 +21,7 @@ jobs:
           mkdir dist/soot-dem/bin
           mkdir cmake-build
           cd cmake-build
-          $Evn:CC="clang"
+          $Env:CC="clang"
           $Env:CXX="clang++"
           cmake -DCMAKE_BUILD_TYPE=Release -G Ninja ..
           cmake --build .
