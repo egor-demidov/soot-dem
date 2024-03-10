@@ -55,6 +55,7 @@ int main(int argc, const char ** argv) {
     const long dump_period = n_steps / n_dumps;
     const long neighbor_update_period = get_integer_parameter(parameter_store, "neighbor_update_period");
     const long n_overlap_iter = get_integer_parameter(parameter_store, "n_overlap_iter");
+    const long rng_seed = get_integer_parameter(parameter_store, "rng_seed");
 
     // General parameters
     const double rho = get_real_parameter(parameter_store, "rho");
@@ -108,6 +109,12 @@ int main(int argc, const char ** argv) {
     x0 = load_aggregate(parameter_store);
     remove_overlap(x0, r_part, d_crit, n_overlap_iter);
 
+    if (x0.size() == 0) {
+        std::cerr << "Loaded an empty aggregate" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    std::cout << "Loaded an aggregate of size " << x0.size() << std::endl;
+
     // Fill the remaining buffers with zeros
     v0.resize(x0.size());
     theta0.resize(x0.size());
@@ -148,6 +155,8 @@ int main(int argc, const char ** argv) {
     auto target_n_necks = size_t(double(n_necks) * frac_necks);
 
     std::cout << "Breaking " << n_necks - target_n_necks << " necks ..." << std::endl;
+
+    seed_rng(rng_seed);
 
     for (size_t i = n_necks; i > target_n_necks; i --) {
         break_random_neck(aggregate_model.get_bonded_contacts(), x0.size());

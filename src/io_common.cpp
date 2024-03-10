@@ -68,14 +68,14 @@ std::ostream & operator << (std::ostream & os, state_printer_t & state_printer) 
     double lin_momentum = compute_linear_momentum(state_printer.v, state_printer.mass);
     double ang_momentum = compute_angular_momentum(state_printer.x, state_printer.v, state_printer.omega, state_printer.mass, state_printer.inertia);
 
-    os << "Dump: " << state_printer.n_iter << "/" << state_printer.total_n_iter << "\tKE: " << ke << "\tP: " << lin_momentum << "\tL: " << ang_momentum;
+    os << "Dump: " << state_printer.n_iter << "/" << state_printer.total_n_iter << " \tKE: " << ke << " \tP: " << lin_momentum << " \tL: " << ang_momentum;
 
     double r_g = r_gyration(state_printer.x);
 
-    os << "\tR_g: " << r_g;
+    os << " \tR_g: " << r_g;
 
     if (state_printer.n_iter < state_printer_t::n_avg_points) {
-        os << "\testimating remaining time ...";
+        os << " \testimating remaining time ...";
     } else {
         long total = std::accumulate(std::begin(state_printer.durations), std::end(state_printer.durations), 0l);
         long duration_per_step = total / state_printer_t::n_avg_points;
@@ -84,7 +84,7 @@ std::ostream & operator << (std::ostream & os, state_printer_t & state_printer) 
         auto remaining_time_minutes = remaining_steps * duration_per_step / 1000l / 60l;
         auto remaining_time_seconds = remaining_steps * duration_per_step / 1000l % 60l;
 
-        os << "\tremaining: " << remaining_time_minutes << ":" << std::setw(2) << std::setfill('0') << remaining_time_seconds;
+        os << " \tremaining: " << remaining_time_minutes << ":" << std::setw(2) << std::setfill('0') << remaining_time_seconds;
     }
 
     state_printer.n_iter ++;

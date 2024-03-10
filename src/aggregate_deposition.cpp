@@ -132,6 +132,12 @@ int main(int argc, const char ** argv) {
 
     x0 = load_aggregate(parameter_store);
 
+    if (x0.size() == 0) {
+        std::cerr << "Loaded an empty aggregate" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    std::cout << "Loaded an aggregate of size " << x0.size() << std::endl;
+
     remove_overlap(x0, r_part, d_crit, n_overlap_iter);
 
     Eigen::Vector3d center_of_mass = Eigen::Vector3d::Zero();
