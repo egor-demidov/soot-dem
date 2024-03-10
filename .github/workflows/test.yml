@@ -9,6 +9,31 @@ on:
     branches: [ main ]
 
 jobs:
+  Compile-Windows-Clang:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Build
+        run: |
+          mkdir dist/soot-dem/bin
+          mkdir cmake-build
+          cd cmake-build
+          cmake -DCMAKE_BUILD_TYPE=Release -G Ninja ..
+          cmake --build .
+          move ./aggregate_deposition.exe ../dist/soot-dem/bin/
+          move ./afm_necking_fraction.exe ../dist/soot-dem/bin/
+          move ./restructuring.exe ../dist/soot-dem/bin/
+      - name: Archive compiled artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: soot-dem-windows-clang-x86_64
+          path: |
+            dist
+
+jobs:
   Compile-Windows-MSVC:
     runs-on: windows-latest
     steps:
