@@ -47,7 +47,8 @@ add_compile_definitions(LIBGRAN_USE_OMP)
 add_compile_definitions("COMPILER_STRING=\"${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}\"")
 add_compile_definitions("SYSTEM_STRING=\"${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_VERSION}\"")
 
-set(CMAKE_UTIL_SOURCES src/writer.cpp src/energy.cpp src/reader.cpp src/break_neck.cpp src/remove_overlap.cpp src/aggregate_stats.cpp
+set(CMAKE_UTIL_SOURCES src/random_engine.cpp src/writer.cpp src/energy.cpp src/reader.cpp
+        src/break_neck.cpp src/remove_overlap.cpp src/aggregate_stats.cpp
         src/parameter_loader.cpp src/io_common.cpp deps/tinyxml2/tinyxml2.cpp)
 
 #add_executable(soot_afm main.cpp ${CMAKE_UTIL_SOURCES})

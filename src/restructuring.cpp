@@ -27,6 +27,7 @@
 #include "aggregate_stats.h"
 #include "io_common.h"
 #include "parameter_loader.h"
+#include "random_engine.h"
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
 using coating_model_t = binary_coating_functor<Eigen::Vector3d, double>;
@@ -156,7 +157,7 @@ int main(int argc, const char ** argv) {
 
     std::cout << "Breaking " << n_necks - target_n_necks << " necks ..." << std::endl;
 
-    seed_rng(rng_seed);
+    seed_random_engine(rng_seed);
 
     for (size_t i = n_necks; i > target_n_necks; i --) {
         break_random_neck(aggregate_model.get_bonded_contacts(), x0.size());

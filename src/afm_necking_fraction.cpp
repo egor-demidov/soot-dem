@@ -19,6 +19,7 @@
 #include "break_neck.h"
 #include "remove_overlap.h"
 #include "io_common.h"
+#include "random_engine.h"
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
 using rect_substrate_model_t = rect_substrate<Eigen::Vector3d, double>;
@@ -60,9 +61,6 @@ int main(int argc, const char ** argv) {
     const double substrate_size = get_real_parameter(parameter_store, "substrate_size");
     const long n_overlap_iter = get_integer_parameter(parameter_store, "n_overlap_iter");
     const double v_afm = get_real_parameter(parameter_store, "v_afm");
-    const double tip_x0 = get_real_parameter(parameter_store, "tip_x0");
-    const double tip_y0 = get_real_parameter(parameter_store, "tip_y0");
-    const double tip_z0 = get_real_parameter(parameter_store, "tip_z0");
     const double t_reversal = get_real_parameter(parameter_store, "t_reversal");
     const long rng_seed = get_integer_parameter(parameter_store, "rng_seed");
 
@@ -158,20 +156,6 @@ int main(int argc, const char ** argv) {
             {-substrate_size / 2.0, substrate_size / 2.0, 0.0}
     };
 
-    const Eigen::Vector3d afm_tip_offset {tip_x0, tip_y0, tip_z0};
-
-    // Afm tip base vertices
-    const std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d> afm_base_vertices {
-        Eigen::Vector3d {-6.0 * r_part, -3.0 * r_part, 25.0 * r_part} + afm_tip_offset,
-        Eigen::Vector3d {6.0 * r_part, -3.0 * r_part, 25.0 * r_part} + afm_tip_offset,
-        Eigen::Vector3d {0.0, 6.0 * r_part, 25.0 * r_part} + afm_tip_offset
-    };
-
-    // Afm tip peak vertex
-    const Eigen::Vector3d afm_peak_vertex = Eigen::Vector3d {
-        0.0, 0, 20.0 * r_part
-    } + afm_tip_offset;
-
     // Afm tip initial velocity
 //    const double afm_tip_t_max = /*2.0 * */t_tot * 0.018 /*2.1e-07*/;
     auto afm_tip_v = [v_afm, t_reversal] (double t) -> Eigen::Vector3d {
@@ -196,6 +180,23 @@ int main(int argc, const char ** argv) {
     std::cout << "Loaded an aggregate of size " << x0.size() << std::endl;
 
     remove_overlap(x0, r_part, d_crit, n_overlap_iter);
+
+    // Randomly pick the monomer that will be indented
+    std::uniform_int_distribution<long> dist(0, x0.size() - 1);
+    long monomer_to_indent = dist(get_random_engine());
+    // Position the tip slightly above the monomer
+    const Eigen::Vector3d afm_tip_offset {x0[monomer_to_indent][0],
+                                          x0[monomer_to_indent][1], x0[monomer_to_indent][2] + 1.5 * r_part};
+
+    // Afm tip base vertices
+    const std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d> afm_base_vertices {
+            Eigen::Vector3d {-6.0 * r_part, -3.0 * r_part, 5.0 * r_part} + afm_tip_offset,
+            Eigen::Vector3d {6.0 * r_part, -3.0 * r_part, 5.0 * r_part} + afm_tip_offset,
+            Eigen::Vector3d {0.0, 6.0 * r_part, 5.0 * r_part} + afm_tip_offset
+    };
+
+    // Afm tip peak vertex
+    const Eigen::Vector3d afm_peak_vertex = afm_tip_offset;
 
     // Fill the remaining buffers with zeros
     v0.resize(x0.size());
@@ -249,7 +250,7 @@ int main(int argc, const char ** argv) {
 
     std::cout << "Breaking " << n_necks - target_n_necks << " necks ..." << std::endl;
 
-    seed_rng(rng_seed);
+    seed_random_engine(rng_seed);
 
     for (size_t i = n_necks; i > target_n_necks; i --) {
         break_random_neck(aggregate_model.get_bonded_contacts(), x0.size());

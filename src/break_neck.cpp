@@ -5,12 +5,7 @@
 #include <random>
 
 #include "break_neck.h"
-
-static std::mt19937_64 mt(0);
-
-void seed_rng(long seed) {
-    mt.seed(seed);
-}
+#include "random_engine.h"
 
 void break_random_neck(std::vector<bool> & bonded_contacts, size_t n_part) {
     std::vector<std::pair<size_t, size_t>> necks;
@@ -25,7 +20,7 @@ void break_random_neck(std::vector<bool> & bonded_contacts, size_t n_part) {
         return;
 
     std::uniform_int_distribution<size_t> dist(0, necks.size() - 1);
-    auto neck_to_break = necks[dist(mt)];
+    auto neck_to_break = necks[dist(get_random_engine())];
     bonded_contacts [neck_to_break.first * n_part + neck_to_break.second] = false;
     bonded_contacts [neck_to_break.second * n_part + neck_to_break.first] = false;
 }

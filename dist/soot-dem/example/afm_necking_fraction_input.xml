@@ -33,12 +33,6 @@
     <let id="r_part" type="real">14e-9</let>
     <!-- Side length of the square substrate centered at the origin in the x-y plane -->
     <let id="substrate_size" type="real">7.0e-7</let>
-    <!-- AFM tip initial offset along the x axis -->
-    <let id="tip_x0" type="real">14e-9</let>
-    <!-- AFM tip initial offset along the y axis -->
-    <let id="tip_y0" type="real">-196e-9</let>
-    <!-- AFM tip initial offset along the z axis -->
-    <let id="tip_z0" type="real">-112e-9</let>
     <!-- AFM tip reversal time -->
     <let id="t_reversal" type="real">1.08e-8</let>
     <!-- AFM tip maximum velocity magnitude -->

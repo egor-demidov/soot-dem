@@ -8,6 +8,5 @@
 #include <vector>
 
 void break_random_neck(std::vector<bool> & bonded_contacts, size_t n_part);
-void seed_rng(long seed);
 
 #endif //SOOT_AFM_BREAK_NECK_H
