@@ -34,6 +34,20 @@ using unary_force_container_t =
 using granular_system_t = granular_system_neighbor_list<Eigen::Vector3d, double, rotational_velocity_verlet_half,
     rotational_step_handler, binary_force_container_t, unary_force_container_t>;
 
+bool is_monomer_hindered(long monomer, std::vector<Eigen::Vector3d> const & xs, double r_part) {
+    for (long i = 0; i < xs.size(); i ++) {
+        if (i == monomer)
+            continue;
+
+        Eigen::Vector3d distance = xs[monomer] - xs[i];
+        distance[2] = 0.0;
+        if (distance.norm() < 2.0 * r_part && xs[i][2] > xs[monomer][2])
+            return true;
+    }
+
+    return false;
+}
+
 int main(int argc, const char ** argv) {
     if (argc < 2) {
         std::cerr << "Path to the input file must be provided as an argument" << std::endl;
@@ -183,7 +197,12 @@ int main(int argc, const char ** argv) {
 
     // Randomly pick the monomer that will be indented
     std::uniform_int_distribution<long> dist(0, x0.size() - 1);
-    long monomer_to_indent = dist(get_random_engine());
+    long monomer_to_indent;
+
+    do {
+        monomer_to_indent = dist(get_random_engine());
+    } while (is_monomer_hindered(monomer_to_indent, x0, r_part));
+
     // Position the tip slightly above the monomer
     const Eigen::Vector3d afm_tip_offset {x0[monomer_to_indent][0],
                                           x0[monomer_to_indent][1], x0[monomer_to_indent][2] + 1.5 * r_part};
