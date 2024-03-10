@@ -196,6 +196,7 @@ int main(int argc, const char ** argv) {
     remove_overlap(x0, r_part, d_crit, n_overlap_iter);
 
     // Randomly pick the monomer that will be indented
+    seed_random_engine(rng_seed);
     std::uniform_int_distribution<long> dist(0, x0.size() - 1);
     long monomer_to_indent;
 
@@ -268,8 +269,6 @@ int main(int argc, const char ** argv) {
     auto target_n_necks = size_t(double(n_necks) * frac_necks);
 
     std::cout << "Breaking " << n_necks - target_n_necks << " necks ..." << std::endl;
-
-    seed_random_engine(rng_seed);
 
     for (size_t i = n_necks; i > target_n_necks; i --) {
         break_random_neck(aggregate_model.get_bonded_contacts(), x0.size());

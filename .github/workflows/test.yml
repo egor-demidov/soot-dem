@@ -1,6 +1,6 @@
 name: Build, Test, Deploy
 
-run-name: ${{ github.actor }} triggered pipeline
+run-name: CI pipeline triggered by ${{ github.actor }}
 
 on:
   push:
@@ -56,7 +56,7 @@ jobs:
       - name: Archive compiled artifact
         uses: actions/upload-artifact@v3
         with:
-          name: soot-dem-windows-MSVC-x86_64
+          name: soot-dem-windows-msvc-x86_64
           path: |
             dist
 
