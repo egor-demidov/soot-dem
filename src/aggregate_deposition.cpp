@@ -154,9 +154,6 @@ int main(int argc, const char ** argv) {
     }
     std::cout << "Loaded an aggregate of size " << x0.size() << std::endl;
 
-    center_in_the_xy_plane(x0);
-    std::cout << "Centered the aggregate in the xy plane" << std::endl;
-
     remove_overlap(x0, r_part, d_crit, n_overlap_iter);
 
     Eigen::Vector3d center_of_mass = Eigen::Vector3d::Zero();
@@ -178,6 +175,9 @@ int main(int argc, const char ** argv) {
     std::transform(x0.begin(), x0.end(), x0.begin(), [r_part, z_min] (auto const & x) {
         return x + Eigen::Vector3d::UnitZ() * (-z_min + 1.1 * r_part);
     });
+
+    center_in_the_xy_plane(x0);
+    std::cout << "Centered the aggregate in the xy plane" << std::endl;
 
     // Fill the remaining buffers with zeros
     v0.resize(x0.size());
