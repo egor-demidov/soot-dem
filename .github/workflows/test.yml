@@ -9,6 +9,36 @@ on:
     branches: [ main ]
 
 jobs:
+  Compile-Linux-ICC:
+    runs-on: ubuntu-latest
+    container: intel/oneapi-basekit
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Build
+        run: |
+          mkdir dist/soot-dem/bin
+          mkdir cmake-build
+          cd cmake-build
+          export CC=icc
+          export CXX=icpc
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake --build .
+          strip aggregate_deposition
+          strip afm_necking_fraction
+          strip restructuring
+          mv ./aggregate_deposition ../dist/soot-dem/bin/
+          mv ./afm_necking_fraction ../dist/soot-dem/bin/
+          mv ./restructuring ../dist/soot-dem/bin/
+      - name: Archive compiled artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: soot-dem-linux-icc-x86_64
+          path: |
+            dist
+
   Compile-Windows-Clang:
     runs-on: windows-latest
     steps:
