@@ -21,6 +21,7 @@ jobs:
           mkdir dist/soot-dem/bin
           mkdir cmake-build
           cd cmake-build
+          vcpkg install ninja
           $Env:CC="clang"
           $Env:CXX="clang++"
           cmake -DCMAKE_BUILD_TYPE=Release -G Ninja ..
