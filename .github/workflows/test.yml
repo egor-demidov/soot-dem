@@ -22,8 +22,8 @@ jobs:
           mkdir dist/soot-dem/bin
           mkdir cmake-build
           cd cmake-build
-          export CC=icc
-          export CXX=icpc
+          export CC=icx
+          export CXX=icpx
           cmake -DCMAKE_BUILD_TYPE=Release ..
           cmake --build .
           strip aggregate_deposition
