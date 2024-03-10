@@ -32,6 +32,22 @@ using unary_force_container_t =
 using granular_system_t = granular_system_neighbor_list<Eigen::Vector3d, double, rotational_velocity_verlet_half,
         rotational_step_handler, binary_force_container_t, unary_force_container_t>;
 
+// Centers the loaded aggregate in the xy-plane
+void center_in_the_xy_plane(std::vector<Eigen::Vector3d> & x) {
+    Eigen::Vector3d center_of_mass = Eigen::Vector3d::Zero();
+
+    for (auto const & pt : x) {
+        center_of_mass += pt;
+    }
+
+    center_of_mass /= double(x.size());
+
+    for (auto & pt : x) {
+        pt[0] -= center_of_mass[0];
+        pt[1] -= center_of_mass[1];
+    }
+}
+
 int main(int argc, const char ** argv) {
     if (argc < 2) {
         std::cerr << "Path to the input file must be provided as an argument" << std::endl;
@@ -137,6 +153,9 @@ int main(int argc, const char ** argv) {
         exit(EXIT_FAILURE);
     }
     std::cout << "Loaded an aggregate of size " << x0.size() << std::endl;
+
+    center_in_the_xy_plane(x0);
+    std::cout << "Centered the aggregate in the xy plane" << std::endl;
 
     remove_overlap(x0, r_part, d_crit, n_overlap_iter);
 
