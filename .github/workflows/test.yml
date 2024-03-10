@@ -21,6 +21,8 @@ jobs:
           mkdir dist/soot-dem/bin
           mkdir cmake-build
           cd cmake-build
+          $Evn:CC="clang"
+          $Env:CXX="clang++"
           cmake -DCMAKE_BUILD_TYPE=Release -G Ninja ..
           cmake --build .
           move ./aggregate_deposition.exe ../dist/soot-dem/bin/
@@ -32,8 +34,7 @@ jobs:
           name: soot-dem-windows-clang-x86_64
           path: |
             dist
-
-jobs:
+            
   Compile-Windows-MSVC:
     runs-on: windows-latest
     steps:
