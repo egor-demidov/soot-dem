@@ -182,6 +182,7 @@ int main(int argc, const char ** argv) {
         }
 
         system.do_step(dt);
+        coating_model.update_center_of_mass(center_of_mass(system.get_x()));
     }
 
     return 0;
