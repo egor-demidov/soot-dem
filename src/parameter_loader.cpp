@@ -98,7 +98,7 @@ void load_include_file(parameter_store_t & parameter_store, std::filesystem::pat
     auto effective_path = reference_path / include_file_path;
 
     tinyxml2::XMLDocument doc;
-    doc.LoadFile(effective_path.c_str());
+    doc.LoadFile(effective_path.string().c_str());
 
     if (doc.Error()) {
         std::cerr << "Unable to read the parameter file at " << effective_path << std::endl;
@@ -158,7 +158,7 @@ parameter_store_t load_parameters(std::filesystem::path const & parameter_file_p
     parameter_store_t parameter_store;
 
     tinyxml2::XMLDocument doc;
-    doc.LoadFile(parameter_file_path.c_str());
+    doc.LoadFile(parameter_file_path.string().c_str());
 
     if (doc.Error()) {
         std::cerr << "Unable to read the parameter file at " << parameter_file_path << std::endl;
