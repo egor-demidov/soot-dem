@@ -3,7 +3,7 @@
 //
 
 #ifndef SOOT_AFM_PARAMETER_LOADER_H
-#define SOOT_AFM_PARAMETER_LOADER_Hecho
+#define SOOT_AFM_PARAMETER_LOADER_H
 
 #include <map>
 #include <string>
