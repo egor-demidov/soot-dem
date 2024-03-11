@@ -21,7 +21,7 @@ struct central_force_functor {
          std::vector<field_value_t> const & omega [[maybe_unused]],
          real_t t [[maybe_unused]]) const {
 
-        field_value_t n = (x[i] - center_of_mass).normalized();
+        field_value_t n = (center_of_mass - x[i]).normalized();
         field_value_t f = magnitude * n;
 
         return std::make_pair(f / mass, zero_field);
