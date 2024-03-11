@@ -1,5 +1,5 @@
 //
-// Created by egor on 2/28/24.
+// Created by egor on 3/11/24.
 //
 
 #include <iostream>
@@ -15,7 +15,7 @@
 #include <libgran/hamaker_force/hamaker_force.h>
 #include <libgran/granular_system/granular_system_neighbor_list.h>
 
-#include "coating_force.h"
+#include "central_force.h"
 #include "aggregate.h"
 
 #include "writer.h"
@@ -30,13 +30,13 @@
 #include "random_engine.h"
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
-using coating_model_t = binary_coating_functor<Eigen::Vector3d, double>;
+using central_force_model_t = central_force_functor<Eigen::Vector3d, double>;
 
-using binary_force_container_t = binary_force_functor_container<Eigen::Vector3d, double, aggregate_model_t, coating_model_t>;
-using unary_force_container_t = unary_force_functor_container<Eigen::Vector3d, double>;
+using binary_force_container_t = binary_force_functor_container<Eigen::Vector3d, double, aggregate_model_t>;
+using unary_force_container_t = unary_force_functor_container<Eigen::Vector3d, double, central_force_model_t>;
 
 using granular_system_t = granular_system_neighbor_list<Eigen::Vector3d, double, rotational_velocity_verlet_half,
-    rotational_step_handler, binary_force_container_t, unary_force_container_t>;
+        rotational_step_handler, binary_force_container_t, unary_force_container_t>;
 
 int main(int argc, const char ** argv) {
     if (argc < 2) {
@@ -46,10 +46,10 @@ int main(int argc, const char ** argv) {
 
     auto parameter_store = load_parameters(argv[1]);
 
-    print_header(parameter_store, "restructuring");
+    print_header(parameter_store, "restructuring_central");
 
-    if (parameter_store.simulation_type != "restructuring") {
-        std::cerr << "Parameter file simulation type must be `restructuring`" << std::endl;
+    if (parameter_store.simulation_type != "restructuring_central") {
+        std::cerr << "Parameter file simulation type must be `restructuring_central`" << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -101,10 +101,8 @@ int main(int argc, const char ** argv) {
     const double A = get_real_parameter(parameter_store, "A");
     const double h0 = get_real_parameter(parameter_store, "h0");
 
-    // Parameters for the coating model
+    // Parameters for the central force model
     const double f_coat_mag = get_real_parameter(parameter_store, "f_coat_max");
-    const double f_coat_cutoff = get_real_parameter(parameter_store, "f_coat_cutoff");
-    const double f_coat_drop_rate = get_real_parameter(parameter_store, "f_coat_drop_rate");
 
     // Necking fraction
     const double frac_necks = get_real_parameter(parameter_store, "frac_necks");
@@ -130,22 +128,22 @@ int main(int argc, const char ** argv) {
     std::fill(omega0.begin(), omega0.end(), Eigen::Vector3d::Zero());
 
     aggregate_model_t aggregate_model {
-        k_n, gamma_n,
-        k_t, gamma_t, mu_t, phi_t,
-        k_r, gamma_r, mu_r, phi_r,
-        k_o, gamma_o, mu_o, phi_o,
-        k_n_bond, gamma_n_bond,
-        k_t_bond, gamma_t_bond,
-        k_r_bond, gamma_r_bond,
-        k_o_bond, gamma_o_bond,
-          d_crit, A, h0, x0, x0.size(),
-          r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0};
+            k_n, gamma_n,
+            k_t, gamma_t, mu_t, phi_t,
+            k_r, gamma_r, mu_r, phi_r,
+            k_o, gamma_o, mu_o, phi_o,
+            k_n_bond, gamma_n_bond,
+            k_t_bond, gamma_t_bond,
+            k_r_bond, gamma_r_bond,
+            k_o_bond, gamma_o_bond,
+            d_crit, A, h0, x0, x0.size(),
+            r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0};
 
-    coating_model_t coating_model(f_coat_cutoff, f_coat_mag, f_coat_drop_rate, mass, Eigen::Vector3d::Zero());
+    central_force_model_t coating_model(center_of_mass(x0), f_coat_mag, mass, Eigen::Vector3d::Zero());
 
-    binary_force_container_t binary_force_functors {aggregate_model, coating_model};
+    binary_force_container_t binary_force_functors {aggregate_model};
 
-    unary_force_container_t unary_force_functors;
+    unary_force_container_t unary_force_functors {coating_model};
 
     rotational_step_handler<std::vector<Eigen::Vector3d>, Eigen::Vector3d>
             step_handler_instance;
@@ -184,6 +182,7 @@ int main(int argc, const char ** argv) {
         }
 
         system.do_step(dt);
+        coating_model.update_center_of_mass(center_of_mass(system.get_x()));
     }
 
     return 0;

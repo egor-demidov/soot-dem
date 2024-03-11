@@ -54,7 +54,9 @@ set(CMAKE_UTIL_SOURCES src/random_engine.cpp src/writer.cpp src/energy.cpp src/r
 add_executable(aggregate_deposition src/aggregate_deposition.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(restructuring src/restructuring.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(afm_necking_fraction src/afm_necking_fraction.cpp ${CMAKE_UTIL_SOURCES})
+add_executable(restructuring_central src/restructuring_central.cpp ${CMAKE_UTIL_SOURCES})
 
 target_link_libraries(aggregate_deposition ${LIBRARY_LIST})
 target_link_libraries(restructuring ${LIBRARY_LIST})
 target_link_libraries(afm_necking_fraction ${LIBRARY_LIST})
+target_link_libraries(restructuring_central ${LIBRARY_LIST})
