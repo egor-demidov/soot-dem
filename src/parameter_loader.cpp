@@ -90,35 +90,30 @@ void set_string(parameter_store_t & parameter_store, std::string const & id, std
     parameter_store.strings[id] = value;
 }
 
-parameter_store_t load_parameters(std::string const & parameter_file_path) {
-    parameter_store_t parameter_store;
+void parse_parameters(parameter_store_t & parameter_store, tinyxml2::XMLElement * root_element);
 
+void load_include_file(parameter_store_t & parameter_store, std::string const & include_file_path) {
     tinyxml2::XMLDocument doc;
-    doc.LoadFile(parameter_file_path.c_str());
+    doc.LoadFile(include_file_path.c_str());
 
     if (doc.Error()) {
-        std::cerr << "Unable to read the parameter file at " << parameter_file_path << std::endl;
+        std::cerr << "Unable to read the parameter file at " << include_file_path << std::endl;
         exit(EXIT_FAILURE);
     }
 
-    auto root = doc.FirstChildElement("simulation");
+    auto root = doc.FirstChildElement("include_file");
 
     if (root == nullptr) {
-        std::cerr << "The root element of the parameter file must be `simulation`" << std::endl;
+        std::cerr << "The root element of the include file must be `include_file`" << std::endl;
         exit(EXIT_FAILURE);
     }
 
-    auto simulation_type = root->FindAttribute("type");
+    parse_parameters(parameter_store, root);
+}
 
-    if (simulation_type == nullptr) {
-        std::cerr << "The `simulation` element must contain a `type` attribute" << std::endl;
-        exit(EXIT_FAILURE);
-    }
-
-    parameter_store.simulation_type = std::string(simulation_type->Value());
-
+void parse_parameters(parameter_store_t & parameter_store, tinyxml2::XMLElement * root_element) {
     // Iterate over parameter declarations
-    for (auto element = root->FirstChildElement("let"); element != nullptr; element = element->NextSiblingElement("let")) {
+    for (auto element = root_element->FirstChildElement("let"); element != nullptr; element = element->NextSiblingElement("let")) {
         auto id = element->FindAttribute("id");
 
         if (id == nullptr) {
@@ -148,6 +143,41 @@ parameter_store_t load_parameters(std::string const & parameter_file_path) {
             exit(EXIT_FAILURE);
         }
     }
+
+    for (auto element = root_element->FirstChildElement("include"); element != nullptr; element = element->NextSiblingElement("include")) {
+        auto text = element->GetText();
+        load_include_file(parameter_store, text);
+    }
+}
+
+parameter_store_t load_parameters(std::string const & parameter_file_path) {
+    parameter_store_t parameter_store;
+
+    tinyxml2::XMLDocument doc;
+    doc.LoadFile(parameter_file_path.c_str());
+
+    if (doc.Error()) {
+        std::cerr << "Unable to read the parameter file at " << parameter_file_path << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    auto root = doc.FirstChildElement("simulation");
+
+    if (root == nullptr) {
+        std::cerr << "The root element of the parameter file must be `simulation`" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    auto simulation_type = root->FindAttribute("type");
+
+    if (simulation_type == nullptr) {
+        std::cerr << "The `simulation` element must contain a `type` attribute" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    parameter_store.simulation_type = std::string(simulation_type->Value());
+
+    parse_parameters(parameter_store, root);
 
     return parameter_store;
 }

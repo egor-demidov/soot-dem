@@ -48,64 +48,8 @@
     <!-- Number of overlap removal iterations -->
     <let id="n_overlap_iter" type="integer">10000</let>
 
-    <!-- PARTICLE-PARTICLE FRICTIONAL CONTACT PARAMETERS -->
-
-    <!-- Normal stiffness -->
-    <let id="k_n" type="real">10000.0</let>
-    <!-- Normal damping coefficient -->
-    <let id="gamma_n" type="real">5e-9</let>
-    <!-- Tangential stiffness -->
-    <let id="k_t" type="real">10000.0</let>
-    <!-- Tangential damping coefficient -->
-    <let id="gamma_t" type="real">1e-9</let>
-    <!-- Tangential static friction coefficient -->
-    <let id="mu_t" type="real">1.0</let>
-    <!-- Tangential dynamic to static friction ratio -->
-    <let id="phi_t" type="real">1.0</let>
-    <!-- Rolling stiffness -->
-    <let id="k_r" type="real">10000.0</let>
-    <!-- Rolling damping coefficient -->
-    <let id="gamma_r" type="real">2.5e-10</let>
-    <!-- Rolling static friction coefficient -->
-    <let id="mu_r" type="real">0.1</let>
-    <!-- Rolling dynamic to static friction ratio -->
-    <let id="phi_r" type="real">1.0</let>
-    <!-- Torsion stiffness -->
-    <let id="k_o" type="real">10000.0</let>
-    <!-- Torsion damping coefficient -->
-    <let id="gamma_o" type="real">2.5e-10</let>
-    <!-- Torsion static friction coefficient -->
-    <let id="mu_o" type="real">0.1</let>
-    <!-- Torsion dynamic to static friction ratio -->
-    <let id="phi_o" type="real">1.0</let>
-
-    <!-- PARTICLE-PARTICLE BOND PARAMETERS -->
-
-    <!-- Normal stiffness coefficient -->
-    <let id="k_n_bond" type="real">100000.0</let>
-    <!-- Normal damping coefficient -->
-    <let id="gamma_n_bond" type="real">1.25e-7</let>
-    <!-- Tangential stiffness coefficient -->
-    <let id="k_t_bond" type="real">100000.0</let>
-    <!-- Tangential damping coefficient -->
-    <let id="gamma_t_bond" type="real">2.5e-8</let>
-    <!-- Rolling stiffness coefficient -->
-    <let id="k_r_bond" type="real">100000.0</let>
-    <!-- Rolling damping coefficient -->
-    <let id="gamma_r_bond" type="real">6.25e-9</let>
-    <!-- Torsion stiffness coefficient -->
-    <let id="k_o_bond" type="real">100000.0</let>
-    <!-- Torsion damping coefficient -->
-    <let id="gamma_o_bond" type="real">6.25e-9</let>
-    <!-- Critical inter-particle separation for bond creation -->
-    <let id="d_crit" type="real">1e-9</let>
-
-    <!-- PARTICLE-PARTICLE VAN DER WAALS PARAMETERS -->
-
-    <!-- Hamaker constant -->
-    <let id="A" type="real">1.0e-19</let>
-    <!-- Hamaker saturation distance -->
-    <let id="h0" type="real">1.0e-9</let>
+    <!-- IMPORT THE COMMON PARAMETERS -->
+    <include>common_include.xml</include>
 
     <!-- PARTICLE-SUBSTRATE FRICTION PARAMETERS -->
 
