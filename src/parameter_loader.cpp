@@ -90,14 +90,18 @@ void set_string(parameter_store_t & parameter_store, std::string const & id, std
     parameter_store.strings[id] = value;
 }
 
-void parse_parameters(parameter_store_t & parameter_store, tinyxml2::XMLElement * root_element);
+void parse_parameters(parameter_store_t & parameter_store, tinyxml2::XMLElement * root_element, std::filesystem::path const & reference_path);
 
-void load_include_file(parameter_store_t & parameter_store, std::string const & include_file_path) {
+void load_include_file(parameter_store_t & parameter_store, std::filesystem::path const & include_file_path,
+    std::filesystem::path const & reference_path) {
+
+    auto effective_path = reference_path / include_file_path;
+
     tinyxml2::XMLDocument doc;
-    doc.LoadFile(include_file_path.c_str());
+    doc.LoadFile(effective_path.c_str());
 
     if (doc.Error()) {
-        std::cerr << "Unable to read the parameter file at " << include_file_path << std::endl;
+        std::cerr << "Unable to read the parameter file at " << effective_path << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -108,10 +112,10 @@ void load_include_file(parameter_store_t & parameter_store, std::string const & 
         exit(EXIT_FAILURE);
     }
 
-    parse_parameters(parameter_store, root);
+    parse_parameters(parameter_store, root, effective_path.parent_path());
 }
 
-void parse_parameters(parameter_store_t & parameter_store, tinyxml2::XMLElement * root_element) {
+void parse_parameters(parameter_store_t & parameter_store, tinyxml2::XMLElement * root_element, std::filesystem::path const & reference_path) {
     // Iterate over parameter declarations
     for (auto element = root_element->FirstChildElement("let"); element != nullptr; element = element->NextSiblingElement("let")) {
         auto id = element->FindAttribute("id");
@@ -146,11 +150,11 @@ void parse_parameters(parameter_store_t & parameter_store, tinyxml2::XMLElement 
 
     for (auto element = root_element->FirstChildElement("include"); element != nullptr; element = element->NextSiblingElement("include")) {
         auto text = element->GetText();
-        load_include_file(parameter_store, text);
+        load_include_file(parameter_store, text, reference_path);
     }
 }
 
-parameter_store_t load_parameters(std::string const & parameter_file_path) {
+parameter_store_t load_parameters(std::filesystem::path const & parameter_file_path) {
     parameter_store_t parameter_store;
 
     tinyxml2::XMLDocument doc;
@@ -177,7 +181,7 @@ parameter_store_t load_parameters(std::string const & parameter_file_path) {
 
     parameter_store.simulation_type = std::string(simulation_type->Value());
 
-    parse_parameters(parameter_store, root);
+    parse_parameters(parameter_store, root, parameter_file_path.parent_path());
 
     return parameter_store;
 }

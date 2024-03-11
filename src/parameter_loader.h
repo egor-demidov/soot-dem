@@ -3,11 +3,12 @@
 //
 
 #ifndef SOOT_AFM_PARAMETER_LOADER_H
-#define SOOT_AFM_PARAMETER_LOADER_H
+#define SOOT_AFM_PARAMETER_LOADER_Hecho
 
 #include <map>
 #include <string>
 #include <iostream>
+#include <filesystem>
 
 struct parameter_store_t {
     std::string simulation_type; // Used to validate that the correct input file is being used
@@ -24,6 +25,6 @@ long get_integer_parameter(parameter_store_t const & parameter_store, std::strin
 
 std::string const & get_string_parameter(parameter_store_t const & parameter_store, std::string const & id);
 
-parameter_store_t load_parameters(std::string const & parameter_file_path);
+parameter_store_t load_parameters(std::filesystem::path const & parameter_file_path);
 
 #endif //SOOT_AFM_PARAMETER_LOADER_H
