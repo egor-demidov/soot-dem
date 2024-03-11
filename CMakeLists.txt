@@ -51,11 +51,8 @@ set(CMAKE_UTIL_SOURCES src/random_engine.cpp src/writer.cpp src/energy.cpp src/r
         src/break_neck.cpp src/remove_overlap.cpp src/aggregate_stats.cpp
         src/parameter_loader.cpp src/io_common.cpp deps/tinyxml2/tinyxml2.cpp)
 
-#add_executable(soot_afm main.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(aggregate_deposition src/aggregate_deposition.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(restructuring src/restructuring.cpp ${CMAKE_UTIL_SOURCES})
-#add_executable(aggregate_deposition_no_necks aggregate_deposition_no_necks.cpp ${CMAKE_UTIL_SOURCES})
-#add_executable(afm_no_necks afm_no_necks.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(afm_necking_fraction src/afm_necking_fraction.cpp ${CMAKE_UTIL_SOURCES})
 
 target_link_libraries(aggregate_deposition ${LIBRARY_LIST})
