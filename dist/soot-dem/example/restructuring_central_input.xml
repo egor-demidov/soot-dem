@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     SUMMARY: This is an example parameter file for an aggregate restructuring simulation
+    where restructuring is driven by a central force of constant magnitude
 -->
 <!--
     DESCRIPTION: An aggregate is loaded and a fraction of contacts are made necked.
     A binary force is applied to the particles to induce restructuring
  -->
 <!--
-    BINARY MODELS: Bonded contact force, Hamaker attraction, Coating force
+    BINARY MODELS: Bonded contact force, Hamaker attraction
  -->
 <!--
-    UNARY MODELS: N/A
+    UNARY MODELS: Central coating force
  -->
 
 <simulation type="restructuring">
@@ -23,7 +24,7 @@
     <!-- Number of data dumps -->
     <let id="n_dumps" type="integer">500</let>
     <!-- Verlet (cutoff) radius for neighbor lists -->
-    <let id="r_verlet" type="real">70e-9</let>
+    <let id="r_verlet" type="real">42e-9</let>
     <!-- Neighbor list update period -->
     <let id="neighbor_update_period" type="integer">20</let>
     <!-- Material density -->
@@ -48,9 +49,5 @@
 
     <!-- Maximum magnitude of coating-induced force -->
     <let id="f_coat_max" type="real">1e-11</let>
-    <!-- Cutoff distance for the coating-induced force -->
-    <let id="f_coat_cutoff" type="real">56e-9</let>
-    <!-- Drop rate at cutoff point -->
-    <let id="f_coat_drop_rate" type="real">178571429</let> <!-- 10.0/f_coat_cutoff -->
 
 </simulation>
