@@ -39,11 +39,11 @@ std::vector<Eigen::Vector3d> load_aggregate(parameter_store_t const & parameter_
     std::vector<Eigen::Vector3d> x0;
 
     if (aggregate_type == "mackowski") {
-        x0 = load_mackowski_aggregate(aggregate_path, r_part);
+        x0 = load_mackowski_aggregate(aggregate_path.string(), r_part);
     } else if (aggregate_type == "flage") {
-        x0 = load_flage_aggregate(aggregate_path, r_part);
+        x0 = load_flage_aggregate(aggregate_path.string(), r_part);
     } else if (aggregate_type == "vtk") {
-        x0 = load_vtk_aggregate(aggregate_path, r_part);
+        x0 = load_vtk_aggregate(aggregate_path.string(), r_part);
     } else {
         std::cerr << "Unrecognized aggregate type: `" << aggregate_type << "`" << std::endl;
         exit(EXIT_FAILURE);
