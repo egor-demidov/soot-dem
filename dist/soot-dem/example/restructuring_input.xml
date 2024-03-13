@@ -35,7 +35,7 @@
     <!-- Aggregate file type -->
     <let id="aggregate_type" type="string">mackowski</let>
     <!-- Aggregate file path -->
-    <let id="aggregate_path" type="string">example_aggregate.txt</let>
+    <let id="aggregate_path" type="path">example_aggregate.txt</let>
     <!-- Number of overlap removal iterations -->
     <let id="n_overlap_iter" type="integer">10000</let>
     <!-- Seed for the RNG (to determine which necks to break) -->

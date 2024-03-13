@@ -46,7 +46,7 @@
     <!-- Aggregate file type -->
     <let id="aggregate_type" type="string">vtk</let>
     <!-- Aggregate file path -->
-    <let id="aggregate_path" type="string">run/particles_499.vtk</let>
+    <let id="aggregate_path" type="path">run/particles_499.vtk</let>
     <!-- Number of overlap removal iterations -->
     <let id="n_overlap_iter" type="integer">10000</let>
     <!-- Seed for the RNG (to determine which necks to break) -->
