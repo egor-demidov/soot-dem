@@ -56,7 +56,12 @@ void dump_necks(std::string const & dir, size_t count, std::vector<Eigen::Vector
     }
 }
 
-void dump_particles(std::string const & dir, size_t count, std::vector<Eigen::Vector3d> const & x, double r_part) {
+void dump_particles(std::string const & dir, size_t count, std::vector<Eigen::Vector3d> const & x,
+                    std::vector<Eigen::Vector3d> const & v,
+                    std::vector<Eigen::Vector3d> const & a,
+                    std::vector<Eigen::Vector3d> const & omega,
+                    std::vector<Eigen::Vector3d> const & alpha,
+                    double r_part) {
     std::stringstream out_file_name;
     out_file_name << dir << "/particles_" << count << ".vtk";
     std::ofstream ofs(out_file_name.str());
@@ -75,6 +80,29 @@ void dump_particles(std::string const & dir, size_t count, std::vector<Eigen::Ve
     // Coordinates are normalized to avoid issues with ParaView and small particles
     for (auto const & p : x) {
         ofs << p[0] / r_part << " " << p[1] / r_part << " " << p[2] / r_part << " ";
+    }
+
+    ofs << "\n\n";
+    ofs << "POINT_DATA " << x.size() << "\n";
+    ofs << "FIELD FieldData 4" << "\n";
+    ofs << "v 1 " << x.size() << " double\n";
+    for (auto const & p : v) {
+        ofs << p.norm() << " ";
+    }
+    ofs << "\n";
+    ofs << "a 1 " << x.size() << " double\n";
+    for (auto const & p : a) {
+        ofs << p.norm() << " ";
+    }
+    ofs << "\n";
+    ofs << "omega 1 " << x.size() << " double\n";
+    for (auto const & p : omega) {
+        ofs << p.norm() << " ";
+    }
+    ofs << "\n";
+    ofs << "alpha 1 " << x.size() << " double\n";
+    for (auto const & p : alpha) {
+        ofs << p.norm() << " ";
     }
     ofs << "\n";
 }

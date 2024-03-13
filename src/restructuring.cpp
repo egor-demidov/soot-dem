@@ -179,7 +179,9 @@ int main(int argc, const char ** argv) {
         if (n % dump_period == 0) {
             std::cout << state_printer << std::endl;
 
-            dump_particles("run", n / dump_period, system.get_x(), r_part);
+            dump_particles("run", n / dump_period, system.get_x(),
+                           system.get_v(), system.get_a(),
+                           system.get_omega(), system.get_alpha(), r_part);
             dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part);
         }
 
