@@ -15,6 +15,7 @@ struct parameter_store_t {
     std::map<std::string, double> reals;
     std::map<std::string, long> integers;
     std::map<std::string, std::string> strings;
+    std::map<std::string, std::filesystem::path> paths;
 };
 
 std::ostream & operator << (std::ostream & os, parameter_store_t const & parameter_store);
@@ -24,6 +25,8 @@ double get_real_parameter(parameter_store_t const & parameter_store, std::string
 long get_integer_parameter(parameter_store_t const & parameter_store, std::string const & id);
 
 std::string const & get_string_parameter(parameter_store_t const & parameter_store, std::string const & id);
+
+std::filesystem::path const & get_path_parameter(parameter_store_t const & parameter_store, std::string const & id);
 
 parameter_store_t load_parameters(std::filesystem::path const & parameter_file_path);
 

@@ -14,12 +14,16 @@ std::ostream & operator << (std::ostream & os, parameter_store_t const & paramet
         os << "\t" << real.first << ": " << real.second << "\n";
     }
     os << "INTEGER PARAMETERS:\n";
-    for (const auto & real : parameter_store.integers) {
-        os << "\t" << real.first << ": " << real.second << "\n";
+    for (const auto & integer : parameter_store.integers) {
+        os << "\t" << integer.first << ": " << integer.second << "\n";
     }
     os << "STRING PARAMETERS:\n";
-    for (const auto & real : parameter_store.strings) {
-        os << "\t" << real.first << ": " << real.second << "\n";
+    for (const auto & string : parameter_store.strings) {
+        os << "\t" << string.first << ": " << string.second << "\n";
+    }
+    os << "PATH PARAMETERS:\n";
+    for (const auto & path : parameter_store.paths) {
+        os << "\t" << path.first << ": " << path.second << "\n";
     }
     return os;
 }
@@ -57,6 +61,17 @@ std::string const & get_string_parameter(parameter_store_t const & parameter_sto
     return parameter_itr->second;
 }
 
+std::filesystem::path const & get_path_parameter(parameter_store_t const & parameter_store, std::string const & id) {
+    auto parameter_itr = parameter_store.paths.find(id);
+
+    if (parameter_itr == parameter_store.paths.end()) {
+        std::cerr << "Path parameter `" << id << "` is required but was not specified in the parameter file" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    return parameter_itr->second;
+}
+
 void set_real(parameter_store_t & parameter_store, std::string const & id, double value) {
     auto parameter_itr = parameter_store.reals.find(id);
 
@@ -88,6 +103,17 @@ void set_string(parameter_store_t & parameter_store, std::string const & id, std
     }
 
     parameter_store.strings[id] = value;
+}
+
+void set_path(parameter_store_t & parameter_store, std::string const & id, std::filesystem::path const & value) {
+    auto parameter_itr = parameter_store.paths.find(id);
+
+    if (parameter_itr != parameter_store.paths.end()) {
+        std::cerr << "Multiple definition of path parameter `" << id << "`" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    parameter_store.paths[id] = value;
 }
 
 void parse_parameters(parameter_store_t & parameter_store, tinyxml2::XMLElement * root_element, std::filesystem::path const & reference_path);
@@ -142,6 +168,8 @@ void parse_parameters(parameter_store_t & parameter_store, tinyxml2::XMLElement 
             set_integer(parameter_store, id_string, std::stol(text));
         } else if (type_string == "string") {
             set_string(parameter_store, id_string, text);
+        } else if (type_string == "path") {
+            set_path(parameter_store, id_string, reference_path / std::filesystem::path(text));
         } else {
             std::cerr << "Unrecognized parameter type `" << type_string << "`" << std::endl;
             exit(EXIT_FAILURE);
