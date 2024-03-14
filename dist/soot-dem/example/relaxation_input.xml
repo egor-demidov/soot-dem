@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    SUMMARY: This is an example parameter file for an aggregate deposition simulation
+-->
+<!--
+    DESCRIPTION: A fully-necked aggregate is loaded, oriented, and positioned slightly above
+    a square substrate. The aggregate is given an initial velocity directed towards the substrate.
+    The aggregate collides with the substrate and adheres to it
+ -->
+<!--
+    BINARY MODELS: Bonded contact force, Hamaker attraction
+ -->
+<!--
+    UNARY MODELS: Square substrate made of two triangular facets with friction and Hamaker attraction
+ -->
+
+<simulation type="relaxation">
+    <!-- GENERAL SIMULATION PARAMETERS -->
+
+    <!-- Integration time step -->
+    <let id="dt" type="real">5e-14</let>
+    <!-- Simulation duration -->
+    <let id="t_tot" type="real">2e-7</let>
+    <!-- Number of data dumps -->
+    <let id="n_dumps" type="integer">10</let>
+    <!-- Verlet (cutoff) radius for neighbor lists -->
+    <let id="r_verlet" type="real">42e-9</let>
+    <!-- Neighbor list update period -->
+    <let id="neighbor_update_period" type="integer">20</let>
+    <!-- Material density -->
+    <let id="rho" type="real">1700.0</let>
+    <!-- Particle radius -->
+    <let id="r_part" type="real">14e-9</let>
+    <!-- Aggregate file type -->
+    <let id="aggregate_type" type="string">mackowski</let>
+    <!-- Aggregate file path -->
+    <let id="aggregate_path" type="path">example_aggregate.txt</let>
+    <!-- Number of overlap removal iterations -->
+    <let id="n_overlap_iter" type="integer">10000</let>
+
+    <!-- IMPORT THE COMMON PARAMETERS -->
+    <include>common_include.xml</include>
+
+</simulation>
