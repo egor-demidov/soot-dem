@@ -63,6 +63,7 @@ jobs:
           move ./aggregate_deposition.exe ../dist/soot-dem/bin/
           move ./afm_necking_fraction.exe ../dist/soot-dem/bin/
           move ./restructuring.exe ../dist/soot-dem/bin/
+          move ./Release/relax_aggregate.exe ../dist/soot-dem/bin/
           cd ..
           $compress = @{
             Path = "dist/soot-dem/"
@@ -95,6 +96,7 @@ jobs:
           move ./Release/aggregate_deposition.exe ../dist/soot-dem/bin/
           move ./Release/afm_necking_fraction.exe ../dist/soot-dem/bin/
           move ./Release/restructuring.exe ../dist/soot-dem/bin/
+          move ./Release/relax_aggregate.exe ../dist/soot-dem/bin/
           cd ..
           $compress = @{
             Path = "dist/soot-dem/"
@@ -144,7 +146,7 @@ jobs:
 #            bin
 
   Compile-Linux-GNU:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -160,9 +162,11 @@ jobs:
           strip aggregate_deposition
           strip afm_necking_fraction
           strip restructuring
+          strip relax_aggregate
           mv ./aggregate_deposition ../dist/soot-dem/bin/
           mv ./afm_necking_fraction ../dist/soot-dem/bin/
           mv ./restructuring ../dist/soot-dem/bin/
+          mv ./relax_aggregate ../dist/soot-dem/bin/
       - name: Archive compiled artifact
         uses: actions/upload-artifact@v3
         with:
