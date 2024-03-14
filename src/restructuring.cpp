@@ -16,7 +16,7 @@
 #include <libgran/granular_system/granular_system_neighbor_list.h>
 
 #include "coating_force.h"
-#include "aggregate.h"
+#include "aggregate_breaking_necks.h"
 
 #include "writer.h"
 #include "energy.h"
@@ -29,7 +29,24 @@
 #include "parameter_loader.h"
 #include "random_engine.h"
 
-using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
+struct neck_strength_distribution_t {
+    neck_strength_distribution_t (long seed, double mu, double sigma) :
+        generator(seed), dist(mu, sigma) {}
+
+    double operator () () {
+        return dist(generator);
+    }
+
+private:
+    std::mt19937_64 generator;
+    std::normal_distribution<double> dist;
+};
+
+long count_necks(std::vector<bool> const & bonded_contacts) {
+    return std::count(bonded_contacts.begin(), bonded_contacts.end(), true) / 2;
+}
+
+using aggregate_model_t = aggregate_breaking_necks<Eigen::Vector3d, double, neck_strength_distribution_t>;
 using coating_model_t = binary_coating_functor<Eigen::Vector3d, double>;
 
 using binary_force_container_t = binary_force_functor_container<Eigen::Vector3d, double, aggregate_model_t, coating_model_t>;
@@ -52,6 +69,9 @@ int main(int argc, const char ** argv) {
         std::cerr << "Parameter file simulation type must be `restructuring`" << std::endl;
         exit(EXIT_FAILURE);
     }
+
+    // TESTING: neck strength distribution
+    neck_strength_distribution_t neck_dist(0, 1.0e-1, 1.0e-2);
 
     // General simulation parameters
     const double dt = get_real_parameter(parameter_store, "dt");
@@ -138,7 +158,7 @@ int main(int argc, const char ** argv) {
         k_t_bond, gamma_t_bond,
         k_r_bond, gamma_r_bond,
         k_o_bond, gamma_o_bond,
-          d_crit, A, h0, x0, x0.size(),
+          d_crit, neck_dist, A, h0, x0, x0.size(),
           r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0};
 
     coating_model_t coating_model(f_coat_cutoff, f_coat_mag, f_coat_drop_rate, mass, Eigen::Vector3d::Zero());
@@ -158,15 +178,7 @@ int main(int argc, const char ** argv) {
     size_t n_necks = std::count(aggregate_model.get_bonded_contacts().begin(),
                                 aggregate_model.get_bonded_contacts().end(), true) / 2;
 
-    auto target_n_necks = size_t(double(n_necks) * frac_necks);
-
-    std::cout << "Breaking " << n_necks - target_n_necks << " necks ..." << std::endl;
-
     seed_random_engine(rng_seed);
-
-    for (size_t i = n_necks; i > target_n_necks; i --) {
-        break_random_neck(aggregate_model.get_bonded_contacts(), x0.size());
-    }
 
     state_printer_t state_printer(system.get_x(), system.get_v(), system.get_theta(), system.get_omega(), mass, inertia, n_dumps);
 
@@ -178,6 +190,8 @@ int main(int argc, const char ** argv) {
         }
         if (n % dump_period == 0) {
             std::cout << state_printer << std::endl;
+
+            std::cout << "Neck count: " << count_necks(aggregate_model.get_bonded_contacts()) << std::endl;
 
             dump_particles("run", n / dump_period, system.get_x(),
                            system.get_v(), system.get_a(),
