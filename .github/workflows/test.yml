@@ -63,7 +63,7 @@ jobs:
           move ./aggregate_deposition.exe ../dist/soot-dem/bin/
           move ./afm_necking_fraction.exe ../dist/soot-dem/bin/
           move ./restructuring.exe ../dist/soot-dem/bin/
-          move ./Release/relax_aggregate.exe ../dist/soot-dem/bin/
+          move ./relax_aggregate.exe ../dist/soot-dem/bin/
           cd ..
           $compress = @{
             Path = "dist/soot-dem/"
