@@ -133,6 +133,6 @@ jobs:
       - name: Archive compiled artifact
         uses: actions/upload-artifact@v3
         with:
-          name: soot-dem-linux-gnu-x86_64
+          name: soot-dem-macos-clang-arm64
           path: |
             dist
