@@ -24,13 +24,13 @@ if (${CMAKE_COMPILER_IS_GNUCXX})
     endif ()
 endif ()
 
+if (${CMAKE_CXX_COMPILER_ID} MATCHES "AppleClang")
+    message(FATAL_ERROR "AppleClang compiler is not supported")
+endif ()
+
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "-Wall -Wextra -flto=auto -O3 -fopenmp")
 endif ()
-
-#if (${APPLE})
-#    set
-#endif ()
 
 include(FetchContent)
 FetchContent_Declare(cmake_git_version_tracking
