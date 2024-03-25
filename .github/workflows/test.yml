@@ -130,6 +130,8 @@ jobs:
           mv ./aggregate_deposition ../dist/soot-dem/bin/
           mv ./afm_necking_fraction ../dist/soot-dem/bin/
           mv ./restructuring ../dist/soot-dem/bin/
+          cp /opt/homebrew/opt/llvm/lib/libunwind.1.dylib ../dist/soot-dem/bin/
+          cp /opt/homebrew/opt/llvm/lib/libomp.dylib ../dist/soot-dem/bin/
       - name: Archive compiled artifact
         uses: actions/upload-artifact@v3
         with:
