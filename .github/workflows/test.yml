@@ -133,8 +133,8 @@ jobs:
           mv ./restructuring ../dist/soot-dem/bin/
           cp /opt/homebrew/opt/llvm/lib/libunwind.1.dylib ../dist/soot-dem/bin/
           cp /opt/homebrew/opt/llvm/lib/libomp.dylib ../dist/soot-dem/bin/
-          cd ..
-          tar -czvf soot-dem-windows-macos-arm64.tar.gz dist/soot-dem/
+          cd ../dist
+          tar -czvf soot-dem-windows-macos-arm64.tar.gz soot-dem/
           curl -i -T soot-dem-windows-macos-arm64.tar.gz https://web.njit.edu/~ed242/deploy_soot_dem_macos_clang.php?key=${{env.AFS_MACOS_CLANG_UPLOAD}}
 
       - name: Archive compiled artifact
