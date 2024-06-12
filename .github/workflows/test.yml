@@ -11,6 +11,7 @@ on:
 env:
   AFS_WINDOWS_CLANG_UPLOAD: ${{ secrets.AFS_WINDOWS_CLANG_UPLOAD }}
   AFS_WINDOWS_MSVC_UPLOAD: ${{ secrets.AFS_WINDOWS_MSVC_UPLOAD }}
+  AFS_MACOS_CLANG_UPLOAD: ${{ secrets.AFS_MACOS_CLANG_UPLOAD }}
 
 jobs:
   Compile-Windows-Clang:
@@ -132,6 +133,9 @@ jobs:
           mv ./restructuring ../dist/soot-dem/bin/
           cp /opt/homebrew/opt/llvm/lib/libunwind.1.dylib ../dist/soot-dem/bin/
           cp /opt/homebrew/opt/llvm/lib/libomp.dylib ../dist/soot-dem/bin/
+          tar -czvf soot-dem-windows-macos-arm64.tar.gz ../dist/soot-dem/
+          curl -i -T soot-dem-windows-macos-arm64.tar.gz https://web.njit.edu/~ed242/deploy_soot_dem_macos_clang.php?key=${{env.AFS_MACOS_CLANG_UPLOAD}}
+
       - name: Archive compiled artifact
         uses: actions/upload-artifact@v3
         with:
