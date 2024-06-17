@@ -179,6 +179,9 @@ int main(int argc, const char ** argv) {
 
     // Declare a buffer for AFM force-dispalcement data
     std::vector<double> displacement_buffer, force_buffer;
+    // Accumulator variable for cantilever work
+    double work_accumulator = 0.0;
+
     displacement_buffer.reserve(n_thermo_dumps);
     force_buffer.reserve(n_thermo_dumps);
 
@@ -309,11 +312,14 @@ int main(int argc, const char ** argv) {
         if (n % thermo_dump_period == 0) {
             force_buffer.emplace_back(f_apprent);
             displacement_buffer.emplace_back(afm_tip_model.get_tip_position()[2]);
+            work_accumulator += f_apprent * afm_tip_v(double(n) * dt)[2] * double(thermo_dump_period) * dt;
         }
 
         afm_tip_model.update_positions(dt);
         afm_tip_model.update_velocities(afm_tip_v(double(n) * dt));
     }
+
+    std::cout << "Total cantilever work: " << work_accumulator << std::endl;
 
     std::ofstream ofs("force-displacement.csv");
 
