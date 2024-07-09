@@ -60,6 +60,9 @@ struct vector_representation {
 void dump_necks(std::string const & dir, size_t count, std::vector<Eigen::Vector3d> const & x,
                 std::vector<bool> const & bonded_contacts, double r_part);
 
+// Overload to write particle positions without velocities and orientations
+void dump_particles(std::string const & name, std::vector<Eigen::Vector3d> const & x, double r_part);
+
 void dump_particles(std::string const & dir, size_t count, std::vector<Eigen::Vector3d> const & x,
                     std::vector<Eigen::Vector3d> const & v,
                     std::vector<Eigen::Vector3d> const & a,

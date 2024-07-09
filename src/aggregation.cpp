@@ -90,6 +90,52 @@ void bounce_off_walls(std::vector<Eigen::Vector3d> const & particles,
     }
 }
 
+struct AggregateGraph {
+    std::vector<int> edgeIndices;
+    std::vector<int> nodeIndices;
+};
+
+using GraphEdge = std::pair<int, int>;
+
+void recursive_edge_traversal(AggregateGraph & graph,
+                              std::vector<bool> & visited_edges,
+                              std::vector<GraphEdge> const & edges) {
+
+    auto const & prevEdge = edges[graph.edgeIndices.back()];
+
+    // Iterate over unvisited edges and see if any of them are adjacent
+    for (int k = 0; k < edges.size(); k ++) {
+        if (visited_edges[k])
+            continue;
+
+        // Check if adjacent
+        if (edges[k].first == prevEdge.first || edges[k].second == prevEdge.first
+            || edges[k].first == prevEdge.second || edges[k].second == prevEdge.second) {
+
+            // Mark as visited
+            visited_edges[k] = true;
+
+            graph.edgeIndices.emplace_back(k);
+
+            recursive_edge_traversal(graph, visited_edges, edges);
+        }
+    }
+}
+
+void populate_node_indices(AggregateGraph & graph, std::vector<GraphEdge> const & edges) {
+    for (auto edgeIndex : graph.edgeIndices) {
+        auto const & edge = edges[edgeIndex];
+        if (!std::any_of(graph.nodeIndices.begin(), graph.nodeIndices.end(), [&edge] (auto nodeIndex) {
+            return nodeIndex == edge.first;
+        }))
+            graph.nodeIndices.emplace_back(edge.first);
+        if (!std::any_of(graph.nodeIndices.begin(), graph.nodeIndices.end(), [&edge] (auto nodeIndex) {
+            return nodeIndex == edge.second;
+        }))
+            graph.nodeIndices.emplace_back(edge.second);
+    }
+}
+
 int main(int argc, char ** argv) {
     if (argc < 2) {
         std::cerr << "Path to the input file must be provided as an argument" << std::endl;
@@ -112,11 +158,11 @@ int main(int argc, char ** argv) {
     const long n_dumps = get_integer_parameter(parameter_store, "n_dumps");
     const long dump_period = n_steps / n_dumps;
     const long neighbor_update_period = get_integer_parameter(parameter_store, "neighbor_update_period");
-    const long n_overlap_iter = get_integer_parameter(parameter_store, "n_overlap_iter");
     const long rng_seed = get_integer_parameter(parameter_store, "rng_seed");
     const long n_part = get_integer_parameter(parameter_store, "n_part");
     const double box_size = get_real_parameter(parameter_store, "box_size");
     const double v0_part = get_real_parameter(parameter_store, "v0_part");
+    const double d_crit = get_real_parameter(parameter_store, "d_crit"); // Critical separation (required tp build graphs)
 
     // General parameters
     const double rho = get_real_parameter(parameter_store, "rho");
@@ -217,6 +263,57 @@ int main(int argc, char ** argv) {
         system.do_step(dt);
 
         bounce_off_walls(system.get_x(), system.get_v(), r_part, box_size);
+    }
+
+    // Build graphs of aggregates to write them out separately
+
+    std::vector<AggregateGraph> graphs;
+    std::vector<GraphEdge> edges;
+
+    for (int i = 0; i < system.get_x().size() - 1; i ++) {
+        // Iterate over neighbors
+        for (int j = i+1; j < system.get_x().size(); j ++) {
+            Eigen::Vector3d distance = system.get_x()[j] - system.get_x()[i];
+            if (sqrt(distance.dot(distance)) - 2.0 * r_part > d_crit)
+                continue;
+
+            // Create an edge
+            edges.emplace_back(i, j);
+        }
+    }
+
+    std::vector<bool> visited_edges(edges.size(), false);
+
+    // Iterate over edges
+    for (int k = 0; k < edges.size(); k ++) {
+        if (visited_edges[k])
+            continue;
+
+        // Mark as visited
+        visited_edges[k] = true;
+
+        AggregateGraph graph;
+        graph.edgeIndices.emplace_back(k);
+        recursive_edge_traversal(graph, visited_edges, edges);
+        graphs.emplace_back(graph);
+    }
+
+    for (auto & graph : graphs) {
+        populate_node_indices(graph, edges);
+    }
+
+    std::cout << "\nTotal aggregates: " << graphs.size() << std::endl;
+    for (int i = 0; i < graphs.size(); i ++) {
+        std::string name = "aggregate_" + std::to_string(i);
+        std::cout << "Writing aggregate of size " << graphs[i].nodeIndices.size() << " as " << name << ".vtk" << std::endl;
+
+        std::vector<Eigen::Vector3d> aggregate;
+        aggregate.reserve(graphs[i].nodeIndices.size());
+
+        for (auto index : graphs[i].nodeIndices)
+            aggregate.emplace_back(system.get_x()[index]);
+
+        dump_particles(name, aggregate, r_part);
     }
 
     return 0;
