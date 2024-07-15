@@ -37,7 +37,7 @@ int main() {
 
     // Parameters for the contact model
     const double k = 10000.0;
-    const double gamma_n = 0.0;
+    const double gamma_n = 5.0e-9;
     const double mu = 1.0;
     const double phi = 1.0;
     const double mu_o = 0.1;
@@ -50,7 +50,7 @@ int main() {
     x0.emplace_back(Eigen::Vector3d::Zero());
     x0.emplace_back(0.0, 2.00001*r_part, 0.0);
 
-    v0.emplace_back(0.0, 1.0, 0.0);
+    v0.emplace_back(1.0/sqrt(2.0), 1.0/sqrt(2.0), 0.0);
     v0.emplace_back(Eigen::Vector3d::Zero());
 
     // Initialize the remaining buffers

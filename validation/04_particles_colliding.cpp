@@ -37,7 +37,7 @@ int main() {
 
     // Parameters for the contact model
     const double k = 10000.0;
-    const double gamma_n = 0.0;
+    const double gamma_n = 5.0e-9;
     const double mu = 1.0;
     const double phi = 1.0;
     const double mu_o = 0.1;
@@ -53,11 +53,12 @@ int main() {
     v0.emplace_back(0.0, 1.0, 0.0);
     v0.emplace_back(Eigen::Vector3d::Zero());
 
+    omega0.emplace_back(0.0, 0.0, 100000000.0);
+    omega0.emplace_back(Eigen::Vector3d::Zero());
+
     // Initialize the remaining buffers
     theta0.resize(x0.size());
-    omega0.resize(x0.size());
     std::fill(theta0.begin(), theta0.end(), Eigen::Vector3d::Zero());
-    std::fill(omega0.begin(), omega0.end(), Eigen::Vector3d::Zero());
 
     // Create an instance of step_handler
     // Using field type Eigen::Vector3d with container std::vector

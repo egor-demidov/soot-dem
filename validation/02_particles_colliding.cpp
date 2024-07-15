@@ -28,6 +28,8 @@ int main() {
     const double dt = 1e-13;
     const double t_tot = 1.0e-10;
     const auto n_steps = size_t(t_tot / dt);
+    const size_t n_dumps = 1000;
+    const size_t dump_period = n_steps / n_dumps;
 
     // General parameters
     const double rho = 1700.0;
@@ -37,7 +39,7 @@ int main() {
 
     // Parameters for the contact model
     const double k = 10000.0;
-    const double gamma_n = 0.0;
+    const double gamma_n = 5.0e-9;
     const double mu = 1.0;
     const double phi = 1.0;
     const double mu_o = 0.1;
