@@ -1,8 +1,10 @@
+/****************************************/
+/*** Copyright (c) 2024, Egor Demidov ***/
+/****************************************/
+
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <chrono>
-#include <iomanip>
 #include <filesystem>
 
 #include <Eigen/Eigen>
@@ -14,8 +16,6 @@
 #include "aggregate.h"
 #include "afm_tip.h"
 #include "writer.h"
-#include "energy.h"
-#include "reader.h"
 #include "break_neck.h"
 #include "remove_overlap.h"
 #include "io_common.h"

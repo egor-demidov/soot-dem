@@ -1,6 +1,6 @@
-//
-// Created by egor on 3/3/24.
-//
+/****************************************/
+/*** Copyright (c) 2024, Egor Demidov ***/
+/****************************************/
 
 #ifndef SOOT_AFM_COATING_FORCE_H
 #define SOOT_AFM_COATING_FORCE_H
