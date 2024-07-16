@@ -70,4 +70,12 @@ void dump_particles(std::string const & dir, size_t count, std::vector<Eigen::Ve
                     std::vector<Eigen::Vector3d> const & alpha,
                     double r_part);
 
+void dump_particles(std::string const & dir, size_t count, std::vector<Eigen::Vector3d> const & x,
+                    std::vector<Eigen::Vector3d> const & theta,
+                    std::vector<Eigen::Vector3d> const & v,
+                    std::vector<Eigen::Vector3d> const & a,
+                    std::vector<Eigen::Vector3d> const & omega,
+                    std::vector<Eigen::Vector3d> const & alpha,
+                    double r_part);
+
 #endif //SOOT_AFM_WRITER_H

@@ -13,6 +13,7 @@
 #include <libgran/contact_force/contact_force.h>
 
 #include "../src/energy.h"
+#include "../src/writer.h"
 
 static const std::filesystem::path OUTPUT_FILE = "/dev/stdout";
 
@@ -104,7 +105,11 @@ int main() {
     for (size_t n = 0; n < n_steps; n ++) {
 //        if (n % dump_period == 0) {
 //            std::cout << "Dump #" << n / dump_period << std::endl;
-//            write_particles("run", system.get_x(), system.get_theta(), r_part);
+//            dump_particles("run", n / dump_period, system.get_x(), system.get_theta(),
+//                           system.get_v(), system.get_a(),
+//                           system.get_omega(), system.get_alpha(), r_part);
+//            dump_necks("run", n / dump_period, system.get_x(), std::vector<bool>{false, true, false, true, false, true, false, false,
+//                                                                                 true}, r_part);
 //        }
         if (n % thermo_dump_period == 0) {
             auto ke_trs = compute_ke_trs(system.get_v(), mass);

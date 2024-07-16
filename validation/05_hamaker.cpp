@@ -13,6 +13,7 @@
 #include <libgran/contact_force/contact_force.h>
 
 #include "../src/energy.h"
+#include "../src/writer.h"
 #include "fixed_step_handler.h"
 
 static const std::filesystem::path OUTPUT_FILE = "/dev/stdout";
@@ -116,6 +117,12 @@ int main() {
     ofs << "D\tKE\tU\n";
 
     for (size_t n = 0; n < n_steps; n ++) {
+//        if (n % dump_period == 0) {
+//            std::cout << "Dump #" << n / dump_period << std::endl;
+//            dump_particles("run", n / dump_period, system.get_x(), system.get_theta(),
+//                           system.get_v(), system.get_a(),
+//                           system.get_omega(), system.get_alpha(), r_part);
+//        }
         double separation = (system.get_x()[1] - system.get_x()[0]).norm() - 2.0 * r_part;
         if (separation <= h0) {
             has_collided = true;

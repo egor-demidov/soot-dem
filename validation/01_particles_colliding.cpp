@@ -12,6 +12,7 @@
 #include <libgran/contact_force/contact_force.h>
 
 #include "../src/energy.h"
+#include "../src/writer.h"
 
 static const std::filesystem::path OUTPUT_FILE = "/dev/stdout";
 
@@ -28,6 +29,8 @@ int main() {
     const double dt = 1e-13;
     const double t_tot = 1.0e-10;
     const auto n_steps = size_t(t_tot / dt);
+    const size_t n_dumps = 300;
+    const size_t dump_period = n_steps / n_dumps;
 
     // General parameters
     const double rho = 1700.0;
@@ -83,6 +86,12 @@ int main() {
 
 
     for (size_t n = 0; n < n_steps; n ++) {
+//        if (n % dump_period == 0) {
+//            std::cout << "Dump #" << n / dump_period << std::endl;
+//            dump_particles("run", n / dump_period, system.get_x(), system.get_theta(),
+//                           system.get_v(), system.get_a(),
+//                           system.get_omega(), system.get_alpha(), r_part);
+//        }
         if (double(n) * dt * 1e6 <= 4.0e-6) {
             t_span.emplace_back(double(n) * dt * 1e6);
             ke_trs_span.emplace_back(compute_ke_trs(system.get_v(), mass));
