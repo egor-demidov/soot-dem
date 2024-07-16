@@ -32,7 +32,7 @@
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
 using coating_model_t = binary_coating_functor<Eigen::Vector3d, double>;
-using rect_substrate_model_t = rect_substrate<Eigen::Vector3d, double>;
+using rect_substrate_model_t = rect_substrate_with_coating<Eigen::Vector3d, double>;
 
 using binary_force_container_t = binary_force_functor_container<Eigen::Vector3d, double, aggregate_model_t, coating_model_t>;
 using unary_force_container_t = unary_force_functor_container<Eigen::Vector3d, double, rect_substrate_model_t>;
@@ -178,7 +178,7 @@ int main(int argc, const char ** argv) {
     rect_substrate_model_t substrate_model {substrate_vertices, x0.size(), k_n_substrate, gamma_n_substrate, k_t_substrate,
                                             gamma_t_substrate, mu_t_substrate, phi_t_substrate, k_r_substrate, gamma_r_substrate, mu_r_substrate,
                                             phi_r_substrate, k_o_substrate, gamma_o_substrate,
-                                            mu_o_substrate, phi_o_substrate, A_substrate, h0_substrate, r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0};
+                                            mu_o_substrate, phi_o_substrate, A_substrate, h0_substrate, r_part, mass, inertia, dt, f_coat_cutoff - r_part, f_coat_mag, f_coat_drop_rate, Eigen::Vector3d::Zero(), 0.0};
 
     binary_force_container_t binary_force_functors {aggregate_model, coating_model};
 
