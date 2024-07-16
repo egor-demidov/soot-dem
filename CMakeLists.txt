@@ -54,6 +54,7 @@ add_executable(aggregate_deposition src/aggregate_deposition.cpp ${CMAKE_UTIL_SO
 add_executable(restructuring src/restructuring.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(afm_necking_fraction src/afm_necking_fraction.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(aggregation src/aggregation.cpp ${CMAKE_UTIL_SOURCES})
+add_executable(anchored_restructuring src/anchored_restructuring.cpp ${CMAKE_UTIL_SOURCES})
 
 # VALIDATION EXECUTABLES
 add_executable(01_particles_colliding validation/01_particles_colliding.cpp ${CMAKE_UTIL_SOURCES})
@@ -70,6 +71,7 @@ target_link_libraries(aggregate_deposition ${LIBRARY_LIST})
 target_link_libraries(restructuring ${LIBRARY_LIST})
 target_link_libraries(afm_necking_fraction ${LIBRARY_LIST})
 target_link_libraries(aggregation ${LIBRARY_LIST})
+target_link_libraries(anchored_restructuring ${LIBRARY_LIST})
 
 target_link_libraries(01_particles_colliding ${LIBRARY_LIST})
 target_link_libraries(02_particles_colliding ${LIBRARY_LIST})

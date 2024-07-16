@@ -1,6 +1,6 @@
-//
-// Created by egor on 2/28/24.
-//
+/****************************************/
+/*** Copyright (c) 2024, Egor Demidov ***/
+/****************************************/
 
 #include <iostream>
 #include <fstream>

@@ -1,6 +1,6 @@
-//
-// Created by egor on 2/28/24.
-//
+/****************************************/
+/*** Copyright (c) 2024, Egor Demidov ***/
+/****************************************/
 
 #ifndef SOOT_AFM_READER_H
 #define SOOT_AFM_READER_H
