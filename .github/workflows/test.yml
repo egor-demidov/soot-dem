@@ -14,41 +14,6 @@ env:
   AFS_MACOS_CLANG_UPLOAD: ${{ secrets.AFS_MACOS_CLANG_UPLOAD }}
 
 jobs:
-  Compile-Windows-Clang:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Build
-        run: |
-          mkdir dist/soot-dem/bin
-          mkdir cmake-build
-          cd cmake-build
-          choco install ninja
-          $Env:CC="clang"
-          $Env:CXX="clang++"
-          cmake -DCMAKE_BUILD_TYPE=Release -G Ninja ..
-          cmake --build .
-          move ./aggregate_deposition.exe ../dist/soot-dem/bin/
-          move ./afm_necking_fraction.exe ../dist/soot-dem/bin/
-          move ./restructuring.exe ../dist/soot-dem/bin/
-          cd ..
-          $compress = @{
-            Path = "dist/soot-dem/"
-            CompressionLevel = "Fastest"
-            DestinationPath = "soot-dem-windows-clang-x86_64.zip"
-          }
-          Compress-Archive @compress
-          curl -i -T soot-dem-windows-clang-x86_64.zip https://web.njit.edu/~ed242/deploy_soot_dem_windows_clang.php?key=${{env.AFS_WINDOWS_CLANG_UPLOAD}}
-      - name: Archive compiled artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: soot-dem-windows-clang-x86_64
-          path: |
-            dist
-            
   Compile-Windows-MSVC:
     runs-on: windows-latest
     steps:
