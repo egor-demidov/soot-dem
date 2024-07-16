@@ -220,6 +220,7 @@ int main(int argc, const char ** argv) {
                            system.get_v(), system.get_a(),
                            system.get_omega(), system.get_alpha(), r_part);
             dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part);
+            substrate_model.dump_mesh("run", n / dump_period);
         }
 
         system.do_step(dt);
