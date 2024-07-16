@@ -48,10 +48,10 @@ int main(int argc, const char ** argv) {
 
     auto parameter_store = load_parameters(argv[1]);
 
-    print_header(parameter_store, "restructuring");
+    print_header(parameter_store, "anchored_restructuring");
 
-    if (parameter_store.simulation_type != "restructuring") {
-        std::cerr << "Parameter file simulation type must be `restructuring`" << std::endl;
+    if (parameter_store.simulation_type != "anchored_restructuring") {
+        std::cerr << "Parameter file simulation type must be `anchored_restructuring`" << std::endl;
         exit(EXIT_FAILURE);
     }
 
