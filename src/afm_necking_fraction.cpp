@@ -2,6 +2,9 @@
 /*** Copyright (c) 2024, Egor Demidov ***/
 /****************************************/
 
+// File name: afm_necking_fraction.cpp
+// File description: Driver program for AFM indentation simulations
+
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -21,19 +24,28 @@
 #include "io_common.h"
 #include "random_engine.h"
 
+// Alias for aggregate mechanics model
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
+// Alias for substrate mechanics model
 using rect_substrate_model_t = rect_substrate<Eigen::Vector3d, double>;
+// Alias for AFM tip mechanics model
 using afm_tip_model_t = afm_tip<Eigen::Vector3d, double>;
 
+// Assemble all binary interactions and create an alias
 using binary_force_container_t =
     binary_force_functor_container<Eigen::Vector3d, double, aggregate_model_t>;
 
+// Assemble all unary interactions and create an alias
 using unary_force_container_t =
     unary_force_functor_container<Eigen::Vector3d, double, rect_substrate_model_t, afm_tip_model_t>;
 
+// All force models and integrator and create an alias
 using granular_system_t = granular_system_neighbor_list<Eigen::Vector3d, double, rotational_velocity_verlet_half,
     rotational_step_handler, binary_force_container_t, unary_force_container_t>;
 
+// Helper function for initial positioning the AFM tip
+// Determines is a monomer is hindered or not in the +z direction
+// Arguments: monomer index, monomer position array, radius of a monomer
 bool is_monomer_hindered(long monomer, std::vector<Eigen::Vector3d> const & xs, double r_part) {
     for (long i = 0; i < xs.size(); i ++) {
         if (i == monomer)
@@ -48,6 +60,7 @@ bool is_monomer_hindered(long monomer, std::vector<Eigen::Vector3d> const & xs, 
     return false;
 }
 
+// Entry point
 int main(int argc, const char ** argv) {
     if (argc < 2) {
         std::cerr << "Path to the input file must be provided as an argument" << std::endl;
@@ -63,46 +76,80 @@ int main(int argc, const char ** argv) {
         exit(EXIT_FAILURE);
     }
 
-    // General simulation parameters
+    /* General simulation parameters */
+    // Integration time step
     const double dt = get_real_parameter(parameter_store, "dt");
+    // Total simulation duration
     const double t_tot = get_real_parameter(parameter_store, "t_tot");
+    // Number of integration steps
     const auto n_steps = size_t(t_tot / dt);
+    // Number of data dumps
     const size_t n_dumps = get_integer_parameter(parameter_store, "n_dumps");
+    // Data dump period
     const size_t dump_period = n_steps / n_dumps;
+    // Number of standard output dumps
     const size_t n_thermo_dumps = get_integer_parameter(parameter_store, "n_force_pts");
+    // Standard output dump period
     const size_t thermo_dump_period = n_steps / n_thermo_dumps;
+    // Neighbor list update period
     const size_t neighbor_list_update_period = get_integer_parameter(parameter_store, "neighbor_update_period");
+    // Side length of the square substrate
     const double substrate_size = get_real_parameter(parameter_store, "substrate_size");
+    // Number of overlap reduction iterations to be performed upon loading an aggregate
     const long n_overlap_iter = get_integer_parameter(parameter_store, "n_overlap_iter");
+    // AFM tip indentation/retraction velocity
     const double v_afm = get_real_parameter(parameter_store, "v_afm");
+    // Time when AFM tip reverses its motion
     const double t_reversal = get_real_parameter(parameter_store, "t_reversal");
+    // random number generator seed
     const long rng_seed = get_integer_parameter(parameter_store, "rng_seed");
 
-    // General parameters
+    /* General parameters */
+    // Material density
     const double rho = get_real_parameter(parameter_store, "rho");
+    // Monomer radius
     const double r_part = get_real_parameter(parameter_store, "r_part");
+    // Monomer mass
     const double mass = 4.0 / 3.0 * M_PI * pow(r_part, 3.0) * rho;
+    // Monomer moment of inertia
     const double inertia = 2.0 / 5.0 * mass * pow(r_part, 2.0);
+    // Verlet radius for neighbor lists
     const double r_verlet = get_real_parameter(parameter_store, "r_verlet");
 
-    // Parameters for the contact model
+    /* Parameters for the contact model */
+    // Normal monomer stiffness
     const double k_n = get_real_parameter(parameter_store, "k_n");
+    // Normal monomer damping coefficient
     const double gamma_n = get_real_parameter(parameter_store, "gamma_n");
+    // Tangential monomer stiffness
     const double k_t = get_real_parameter(parameter_store, "k_t");
+    // Tangential damping coefficient
     const double gamma_t = get_real_parameter(parameter_store, "gamma_t");
+    // Tangential friction coefficient
     const double mu_t = get_real_parameter(parameter_store, "mu_t");
+    // Tangential static to dynamic friction ratio
     const double phi_t = get_real_parameter(parameter_store, "phi_t");
+    // Rolling resistance monomer stiffness
     const double k_r = get_real_parameter(parameter_store, "k_r");
+    // Rolling resistance damping coefficient
     const double gamma_r = get_real_parameter(parameter_store, "gamma_r");
+    // Rolling resistance friction coefficient
     const double mu_r = get_real_parameter(parameter_store, "mu_r");
+    // Rolling resistance static to dynamic friction ratio
     const double phi_r = get_real_parameter(parameter_store, "phi_r");
+    // Torsion resistance monomer stiffness
     const double k_o = get_real_parameter(parameter_store, "k_o");
+    // Torsion resistance damping coefficient
     const double gamma_o = get_real_parameter(parameter_store, "gamma_o");
+    // Torsion resistance friction coefficient
     const double mu_o = get_real_parameter(parameter_store, "mu_o");
+    // Torsion resistance static to dynamic friction ratio
     const double phi_o = get_real_parameter(parameter_store, "phi_o");
 
-    // Parameters for the bonded contact model
+    /* Parameters for the bonded contact model */
+    // Bond normal stiffness
     const double k_n_bond = get_real_parameter(parameter_store, "k_n_bond");
+    // Bond normal damping coefficient
     const double gamma_n_bond = get_real_parameter(parameter_store, "gamma_n_bond");
     const double k_t_bond = get_real_parameter(parameter_store, "k_t_bond");
     const double gamma_t_bond = get_real_parameter(parameter_store, "gamma_t_bond");
