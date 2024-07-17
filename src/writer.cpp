@@ -55,7 +55,7 @@ void dump_necks(std::string const & dir, size_t count, std::vector<Eigen::Vector
         }
     }
     ofs << "\n";
-    ofs << "connections 1 " << neck_count * 2u << " int" << "\n";
+    ofs << "connections 2 " << neck_count << " int" << "\n";  // Tuples of 2 to avoid errors with ParaView
     for (size_t i = 0; i < bonded_contacts.size(); i ++) {
         if (bonded_contacts[i])
             ofs << i << " ";

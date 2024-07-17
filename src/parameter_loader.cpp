@@ -28,6 +28,22 @@ std::ostream & operator << (std::ostream & os, parameter_store_t const & paramet
     return os;
 }
 
+bool has_string_parameter(parameter_store_t const & parameter_store, std::string const & id) {
+    return parameter_store.strings.find(id) != parameter_store.strings.end();
+}
+
+bool has_integer_parameter(parameter_store_t const & parameter_store, std::string const & id) {
+    return parameter_store.integers.find(id) != parameter_store.integers.end();
+}
+
+bool has_real_parameter(parameter_store_t const & parameter_store, std::string const & id) {
+    return parameter_store.reals.find(id) != parameter_store.reals.end();
+}
+
+bool has_path_parameter(parameter_store_t const & parameter_store, std::string const & id) {
+    return parameter_store.paths.find(id) != parameter_store.paths.end();
+}
+
 double get_real_parameter(parameter_store_t const & parameter_store, std::string const & id) {
     auto parameter_itr = parameter_store.reals.find(id);
 

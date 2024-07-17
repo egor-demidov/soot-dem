@@ -7,11 +7,13 @@
 
 #include <vector>
 #include <string>
+#include <filesystem>
 
 #include <Eigen/Eigen>
 
-std::vector<Eigen::Vector3d> load_mackowski_aggregate(std::string const & path, double r_part);
-std::vector<Eigen::Vector3d> load_vtk_aggregate(std::string const & path, double r_part);
-std::vector<Eigen::Vector3d> load_flage_aggregate(std::string const & path, double r_part);
+std::vector<Eigen::Vector3d> load_mackowski_aggregate(std::filesystem::path const & path, double r_part);
+std::vector<Eigen::Vector3d> load_vtk_aggregate(std::filesystem::path const & path, double r_part);
+std::vector<Eigen::Vector3d> load_flage_aggregate(std::filesystem::path const & path, double r_part);
+std::vector<bool> load_necks(std::filesystem::path const & path, size_t n_part);
 
 #endif //SOOT_AFM_READER_H
