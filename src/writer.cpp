@@ -41,7 +41,7 @@ void dump_necks(std::string const & dir, size_t count, std::vector<Eigen::Vector
 
     ofs << "\n" << "\n";
     ofs << "POINT_DATA " << neck_count << "\n";
-    ofs << "FIELD FieldData 1" << "\n";
+    ofs << "FIELD FieldData 2" << "\n";
     ofs << "normals 3 " << neck_count << " double" << "\n";
     for (size_t i = 0; i < x.size() - 1; i ++) {
         for (size_t j = i + 1; j < x.size(); j ++) {
@@ -54,6 +54,13 @@ void dump_necks(std::string const & dir, size_t count, std::vector<Eigen::Vector
             ofs << orientation[0] << " " << orientation[1] << " " << orientation[2] << " ";
         }
     }
+    ofs << "\n";
+    ofs << "connections 1 " << neck_count * 2u << " int" << "\n";
+    for (size_t i = 0; i < bonded_contacts.size(); i ++) {
+        if (bonded_contacts[i])
+            ofs << i << " ";
+    }
+    ofs << "\n\n";
 }
 
 // Overload to write particle positions without velocities and orientations
