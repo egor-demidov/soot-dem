@@ -109,9 +109,14 @@ int main(int argc, const char ** argv) {
     // Necking fraction or necks file path
     bool has_frac_necks = has_real_parameter(parameter_store, "frac_necks");
     bool has_necks_path = has_path_parameter(parameter_store, "necks_path");
+    bool has_break_n_necks = has_integer_parameter(parameter_store, "break_n_necks");
 
     if (has_frac_necks && has_necks_path) {
         std::cerr << "Parameters `frac_necks` and `necks_path` are mutually exclusive, but both were provided" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    if (has_break_n_necks && !has_necks_path) {
+        std::cerr << "Parameter `break_n_necks` can only be used in combination with `necks_path`" << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -171,7 +176,7 @@ int main(int argc, const char ** argv) {
 
         auto target_n_necks = size_t(double(n_necks) * frac_necks);
 
-        std::cout << "Breaking " << n_necks - target_n_necks << " necks ..." << std::endl;
+        std::cout << "Breaking " << n_necks - target_n_necks << " necks out of " << n_necks << std::endl;
 
         for (size_t i = n_necks; i > target_n_necks; i --) {
             break_random_neck(aggregate_model.get_bonded_contacts(), x0.size());
@@ -182,9 +187,20 @@ int main(int argc, const char ** argv) {
 
         auto bonded_contacts = load_necks(necks_path, x0.size());
 
-        std::cout << "Loaded necks from file" << std::endl;
 
         aggregate_model.get_bonded_contacts() = bonded_contacts;
+
+        size_t n_necks = std::count(aggregate_model.get_bonded_contacts().begin(),
+                                    aggregate_model.get_bonded_contacts().end(), true) / 2;
+        std::cout << "Loaded necks " << n_necks << " from file" << std::endl;
+
+        if (has_break_n_necks) {
+            long break_n_necks = get_integer_parameter(parameter_store, "break_n_necks");
+            std::cout << "Breaking " << break_n_necks << " necks out of " << n_necks << std::endl;
+            for (size_t i = 0; i < break_n_necks; i ++) {
+                break_random_neck(aggregate_model.get_bonded_contacts(), x0.size());
+            }
+        }
 
     } else {
         std::cerr << "Either `frac_necks` or `necks_path` must be provided for this simulation type" << std::endl;
