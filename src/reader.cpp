@@ -10,7 +10,7 @@
 
 #include "reader.h"
 
-std::vector<Eigen::Vector3d> load_flage_aggregate(std::string const & path, double r_part) {
+std::vector<Eigen::Vector3d> load_flage_aggregate(std::filesystem::path const & path, double r_part) {
     tinyxml2::XMLDocument doc;
     doc.LoadFile(path.c_str());
 
@@ -37,7 +37,7 @@ std::vector<Eigen::Vector3d> load_flage_aggregate(std::string const & path, doub
     return out;
 }
 
-std::vector<Eigen::Vector3d> load_mackowski_aggregate(std::string const & path, double r_part) {
+std::vector<Eigen::Vector3d> load_mackowski_aggregate(std::filesystem::path const & path, double r_part) {
     std::ifstream ifs(path);
 
     if (!ifs.good()) {
@@ -60,7 +60,7 @@ std::vector<Eigen::Vector3d> load_mackowski_aggregate(std::string const & path, 
     return x0;
 }
 
-std::vector<Eigen::Vector3d> load_vtk_aggregate(std::string const & path, double r_part) {
+std::vector<Eigen::Vector3d> load_vtk_aggregate(std::filesystem::path const & path, double r_part) {
     std::ifstream ifs(path);
 
     if (!ifs.good()) {
@@ -87,4 +87,39 @@ std::vector<Eigen::Vector3d> load_vtk_aggregate(std::string const & path, double
     }
 
     return out;
+}
+
+std::vector<bool> load_necks(std::filesystem::path const & path, size_t n_part) {
+    std::ifstream ifs(path);
+
+    if (!ifs.good()) {
+        std::cerr << "Unable to read the aggregate file: " << path << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    std::string _;
+    size_t num_pts;
+
+    std::getline(ifs, _);
+    std::getline(ifs, _);
+    std::getline(ifs, _);
+    std::getline(ifs, _);
+    ifs >> _ >> num_pts >> _;
+    std::getline(ifs, _);
+    std::getline(ifs, _);
+    std::getline(ifs, _);
+    std::getline(ifs, _);
+    std::getline(ifs, _);
+    std::getline(ifs, _);
+    std::getline(ifs, _);
+    std::getline(ifs, _);
+
+    std::vector<bool> bonded_contacts(n_part*n_part, false);
+    for (size_t i = 0; i < num_pts * 2; i ++) {
+        int index;
+        ifs >> index;
+        bonded_contacts[index] = true;
+    }
+
+    return bonded_contacts;
 }

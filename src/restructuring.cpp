@@ -106,8 +106,14 @@ int main(int argc, const char ** argv) {
     const double f_coat_cutoff = get_real_parameter(parameter_store, "f_coat_cutoff");
     const double f_coat_drop_rate = get_real_parameter(parameter_store, "f_coat_drop_rate");
 
-    // Necking fraction
-    const double frac_necks = get_real_parameter(parameter_store, "frac_necks");
+    // Necking fraction or necks file path
+    bool has_frac_necks = has_real_parameter(parameter_store, "frac_necks");
+    bool has_necks_path = has_path_parameter(parameter_store, "necks_path");
+
+    if (has_frac_necks && has_necks_path) {
+        std::cerr << "Parameters `frac_necks` and `necks_path` are mutually exclusive, but both were provided" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
@@ -154,18 +160,35 @@ int main(int argc, const char ** argv) {
                              v0, theta0, omega0, 0.0, Eigen::Vector3d::Zero(), 0.0,
                              step_handler_instance, binary_force_functors, unary_force_functors);
 
-    // Count the number of necks
-    size_t n_necks = std::count(aggregate_model.get_bonded_contacts().begin(),
-                                aggregate_model.get_bonded_contacts().end(), true) / 2;
-
-    auto target_n_necks = size_t(double(n_necks) * frac_necks);
-
-    std::cout << "Breaking " << n_necks - target_n_necks << " necks ..." << std::endl;
-
     seed_random_engine(rng_seed);
 
-    for (size_t i = n_necks; i > target_n_necks; i --) {
-        break_random_neck(aggregate_model.get_bonded_contacts(), x0.size());
+    if (has_frac_necks) {
+        const double frac_necks = get_real_parameter(parameter_store, "frac_necks");
+
+        // Count the number of necks
+        size_t n_necks = std::count(aggregate_model.get_bonded_contacts().begin(),
+                                    aggregate_model.get_bonded_contacts().end(), true) / 2;
+
+        auto target_n_necks = size_t(double(n_necks) * frac_necks);
+
+        std::cout << "Breaking " << n_necks - target_n_necks << " necks ..." << std::endl;
+
+        for (size_t i = n_necks; i > target_n_necks; i --) {
+            break_random_neck(aggregate_model.get_bonded_contacts(), x0.size());
+        }
+
+    } else if (has_necks_path) {
+        const std::filesystem::path necks_path = get_path_parameter(parameter_store, "necks_path");
+
+        auto bonded_contacts = load_necks(necks_path, x0.size());
+
+        std::cout << "Loaded necks from file" << std::endl;
+
+        aggregate_model.get_bonded_contacts() = bonded_contacts;
+
+    } else {
+        std::cerr << "Either `frac_necks` or `necks_path` must be provided for this simulation type" << std::endl;
+        exit(EXIT_FAILURE);
     }
 
     state_printer_t state_printer(system.get_x(), system.get_v(), system.get_theta(), system.get_omega(), mass, inertia, n_dumps);

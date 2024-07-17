@@ -30,4 +30,12 @@ std::filesystem::path const & get_path_parameter(parameter_store_t const & param
 
 parameter_store_t load_parameters(std::filesystem::path const & parameter_file_path);
 
+bool has_string_parameter(parameter_store_t const & parameter_store, std::string const & id);
+
+bool has_integer_parameter(parameter_store_t const & parameter_store, std::string const & id);
+
+bool has_real_parameter(parameter_store_t const & parameter_store, std::string const & id);
+
+bool has_path_parameter(parameter_store_t const & parameter_store, std::string const & id);
+
 #endif //SOOT_AFM_PARAMETER_LOADER_H
