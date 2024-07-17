@@ -12,7 +12,7 @@
 
 std::vector<Eigen::Vector3d> load_flage_aggregate(std::filesystem::path const & path, double r_part) {
     tinyxml2::XMLDocument doc;
-    doc.LoadFile(path.c_str());
+    doc.LoadFile(path.string().c_str());
 
     if (doc.Error()) {
         std::cerr << "Unable to open file " << path << std::endl;
