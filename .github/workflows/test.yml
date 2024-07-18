@@ -55,6 +55,7 @@ jobs:
           submodules: recursive
       - name: Build
         run: |
+          sudo apt install ninja-build
           mkdir dist/soot-dem/bin
           mkdir cmake-build
           cd cmake-build
