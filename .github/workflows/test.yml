@@ -58,7 +58,7 @@ jobs:
           mkdir dist/soot-dem/bin
           mkdir cmake-build
           cd cmake-build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake -DCMAKE_BUILD_TYPE=Release -G Ninja ..
           cmake --build .
           strip aggregate_deposition
           strip afm_necking_fraction
@@ -82,13 +82,13 @@ jobs:
           submodules: recursive
       - name: Build
         run: |
-          brew install llvm libomp
+          brew install llvm libomp ninja
           export CC=/opt/homebrew/opt/llvm/bin/clang
           export CXX=/opt/homebrew/opt/llvm/bin/clang++
           mkdir dist/soot-dem/bin
           mkdir cmake-build
           cd cmake-build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake -DCMAKE_BUILD_TYPE=Release -G Ninja ..
           cmake --build .
           strip aggregate_deposition
           strip afm_necking_fraction
