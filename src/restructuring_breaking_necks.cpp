@@ -2,7 +2,10 @@
 // Created by egor on 7/18/24.
 //
 
-#include <bits/stdc++.h>
+#include <iostream>
+#include <vector>
+#include <fstream>
+#include <algorithm>
 
 #include <Eigen/Eigen>
 
