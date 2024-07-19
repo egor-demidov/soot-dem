@@ -30,7 +30,6 @@ static constexpr double dt = 5e-15;
 static constexpr double f_coat_cutoff = 5.6e-08;
 static constexpr double f_coat_drop_rate = 1.78571e+08;
 static constexpr double f_coat_max = 1e-09;
-static constexpr double frac_necks = 0;
 static constexpr double gamma_n = 5e-09;
 static constexpr double gamma_n_bond = 1.25e-06;
 static constexpr double gamma_o = 2.5e-10;
