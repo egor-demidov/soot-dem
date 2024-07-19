@@ -96,6 +96,11 @@ struct aggregate {
         return sinter_model.bonded_contacts;
     }
 
+    [[nodiscard]]
+    sinter_model_t const & get_sinter_model() const {
+        return sinter_model;
+    }
+
 private:
 
     /*void load_mackowski_aggregate(std::string const & path) {
