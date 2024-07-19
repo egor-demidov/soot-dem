@@ -35,12 +35,12 @@ public:
 
 private:
     typedef std::tuple<
-        vtkSmartPointer<vtkSphereSource>,
         vtkSmartPointer<vtkOpenGLPolyDataMapper>,
         vtkSmartPointer<vtkOpenGLActor>> monomer_representation_t;
 
     const double r_part;
     vtkSmartPointer<vtkNamedColors> colors;
+    vtkSmartPointer<vtkSphereSource> sphere_source;
     vtkSmartPointer<vtkOpenGLRenderer> renderer;
     vtkSmartPointer<vtkRenderWindow> window;
     vtkSmartPointer<vtkTextActor> dump_number_label;
