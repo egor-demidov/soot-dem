@@ -8,6 +8,30 @@ include_directories(SYSTEM deps/libtimestep/include)
 include_directories(SYSTEM deps/eigen)
 include_directories(SYSTEM deps)
 
+### GUI COMPONENT SETUP ###
+find_package(wxWidgets REQUIRED COMPONENTS net core base)
+if(wxWidgets_USE_FILE) # not defined in CONFIG mode
+    include(${wxWidgets_USE_FILE})
+endif()
+
+find_package(VTK COMPONENTS
+        CommonColor
+        CommonCore
+        CommonTransforms
+        FiltersSources
+        InteractionStyle
+        InteractionWidgets
+        RenderingContextOpenGL2
+        RenderingCore
+        RenderingFreeType
+        RenderingGL2PSOpenGL2
+        RenderingOpenGL2
+)
+if (NOT VTK_FOUND)
+    message(FATAL_ERROR "Tutorial_Step1: Unable to find the VTK build folder.")
+endif()
+### END GUI COMPONENT SETUP ###
+
 add_compile_definitions(_USE_MATH_DEFINES)
 
 if (${MSVC})
@@ -50,12 +74,17 @@ set(CMAKE_UTIL_SOURCES src/random_engine.cpp src/writer.cpp src/energy.cpp src/r
         src/break_neck.cpp src/remove_overlap.cpp src/aggregate_stats.cpp
         src/parameter_loader.cpp src/io_common.cpp deps/tinyxml2/tinyxml2.cpp)
 
+set(CMAKE_GUI_SOURCES src/preview_renderer.cpp)
+
 add_executable(aggregate_deposition src/aggregate_deposition.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(restructuring src/restructuring.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(afm_necking_fraction src/afm_necking_fraction.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(aggregation src/aggregation.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(anchored_restructuring src/anchored_restructuring.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(restructuring_breaking_necks src/restructuring_breaking_necks.cpp ${CMAKE_UTIL_SOURCES})
+
+# GUI executables
+add_executable(restructuring_breaking_necks_gui src/restructuring_breaking_necks_gui.cpp ${CMAKE_UTIL_SOURCES} ${CMAKE_GUI_SOURCES})
 
 # VALIDATION EXECUTABLES
 add_executable(01_particles_colliding validation/01_particles_colliding.cpp ${CMAKE_UTIL_SOURCES})
@@ -84,3 +113,10 @@ target_link_libraries(06_sintering ${LIBRARY_LIST})
 target_link_libraries(07_sintering ${LIBRARY_LIST})
 target_link_libraries(08_sintering ${LIBRARY_LIST})
 target_link_libraries(09_sintering ${LIBRARY_LIST})
+
+target_link_libraries(restructuring_breaking_necks_gui ${LIBRARY_LIST} ${wxWidgets_LIBRARIES} ${VTK_LIBRARIES})
+
+vtk_module_autoinit(
+        TARGETS restructuring_breaking_necks_gui
+        MODULES ${VTK_LIBRARIES}
+)

@@ -41,7 +41,7 @@ void break_strained_necks(aggregate<field_value_t, real_t> & aggregate_model,
             if (xi_n > 0.0)
                 total_strain_energy += k_n_bond * xi_n * xi_n;
 
-            constexpr double e_crit = 5e-19;
+            constexpr double e_crit = 1e-20;
 
             if (total_strain_energy < e_crit)
                 continue;
