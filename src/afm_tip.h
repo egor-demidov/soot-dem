@@ -15,6 +15,8 @@
 #include <libgran/surface_force/triangular_facet.h>
 #include <libgran/granular_system/granular_system.h>
 
+#include "exception.h"
+
 template <typename field_value_t, typename real_t>
 struct afm_tip {
 
@@ -106,10 +108,8 @@ struct afm_tip {
 
         std::ofstream ofs(ss.str());
 
-        if (!ofs.good()) {
-            std::cerr << "Unable to create a facet file" << std::endl;
-            exit(EXIT_FAILURE);
-        }
+        if (!ofs.good())
+            throw DemException("Unable to create a facet file");
 
         ofs << "solid facet\n";
 

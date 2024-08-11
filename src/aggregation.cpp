@@ -29,6 +29,7 @@
 #include "io_common.h"
 #include "parameter_loader.h"
 #include "random_engine.h"
+#include "exception.h"
 
 using contact_force_model_t = contact_force_functor<Eigen::Vector3d, double>;
 using hamaker_force_model_t = hamaker_functor<Eigen::Vector3d, double>;
@@ -137,19 +138,15 @@ void populate_node_indices(AggregateGraph & graph, std::vector<GraphEdge> const 
 }
 
 int main(int argc, char ** argv) {
-    if (argc < 2) {
-        std::cerr << "Path to the input file must be provided as an argument" << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    if (argc < 2)
+        throw DemException("Path to the input file must be provided as an argument");
 
     auto parameter_store = load_parameters(argv[1]);
 
     print_header(parameter_store, "aggregation");
 
-    if (parameter_store.simulation_type != "aggregation") {
-        std::cerr << "Parameter file simulation type must be `aggregation`" << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    if (parameter_store.simulation_type != "aggregation")
+        throw DemException("Parameter file simulation type must be `aggregation`");
 
     // General simulation parameters
     const double dt = get_real_parameter(parameter_store, "dt");

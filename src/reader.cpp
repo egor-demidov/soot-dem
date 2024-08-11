@@ -9,15 +9,14 @@
 #include <tinyxml2/tinyxml2.h>
 
 #include "reader.h"
+#include "exception.h"
 
 std::vector<Eigen::Vector3d> load_flage_aggregate(std::filesystem::path const & path, double r_part) {
     tinyxml2::XMLDocument doc;
     doc.LoadFile(path.string().c_str());
 
-    if (doc.Error()) {
-        std::cerr << "Unable to open file " << path << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    if (doc.Error())
+        throw DemException("Unable to open file " + path.string());
 
     auto root = doc.FirstChildElement("geometry_complex");
     auto aggregate = root->FirstChildElement("data_particle");
@@ -40,10 +39,8 @@ std::vector<Eigen::Vector3d> load_flage_aggregate(std::filesystem::path const & 
 std::vector<Eigen::Vector3d> load_mackowski_aggregate(std::filesystem::path const & path, double r_part) {
     std::ifstream ifs(path);
 
-    if (!ifs.good()) {
-        std::cerr << "Unable to read the aggregate file: " << path << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    if (!ifs.good())
+        throw DemException("Unable to read the aggregate file: " + path.string());
 
     std::string line;
     std::vector<Eigen::Vector3d> x0;
@@ -63,10 +60,8 @@ std::vector<Eigen::Vector3d> load_mackowski_aggregate(std::filesystem::path cons
 std::vector<Eigen::Vector3d> load_vtk_aggregate(std::filesystem::path const & path, double r_part) {
     std::ifstream ifs(path);
 
-    if (!ifs.good()) {
-        std::cerr << "Unable to read the aggregate file: " << path << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    if (!ifs.good())
+        throw DemException("Unable to read the aggregate file: " + path.string());
 
     std::string _;
     size_t num_pts;
@@ -92,10 +87,8 @@ std::vector<Eigen::Vector3d> load_vtk_aggregate(std::filesystem::path const & pa
 std::vector<bool> load_necks(std::filesystem::path const & path, size_t n_part) {
     std::ifstream ifs(path);
 
-    if (!ifs.good()) {
-        std::cerr << "Unable to read the aggregate file: " << path << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    if (!ifs.good())
+        throw DemException("Unable to read the aggregate file: " + path.string());
 
     std::string _;
     size_t num_pts;

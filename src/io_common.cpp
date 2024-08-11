@@ -8,6 +8,7 @@
 #include "energy.h"
 #include "aggregate_stats.h"
 #include "git.h"
+#include "exception.h"
 
 #include "io_common.h"
 
@@ -45,8 +46,7 @@ std::vector<Eigen::Vector3d> load_aggregate(parameter_store_t const & parameter_
     } else if (aggregate_type == "vtk") {
         x0 = load_vtk_aggregate(aggregate_path, r_part);
     } else {
-        std::cerr << "Unrecognized aggregate type: `" << aggregate_type << "`" << std::endl;
-        exit(EXIT_FAILURE);
+        throw DemException("Unrecognized aggregate type: `" + aggregate_type + "`");
     }
 
     return x0;

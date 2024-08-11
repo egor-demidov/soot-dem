@@ -19,6 +19,7 @@
 #include "energy.h"
 #include "remove_overlap.h"
 #include "io_common.h"
+#include "exception.h"
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
 using rect_substrate_model_t = rect_substrate<Eigen::Vector3d, double>;
@@ -49,19 +50,15 @@ void center_in_the_xy_plane(std::vector<Eigen::Vector3d> & x) {
 }
 
 int main(int argc, const char ** argv) {
-    if (argc < 2) {
-        std::cerr << "Path to the input file must be provided as an argument" << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    if (argc < 2)
+        throw DemException("Path to the input file must be provided as an argument");
 
     auto parameter_store = load_parameters(argv[1]);
 
     print_header(parameter_store, "aggregate_deposition");
 
-    if (parameter_store.simulation_type != "deposition") {
-        std::cerr << "Parameter file simulation type must be `deposition`" << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    if (parameter_store.simulation_type != "deposition")
+        throw DemException("Parameter file simulation type must be `deposition`");
 
     // General simulation parameters
     const double dt = get_real_parameter(parameter_store, "dt");
@@ -148,10 +145,8 @@ int main(int argc, const char ** argv) {
 
     x0 = load_aggregate(parameter_store);
 
-    if (x0.size() == 0) {
-        std::cerr << "Loaded an empty aggregate" << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    if (x0.empty())
+        throw DemException("Loaded an empty aggregate");
     std::cout << "Loaded an aggregate of size " << x0.size() << std::endl;
 
     remove_overlap(x0, r_part, d_crit, n_overlap_iter);

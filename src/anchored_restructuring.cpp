@@ -29,6 +29,7 @@
 #include "parameter_loader.h"
 #include "random_engine.h"
 #include "rect_substrate.h"
+#include "exception.h"
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
 using coating_model_t = binary_coating_functor<Eigen::Vector3d, double>;
@@ -41,19 +42,15 @@ using granular_system_t = granular_system_neighbor_list<Eigen::Vector3d, double,
     rotational_step_handler, binary_force_container_t, unary_force_container_t>;
 
 int main(int argc, const char ** argv) {
-    if (argc < 2) {
-        std::cerr << "Path to the input file must be provided as an argument" << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    if (argc < 2)
+        throw DemException("Path to the input file must be provided as an argument");
 
     auto parameter_store = load_parameters(argv[1]);
 
     print_header(parameter_store, "anchored_restructuring");
 
-    if (parameter_store.simulation_type != "anchored_restructuring") {
-        std::cerr << "Parameter file simulation type must be `anchored_restructuring`" << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    if (parameter_store.simulation_type != "anchored_restructuring")
+        throw DemException("Parameter file simulation type must be `anchored_restructuring`");
 
     // General simulation parameters
     const double dt = get_real_parameter(parameter_store, "dt");
@@ -146,10 +143,8 @@ int main(int argc, const char ** argv) {
     x0 = load_aggregate(parameter_store);
     remove_overlap(x0, r_part, d_crit, n_overlap_iter);
 
-    if (x0.size() == 0) {
-        std::cerr << "Loaded an empty aggregate" << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    if (x0.empty())
+        throw DemException("Loaded an empty aggregate");
     std::cout << "Loaded an aggregate of size " << x0.size() << std::endl;
 
     // Fill the remaining buffers with zeros

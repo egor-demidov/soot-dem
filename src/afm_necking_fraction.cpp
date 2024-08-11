@@ -24,6 +24,7 @@
 #include "remove_overlap.h"
 #include "io_common.h"
 #include "random_engine.h"
+#include "exception.h"
 
 // Alias for aggregate mechanics model
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
@@ -63,19 +64,15 @@ bool is_monomer_hindered(long monomer, std::vector<Eigen::Vector3d> const & xs, 
 
 // Entry point
 int main(int argc, const char ** argv) {
-    if (argc < 2) {
-        std::cerr << "Path to the input file must be provided as an argument" << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    if (argc < 2)
+        throw DemException("Path to the input file must be provided as an argument");
 
     auto parameter_store = load_parameters(argv[1]);
 
     print_header(parameter_store, "afm_necking_fraction");
 
-    if (parameter_store.simulation_type != "afm_necking_fraction") {
-        std::cerr << "Parameter file simulation type must be `afm_necking_fraction`" << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    if (parameter_store.simulation_type != "afm_necking_fraction")
+        throw DemException("Parameter file simulation type must be `afm_necking_fraction`");
 
     /* General simulation parameters */
     // Integration time step
@@ -212,14 +209,10 @@ int main(int argc, const char ** argv) {
     bool has_necks_path = has_path_parameter(parameter_store, "necks_path");
     bool has_break_n_necks = has_integer_parameter(parameter_store, "break_n_necks");
 
-    if (has_frac_necks && has_necks_path) {
-        std::cerr << "Parameters `frac_necks` and `necks_path` are mutually exclusive, but both were provided" << std::endl;
-        exit(EXIT_FAILURE);
-    }
-    if (has_break_n_necks && !has_necks_path) {
-        std::cerr << "Parameter `break_n_necks` can only be used in combination with `necks_path`" << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    if (has_frac_necks && has_necks_path)
+        throw DemException("Parameters `frac_necks` and `necks_path` are mutually exclusive, but both were provided");
+    if (has_break_n_necks && !has_necks_path)
+        throw DemException("Parameter `break_n_necks` can only be used in combination with `necks_path`");
 
     // Substrate vertices
     const std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d> substrate_vertices {
@@ -249,10 +242,8 @@ int main(int argc, const char ** argv) {
 
     x0 = load_aggregate(parameter_store);
 
-    if (x0.size() == 0) {
-        std::cerr << "Loaded an empty aggregate" << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    if (x0.empty())
+        throw DemException("Loaded an empty aggregate");
     std::cout << "Loaded an aggregate of size " << x0.size() << std::endl;
 
     remove_overlap(x0, r_part, d_crit, n_overlap_iter);
@@ -360,8 +351,7 @@ int main(int argc, const char ** argv) {
         }
 
     } else {
-        std::cerr << "Either `frac_necks` or `necks_path` must be provided for this simulation type" << std::endl;
-        exit(EXIT_FAILURE);
+        throw DemException("Either `frac_necks` or `necks_path` must be provided for this simulation type");
     }
 
     state_printer_t state_printer(system.get_x(), system.get_v(), system.get_theta(), system.get_omega(), mass, inertia, n_dumps);
