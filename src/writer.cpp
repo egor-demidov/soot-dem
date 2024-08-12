@@ -7,7 +7,7 @@
 
 #include "writer.h"
 
-void dump_necks(std::string const & dir, size_t count, std::vector<Eigen::Vector3d> const & x,
+bool dump_necks(std::string const & dir, size_t count, std::vector<Eigen::Vector3d> const & x,
                 std::vector<bool> const & bonded_contacts, double r_part) {
 
     std::stringstream out_file_name;
@@ -16,7 +16,7 @@ void dump_necks(std::string const & dir, size_t count, std::vector<Eigen::Vector
 
     if (!ofs.good()) {
         std::cerr << "Unable to create a dump file at " << out_file_name.str() << std::endl;
-        exit(EXIT_FAILURE);
+        return false;
     }
 
     size_t neck_count = std::count(bonded_contacts.begin(), bonded_contacts.end(), true) / 2u;
@@ -61,17 +61,18 @@ void dump_necks(std::string const & dir, size_t count, std::vector<Eigen::Vector
             ofs << i << " ";
     }
     ofs << "\n\n";
+    return true;
 }
 
 // Overload to write particle positions without velocities and orientations
-void dump_particles(std::string const & name, std::vector<Eigen::Vector3d> const & x, double r_part) {
+bool dump_particles(std::string const & name, std::vector<Eigen::Vector3d> const & x, double r_part) {
     std::stringstream out_file_name;
     out_file_name << name << ".vtk";
     std::ofstream ofs(out_file_name.str());
 
     if (!ofs.good()) {
         std::cerr << "Unable to create a dump file at " << out_file_name.str() << std::endl;
-        exit(EXIT_FAILURE);
+        return false;
     }
 
     ofs << "# vtk DataFile Version 4.0" << "\n";
@@ -85,9 +86,10 @@ void dump_particles(std::string const & name, std::vector<Eigen::Vector3d> const
         ofs << p[0] / r_part << " " << p[1] / r_part << " " << p[2] / r_part << " ";
     }
     ofs << "\n";
+    return true;
 }
 
-void dump_particles(std::string const & dir, size_t count, std::vector<Eigen::Vector3d> const & x,
+bool dump_particles(std::string const & dir, size_t count, std::vector<Eigen::Vector3d> const & x,
                     std::vector<Eigen::Vector3d> const & theta,
                     std::vector<Eigen::Vector3d> const & v,
                     std::vector<Eigen::Vector3d> const & a,
@@ -100,7 +102,7 @@ void dump_particles(std::string const & dir, size_t count, std::vector<Eigen::Ve
 
     if (!ofs.good()) {
         std::cerr << "Unable to create a dump file at " << out_file_name.str() << std::endl;
-        exit(EXIT_FAILURE);
+        return false;
     }
 
     ofs << "# vtk DataFile Version 4.0" << "\n";
@@ -173,9 +175,10 @@ void dump_particles(std::string const & dir, size_t count, std::vector<Eigen::Ve
 
         ofs << orient[0] << " " << orient[1] << " " << orient[2] << " ";
     }
+    return true;
 }
 
-void dump_particles(std::string const & dir, size_t count, std::vector<Eigen::Vector3d> const & x,
+bool dump_particles(std::string const & dir, size_t count, std::vector<Eigen::Vector3d> const & x,
                     std::vector<Eigen::Vector3d> const & v,
                     std::vector<Eigen::Vector3d> const & a,
                     std::vector<Eigen::Vector3d> const & omega,
@@ -187,7 +190,7 @@ void dump_particles(std::string const & dir, size_t count, std::vector<Eigen::Ve
 
     if (!ofs.good()) {
         std::cerr << "Unable to create a dump file at " << out_file_name.str() << std::endl;
-        exit(EXIT_FAILURE);
+        return false;
     }
 
     ofs << "# vtk DataFile Version 4.0" << "\n";
@@ -224,4 +227,5 @@ void dump_particles(std::string const & dir, size_t count, std::vector<Eigen::Ve
         ofs << p.norm() << " ";
     }
     ofs << "\n";
+    return true;
 }

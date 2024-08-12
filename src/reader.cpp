@@ -16,7 +16,7 @@ std::vector<Eigen::Vector3d> load_flage_aggregate(std::filesystem::path const & 
 
     if (doc.Error()) {
         std::cerr << "Unable to open file " << path << std::endl;
-        exit(EXIT_FAILURE);
+        return {};
     }
 
     auto root = doc.FirstChildElement("geometry_complex");
@@ -42,7 +42,7 @@ std::vector<Eigen::Vector3d> load_mackowski_aggregate(std::filesystem::path cons
 
     if (!ifs.good()) {
         std::cerr << "Unable to read the aggregate file: " << path << std::endl;
-        exit(EXIT_FAILURE);
+        return {};
     }
 
     std::string line;
@@ -65,7 +65,7 @@ std::vector<Eigen::Vector3d> load_vtk_aggregate(std::filesystem::path const & pa
 
     if (!ifs.good()) {
         std::cerr << "Unable to read the aggregate file: " << path << std::endl;
-        exit(EXIT_FAILURE);
+        return {};
     }
 
     std::string _;
@@ -94,7 +94,7 @@ std::vector<bool> load_necks(std::filesystem::path const & path, size_t n_part) 
 
     if (!ifs.good()) {
         std::cerr << "Unable to read the aggregate file: " << path << std::endl;
-        exit(EXIT_FAILURE);
+        return {};
     }
 
     std::string _;
