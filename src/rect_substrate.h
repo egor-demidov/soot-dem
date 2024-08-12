@@ -15,7 +15,6 @@
 #include <libgran/granular_system/granular_system.h>
 
 #include "coating_force.h"
-#include "exception.h"
 
 template <typename field_value_t, typename real_t>
 struct rect_substrate {
@@ -79,8 +78,10 @@ struct rect_substrate {
 
         std::ofstream ofs(ss.str());
 
-        if (!ofs.good())
-            throw DemException("Unable to create a facet file");
+        if (!ofs.good()) {
+            std::cerr << "Unable to create a facet file" << std::endl;
+            exit(EXIT_FAILURE);
+        }
 
         ofs << "solid facet\n";
 
@@ -184,8 +185,10 @@ struct rect_substrate_with_coating {
 
         std::ofstream ofs(ss.str());
 
-        if (!ofs.good())
-            throw DemException("Unable to create a facet file");
+        if (!ofs.good()) {
+            std::cerr << "Unable to create a facet file" << std::endl;
+            exit(EXIT_FAILURE);
+        }
 
         ofs << "solid facet\n";
 

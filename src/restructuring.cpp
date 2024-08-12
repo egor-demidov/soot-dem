@@ -28,7 +28,6 @@
 #include "io_common.h"
 #include "parameter_loader.h"
 #include "random_engine.h"
-#include "exception.h"
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
 using coating_model_t = binary_coating_functor<Eigen::Vector3d, double>;
@@ -40,15 +39,19 @@ using granular_system_t = granular_system_neighbor_list<Eigen::Vector3d, double,
     rotational_step_handler, binary_force_container_t, unary_force_container_t>;
 
 int main(int argc, const char ** argv) {
-    if (argc < 2)
-        throw DemException("Path to the input file must be provided as an argument");
+    if (argc < 2) {
+        std::cerr << "Path to the input file must be provided as an argument" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
     auto parameter_store = load_parameters(argv[1]);
 
     print_header(parameter_store, "restructuring");
 
-    if (parameter_store.simulation_type != "restructuring")
-        throw DemException("Parameter file simulation type must be `restructuring`");
+    if (parameter_store.simulation_type != "restructuring") {
+        std::cerr << "Parameter file simulation type must be `restructuring`" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
     // General simulation parameters
     const double dt = get_real_parameter(parameter_store, "dt");
@@ -108,10 +111,14 @@ int main(int argc, const char ** argv) {
     bool has_necks_path = has_path_parameter(parameter_store, "necks_path");
     bool has_break_n_necks = has_integer_parameter(parameter_store, "break_n_necks");
 
-    if (has_frac_necks && has_necks_path)
-        throw DemException("Parameters `frac_necks` and `necks_path` are mutually exclusive, but both were provided");
-    if (has_break_n_necks && !has_necks_path)
-        throw DemException("Parameter `break_n_necks` can only be used in combination with `necks_path`");
+    if (has_frac_necks && has_necks_path) {
+        std::cerr << "Parameters `frac_necks` and `necks_path` are mutually exclusive, but both were provided" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    if (has_break_n_necks && !has_necks_path) {
+        std::cerr << "Parameter `break_n_necks` can only be used in combination with `necks_path`" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;

@@ -102,6 +102,27 @@ struct aggregate {
     }
 
 private:
+
+    /*void load_mackowski_aggregate(std::string const & path) {
+        std::ifstream ifs(path);
+
+        if (!ifs.good()) {
+            std::cerr << "Unable to read the aggregate file: " << path << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        std::string line;
+
+        while (getline(ifs, line)) {
+            if (!line.empty()) {
+                std::istringstream oss(line);
+                double _, x, y, z;
+                oss >> _ >> x >> y >> z;
+                x0.emplace_back(x * r_part, y * r_part, z * r_part);
+            }
+        }
+    }*/
+
     contact_model_t contact_model;
     sinter_model_t sinter_model;
     hamaker_model_t hamaker_model;
