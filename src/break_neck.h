@@ -19,6 +19,7 @@ void break_strained_necks(aggregate<field_value_t, real_t> & aggregate_model,
                           real_t k_t_bond,
                           real_t k_r_bond,
                           real_t k_o_bond,
+                          real_t e_crit,
                           real_t r_part) {
 
     const auto n_part = x.size();
@@ -40,8 +41,6 @@ void break_strained_necks(aggregate<field_value_t, real_t> & aggregate_model,
             // Normal component only contributes in case of tension
             if (xi_n > 0.0)
                 total_strain_energy += k_n_bond * xi_n * xi_n;
-
-            constexpr double e_crit = 5e-19;
 
             if (total_strain_energy < e_crit)
                 continue;

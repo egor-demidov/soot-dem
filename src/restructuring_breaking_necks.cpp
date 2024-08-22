@@ -60,6 +60,7 @@ static constexpr double r_part = 1.4e-08;
 static constexpr double r_verlet = 7e-08;
 static constexpr double rho = 1700;
 static constexpr double t_tot = 5e-08;
+static constexpr double e_crit = 5e-19;
 static constexpr long n_dumps = 500;
 static constexpr long n_overlap_iter = 10000;
 static constexpr long neighbor_update_period = 20;
@@ -139,7 +140,7 @@ int main() {
         }
 
         system.do_step(dt);
-        break_strained_necks(aggregate_model, system.get_x(), k_n_bond, k_t_bond, k_r_bond, k_o_bond, r_part);
+        break_strained_necks(aggregate_model, system.get_x(), k_n_bond, k_t_bond, k_r_bond, k_o_bond, e_crit, r_part);
     }
 
     return 0;
