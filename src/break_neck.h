@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <iostream>
+#include <stack>
 
 #include "aggregate.h"
 
