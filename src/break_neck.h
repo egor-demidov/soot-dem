@@ -50,8 +50,6 @@ void break_strained_necks(aggregate<field_value_t, real_t> & aggregate_model,
                 continue;
             }
 
-            std::cout << "Breaking neck" << std::endl;
-
             aggregate_model.get_bonded_contacts()[i * n_part + j] = false;
             aggregate_model.get_bonded_contacts()[j * n_part + i] = false;
 
@@ -100,8 +98,6 @@ void break_strained_necks(aggregate<field_value_t, real_t> & aggregate_model,
 
             if (total_strain_energy < e_crit)
                 continue;
-
-            std::cout << "Breaking neck" << std::endl;
 
             aggregate_model.get_bonded_contacts()[i * n_part + j] = false;
             aggregate_model.get_bonded_contacts()[j * n_part + i] = false;
