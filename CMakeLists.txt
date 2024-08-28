@@ -41,7 +41,7 @@ FetchContent_Declare(cmake_git_version_tracking
 )
 FetchContent_MakeAvailable(cmake_git_version_tracking)
 
-set(LIBRARY_LIST cmake_git_version_tracking OpenMP::OpenMP ${LIBRARY_LIST})
+set(LIBRARY_LIST cmake_git_version_tracking OpenMP::OpenMP_CXX ${LIBRARY_LIST})
 
 add_compile_definitions(LIBGRAN_USE_OMP)
 
