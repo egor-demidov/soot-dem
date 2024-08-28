@@ -11,11 +11,11 @@ include_directories(SYSTEM deps)
 add_compile_definitions(_USE_MATH_DEFINES)
 
 if (${MSVC})
-    set(CMAKE_CXX_FLAGS "/O2 /openmp /EHsc /GL /fp:except /Wall")
+    set(CMAKE_CXX_FLAGS "/O2 /EHsc /GL /fp:except /Wall")
 endif ()
 
 if (${CMAKE_COMPILER_IS_GNUCXX})
-    set(CMAKE_CXX_FLAGS "-Wall -Wextra -O3 -fopenmp")
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra -O3")
     if (NOT ${MINGW})
         set(CMAKE_CXX_FLAGS "-flto=auto ${CMAKE_CXX_FLAGS}")
     endif ()
@@ -23,6 +23,8 @@ if (${CMAKE_COMPILER_IS_GNUCXX})
         set(CMAKE_CXX_FLAGS "-static ${CMAKE_CXX_FLAGS}")
     endif ()
 endif ()
+
+find_package(OpenMP REQUIRED)
 
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "AppleClang")
     message(FATAL_ERROR "AppleClang compiler is not supported")
@@ -39,7 +41,7 @@ FetchContent_Declare(cmake_git_version_tracking
 )
 FetchContent_MakeAvailable(cmake_git_version_tracking)
 
-set(LIBRARY_LIST cmake_git_version_tracking ${LIBRARY_LIST})
+set(LIBRARY_LIST cmake_git_version_tracking OpenMP::OpenMP ${LIBRARY_LIST})
 
 add_compile_definitions(LIBGRAN_USE_OMP)
 
