@@ -162,7 +162,8 @@ int main(int argc, const char ** argv) {
             dump_particles("run", n / dump_period, system.get_x(),
                            system.get_v(), system.get_a(),
                            system.get_omega(), system.get_alpha(), r_part);
-            dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part);
+            dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part,
+                       k_n_bond, k_t_bond, k_r_bond, k_o_bond, aggregate_model.get_sinter_model().get_contact_springs(), x0.size());
         }
 
         system.do_step(dt);
