@@ -60,7 +60,6 @@ int main(int argc, const char ** argv) {
     const long n_dumps = get_integer_parameter(parameter_store, "n_dumps");
     const long dump_period = n_steps / n_dumps;
     const long neighbor_update_period = get_integer_parameter(parameter_store, "neighbor_update_period");
-    const long n_overlap_iter = get_integer_parameter(parameter_store, "n_overlap_iter");
     const long rng_seed = get_integer_parameter(parameter_store, "rng_seed");
 
     // General parameters
@@ -105,7 +104,6 @@ int main(int argc, const char ** argv) {
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
 
     x0 = load_aggregate(parameter_store);
-    remove_overlap(x0, r_part, d_crit, n_overlap_iter);
 
     if (x0.size() == 0) {
         std::cerr << "Loaded an empty aggregate" << std::endl;
