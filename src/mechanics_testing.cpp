@@ -96,6 +96,11 @@ int main(int argc, const char ** argv) {
     const double gamma_o_bond = get_real_parameter(parameter_store, "gamma_o_bond");
     const double d_crit = get_real_parameter(parameter_store, "d_crit"); // Critical separation
 
+    // Parameters for the applied force model
+    const long applied_particle_i = get_integer_parameter(parameter_store, "applied_particle_i");
+    const long applied_particle_j = get_integer_parameter(parameter_store, "applied_particle_j");
+    const double applied_force_magnitude = get_real_parameter(parameter_store, "applied_force_magnitude");
+
     // Parameters for the Van der Waals model
     const double A = get_real_parameter(parameter_store, "A");
     const double h0 = get_real_parameter(parameter_store, "h0");
@@ -131,7 +136,8 @@ int main(int argc, const char ** argv) {
           d_crit, A, h0, x0, x0.size(),
           r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0};
 
-    applied_force_model_t applied_force_model(0, 10, 1e-10, mass, Eigen::Vector3d::Zero());
+    applied_force_model_t applied_force_model(applied_particle_i, applied_particle_j,
+        applied_force_magnitude, mass, Eigen::Vector3d::Zero());
 
     binary_force_container_t binary_force_functors {aggregate_model};
 
@@ -156,6 +162,13 @@ int main(int argc, const char ** argv) {
         }
         if (n % dump_period == 0) {
             std::cout << state_printer << std::endl;
+
+            std::vector<Eigen::Vector3d> xs_pulled {
+                system.get_x()[applied_particle_i],
+                system.get_x()[applied_particle_j]
+            };
+
+            dump_particles("run/pulled_particles_" + std::to_string(n / dump_period), xs_pulled, r_part);
 
             dump_particles("run", n / dump_period, system.get_x(),
                            system.get_v(), system.get_a(),
