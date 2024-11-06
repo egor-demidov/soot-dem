@@ -13,6 +13,13 @@
 bool dump_necks(std::string const & dir, size_t count, std::vector<Eigen::Vector3d> const & x,
                 std::vector<bool> const & bonded_contacts, double r_part);
 
+// Overload to write necks with energies
+bool dump_necks(std::string const & dir, size_t count, std::vector<Eigen::Vector3d> const & x,
+                std::vector<bool> const & bonded_contacts, double r_part, double k_n_bond,
+                double k_t_bond, double k_r_bond, double k_o_bond,
+                std::vector<std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d>> const & contact_springs,
+                size_t n_part);
+
 // Overload to write particle positions without velocities and orientations
 bool dump_particles(std::string const & name, std::vector<Eigen::Vector3d> const & x, double r_part);
 
