@@ -45,7 +45,7 @@ bool dump_necks(std::string const & dir, size_t count, std::vector<Eigen::Vector
 
     ofs << "\n" << "\n";
     ofs << "POINT_DATA " << neck_count << "\n";
-    ofs << "FIELD FieldData 3" << "\n";
+    ofs << "FIELD FieldData 8" << "\n";
     ofs << "normals 3 " << neck_count << " double" << "\n";
     for (size_t i = 0; i < x.size() - 1; i ++) {
         for (size_t j = i + 1; j < x.size(); j ++) {
@@ -82,6 +82,61 @@ bool dump_necks(std::string const & dir, size_t count, std::vector<Eigen::Vector
                 total_strain_energy += k_n_bond * xi_n * xi_n;
 
             ofs << total_strain_energy << " ";
+        }
+    }
+    ofs << "energies_normal 1 " << neck_count << " double" << "\n";
+    for (size_t i = 0; i < x.size() - 1; i ++) {
+        for (size_t j = i + 1; j < x.size(); j ++) {
+            if (!bonded_contacts[i * x.size() + j])
+                continue;
+
+            double xi_n = (x[i] - x[j]).norm() - 2.0 * r_part;
+
+            ofs << k_n_bond * xi_n * xi_n << " ";
+        }
+    }
+    ofs << "energies_tangential 1 " << neck_count << " double" << "\n";
+    for (size_t i = 0; i < x.size() - 1; i ++) {
+        for (size_t j = i + 1; j < x.size(); j ++) {
+            if (!bonded_contacts[i * x.size() + j])
+                continue;
+
+            auto [xi_t, xi_r, xi_o] = contact_springs[i * n_part + j];
+
+            ofs << k_t_bond * xi_t.dot(xi_t) << " ";
+        }
+    }
+    ofs << "energies_rolling 1 " << neck_count << " double" << "\n";
+    for (size_t i = 0; i < x.size() - 1; i ++) {
+        for (size_t j = i + 1; j < x.size(); j ++) {
+            if (!bonded_contacts[i * x.size() + j])
+                continue;
+
+            auto [xi_t, xi_r, xi_o] = contact_springs[i * n_part + j];
+
+            ofs << k_r_bond * xi_r.dot(xi_r) << " ";
+        }
+    }
+    ofs << "energies_torsional 1 " << neck_count << " double" << "\n";
+    for (size_t i = 0; i < x.size() - 1; i ++) {
+        for (size_t j = i + 1; j < x.size(); j ++) {
+            if (!bonded_contacts[i * x.size() + j])
+                continue;
+
+            auto [xi_t, xi_r, xi_o] = contact_springs[i * n_part + j];
+
+            ofs << k_o_bond * xi_o.dot(xi_o) << " ";
+        }
+    }
+    ofs << "energies_tangential_rolling_torsional 1 " << neck_count << " double" << "\n";
+    for (size_t i = 0; i < x.size() - 1; i ++) {
+        for (size_t j = i + 1; j < x.size(); j ++) {
+            if (!bonded_contacts[i * x.size() + j])
+                continue;
+
+            auto [xi_t, xi_r, xi_o] = contact_springs[i * n_part + j];
+
+            ofs << k_t_bond * xi_t.dot(xi_t) + k_r_bond * xi_r.dot(xi_r) + k_o_bond * xi_o.dot(xi_o) << " ";
         }
     }
     ofs << "\n\n";
