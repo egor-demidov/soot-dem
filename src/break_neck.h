@@ -73,6 +73,55 @@ void break_strained_necks(aggregate<field_value_t, real_t> & aggregate_model,
                           real_t k_t_bond,
                           real_t k_r_bond,
                           real_t k_o_bond,
+                          real_t psi_n,
+                          real_t psi_t,
+                          real_t psi_r,
+                          real_t psi_o,
+                          real_t r_part) {
+
+    const auto n_part = x.size();
+
+    for (size_t i = 0; i < n_part - 1; i ++) {
+        for (size_t j = i + 1; j < n_part; j ++) {
+            bool bond = aggregate_model.get_bonded_contacts()[i * n_part + j];
+
+            if (!bond)
+                continue;
+
+            real_t xi_n = (x[i] - x[j]).norm() - 2.0 * r_part;
+            auto [xi_t, xi_r, xi_o] = aggregate_model.get_sinter_model().get_contact_springs()[i * n_part + j];
+
+            // Normal component only contributes in case of tension
+            // Normal breaking criterion
+            if (xi_n > 0.0 && k_n_bond * xi_n * xi_n > psi_n) {
+                std::cout << "Failure due to normal criterion" << std::endl;
+                aggregate_model.get_bonded_contacts()[i * n_part + j] = false;
+                aggregate_model.get_bonded_contacts()[j * n_part + i] = false;
+                continue;
+            } else if (k_t_bond * xi_t.dot(xi_t) > psi_t) {
+                std::cout << "Failure due to tangential criterion" << std::endl;
+                aggregate_model.get_bonded_contacts()[i * n_part + j] = false;
+                aggregate_model.get_bonded_contacts()[j * n_part + i] = false;
+            } else if (k_r_bond * xi_r.dot(xi_r) > psi_r) {
+                std::cout << "Failure due to rolling criterion" << std::endl;
+                aggregate_model.get_bonded_contacts()[i * n_part + j] = false;
+                aggregate_model.get_bonded_contacts()[j * n_part + i] = false;
+            } else if (k_o_bond * xi_o.dot(xi_o) > psi_o) {
+                std::cout << "Failure due to torsional criterion" << std::endl;
+                aggregate_model.get_bonded_contacts()[i * n_part + j] = false;
+                aggregate_model.get_bonded_contacts()[j * n_part + i] = false;
+            }
+        }
+    }
+}
+
+template <typename field_value_t, typename real_t>
+void break_strained_necks(aggregate<field_value_t, real_t> & aggregate_model,
+                          std::vector<field_value_t> const & x,
+                          real_t k_n_bond,
+                          real_t k_t_bond,
+                          real_t k_r_bond,
+                          real_t k_o_bond,
                           real_t e_crit,
                           real_t r_part) {
 
