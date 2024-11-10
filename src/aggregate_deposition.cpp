@@ -17,7 +17,6 @@
 #include "aggregate.h"
 #include "writer.h"
 #include "energy.h"
-#include "remove_overlap.h"
 #include "io_common.h"
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
@@ -75,7 +74,6 @@ int main(int argc, const char ** argv) {
     const double rot_x = get_real_parameter(parameter_store, "rot_x");
     const double rot_y = get_real_parameter(parameter_store, "rot_y");
     const double rot_z = get_real_parameter(parameter_store, "rot_z");
-    const long n_overlap_iter = get_integer_parameter(parameter_store, "n_overlap_iter");
 
     // General parameters
     const double rho = get_real_parameter(parameter_store, "rho");
@@ -154,7 +152,6 @@ int main(int argc, const char ** argv) {
     }
     std::cout << "Loaded an aggregate of size " << x0.size() << std::endl;
 
-    remove_overlap(x0, r_part, d_crit, n_overlap_iter);
 
     Eigen::Vector3d center_of_mass = Eigen::Vector3d::Zero();
     for (auto const & x : x0) {

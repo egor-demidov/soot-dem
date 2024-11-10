@@ -23,7 +23,6 @@
 #include "writer.h"
 #include "reader.h"
 #include "break_neck.h"
-#include "remove_overlap.h"
 #include "aggregate_stats.h"
 #include "io_common.h"
 #include "parameter_loader.h"

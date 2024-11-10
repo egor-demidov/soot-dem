@@ -20,7 +20,6 @@
 #include "writer.h"
 #include "reader.h"
 #include "break_neck.h"
-#include "remove_overlap.h"
 #include "aggregate_stats.h"
 #include "io_common.h"
 #include "parameter_loader.h"
@@ -62,7 +61,6 @@ static constexpr double rho = 1700;
 static constexpr double t_tot = 5e-08;
 static constexpr double e_crit = 5e-19;
 static constexpr long n_dumps = 500;
-static constexpr long n_overlap_iter = 10000;
 static constexpr long neighbor_update_period = 20;
 static constexpr long rng_seed = 0;
 

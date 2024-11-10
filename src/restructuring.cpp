@@ -23,7 +23,6 @@
 #include "writer.h"
 #include "reader.h"
 #include "break_neck.h"
-#include "remove_overlap.h"
 #include "aggregate_stats.h"
 #include "io_common.h"
 #include "parameter_loader.h"
@@ -124,7 +123,6 @@ int main(int argc, const char ** argv) {
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
 
     x0 = load_aggregate(parameter_store);
-    remove_overlap(x0, r_part, d_crit, n_overlap_iter);
 
     if (x0.size() == 0) {
         std::cerr << "Loaded an empty aggregate" << std::endl;

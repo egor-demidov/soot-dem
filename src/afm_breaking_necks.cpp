@@ -21,7 +21,6 @@
 #include "reader.h"
 #include "writer.h"
 #include "break_neck.h"
-#include "remove_overlap.h"
 #include "io_common.h"
 #include "random_engine.h"
 
@@ -96,8 +95,6 @@ int main(int argc, const char ** argv) {
     const size_t neighbor_list_update_period = get_integer_parameter(parameter_store, "neighbor_update_period");
     // Side length of the square substrate
     const double substrate_size = get_real_parameter(parameter_store, "substrate_size");
-    // Number of overlap reduction iterations to be performed upon loading an aggregate
-    const long n_overlap_iter = get_integer_parameter(parameter_store, "n_overlap_iter");
     // AFM tip indentation/retraction velocity
     const double v_afm = get_real_parameter(parameter_store, "v_afm");
     // Time when AFM tip reverses its motion
@@ -246,8 +243,6 @@ int main(int argc, const char ** argv) {
         exit(EXIT_FAILURE);
     }
     std::cout << "Loaded an aggregate of size " << x0.size() << std::endl;
-
-    remove_overlap(x0, r_part, d_crit, n_overlap_iter);
 
     // Randomly pick the monomer that will be indented
     seed_random_engine(rng_seed);
