@@ -25,49 +25,49 @@
 #include "parameter_loader.h"
 #include "random_engine.h"
 
-static const std::filesystem::path aggregate_file_path = "aggregate_example.vtk";
-static constexpr double A = 1e-19;
-static constexpr double d_crit = 1e-09;
-static constexpr double dt = 5e-15;
-static constexpr double f_coat_cutoff = 5.6e-08;
-static constexpr double f_coat_drop_rate = 1.78571e+08;
-static constexpr double f_coat_max = 1e-09;
-static constexpr double gamma_n = 5e-09;
-static constexpr double gamma_n_bond = 1.25e-06;
-static constexpr double gamma_o = 2.5e-10;
-static constexpr double gamma_o_bond = 6.25e-08;
-static constexpr double gamma_r = 2.5e-10;
-static constexpr double gamma_r_bond = 6.25e-08;
-static constexpr double gamma_t = 1e-09;
-static constexpr double gamma_t_bond = 2.5e-07;
-static constexpr double h0 = 1e-09;
-static constexpr double k_n = 10000;
-static constexpr double k_n_bond = 1e+06;
-static constexpr double k_o = 10000;
-static constexpr double k_o_bond = 1e+07;
-static constexpr double k_r = 10000;
-static constexpr double k_r_bond = 1e+07;
-static constexpr double k_t = 10000;
-static constexpr double k_t_bond = 1e+07;
-static constexpr double mu_o = 0.1;
-static constexpr double mu_r = 0.1;
-static constexpr double mu_t = 1;
-static constexpr double phi_o = 1;
-static constexpr double phi_r = 1;
-static constexpr double phi_t = 1;
-static constexpr double r_part = 1.4e-08;
-static constexpr double r_verlet = 7e-08;
-static constexpr double rho = 1700;
-static constexpr double t_tot = 5e-08;
-static constexpr double e_crit = 5e-19;
-static constexpr long n_dumps = 500;
-static constexpr long neighbor_update_period = 20;
-static constexpr long rng_seed = 0;
-
-static constexpr auto n_steps = long(t_tot / dt);
-static constexpr long dump_period = n_steps / n_dumps;
-static const double mass = 4.0 / 3.0 * M_PI * pow(r_part, 3.0) * rho;
-static const double inertia = 2.0 / 5.0 * mass * pow(r_part, 2.0);
+// static const std::filesystem::path aggregate_file_path = "aggregate_example.vtk";
+// static constexpr double A = 1e-19;
+// static constexpr double d_crit = 1e-09;
+// static constexpr double dt = 5e-15;
+// static constexpr double f_coat_cutoff = 5.6e-08;
+// static constexpr double f_coat_drop_rate = 1.78571e+08;
+// static constexpr double f_coat_max = 1e-09;
+// static constexpr double gamma_n = 5e-09;
+// static constexpr double gamma_n_bond = 1.25e-06;
+// static constexpr double gamma_o = 2.5e-10;
+// static constexpr double gamma_o_bond = 6.25e-08;
+// static constexpr double gamma_r = 2.5e-10;
+// static constexpr double gamma_r_bond = 6.25e-08;
+// static constexpr double gamma_t = 1e-09;
+// static constexpr double gamma_t_bond = 2.5e-07;
+// static constexpr double h0 = 1e-09;
+// static constexpr double k_n = 10000;
+// static constexpr double k_n_bond = 1e+06;
+// static constexpr double k_o = 10000;
+// static constexpr double k_o_bond = 1e+07;
+// static constexpr double k_r = 10000;
+// static constexpr double k_r_bond = 1e+07;
+// static constexpr double k_t = 10000;
+// static constexpr double k_t_bond = 1e+07;
+// static constexpr double mu_o = 0.1;
+// static constexpr double mu_r = 0.1;
+// static constexpr double mu_t = 1;
+// static constexpr double phi_o = 1;
+// static constexpr double phi_r = 1;
+// static constexpr double phi_t = 1;
+// static constexpr double r_part = 1.4e-08;
+// static constexpr double r_verlet = 7e-08;
+// static constexpr double rho = 1700;
+// static constexpr double t_tot = 5e-08;
+// static constexpr double e_crit = 5e-19;
+// static constexpr long n_dumps = 500;
+// static constexpr long neighbor_update_period = 20;
+// static constexpr long rng_seed = 0;
+//
+// static constexpr auto n_steps = long(t_tot / dt);
+// static constexpr long dump_period = n_steps / n_dumps;
+// static const double mass = 4.0 / 3.0 * M_PI * pow(r_part, 3.0) * rho;
+// static const double inertia = 2.0 / 5.0 * mass * pow(r_part, 2.0);
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
 using coating_model_t = binary_coating_functor<Eigen::Vector3d, double>;
@@ -78,12 +78,79 @@ using unary_force_container_t = unary_force_functor_container<Eigen::Vector3d, d
 using granular_system_t = granular_system_neighbor_list<Eigen::Vector3d, double, rotational_velocity_verlet_half,
         rotational_step_handler, binary_force_container_t, unary_force_container_t>;
 
-int main() {
+int main(int argc, const char ** argv) {
+
+    if (argc < 2) {
+        std::cerr << "Path to the input file must be provided as an argument" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    auto parameter_store = load_parameters(argv[1]);
+
+    print_header(parameter_store, "restructuring_breaking_necks");
+
+    if (parameter_store.simulation_type != "restructuring_breaking_necks") {
+        std::cerr << "Parameter file simulation type must be `restructuring_breaking_necks`" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    // General simulation parameters
+    const double dt = get_real_parameter(parameter_store, "dt");
+    const double t_tot = get_real_parameter(parameter_store, "t_tot");
+    const auto n_steps = long(t_tot / dt);
+    const long n_dumps = get_integer_parameter(parameter_store, "n_dumps");
+    const long dump_period = n_steps / n_dumps;
+    const long neighbor_update_period = get_integer_parameter(parameter_store, "neighbor_update_period");
+    const long rng_seed = get_integer_parameter(parameter_store, "rng_seed");
+
+    // General parameters
+    const double rho = get_real_parameter(parameter_store, "rho");
+    const double r_part = get_real_parameter(parameter_store, "r_part");
+    const double mass = 4.0 / 3.0 * M_PI * pow(r_part, 3.0) * rho;
+    const double inertia = 2.0 / 5.0 * mass * pow(r_part, 2.0);
+    const double r_verlet = get_real_parameter(parameter_store, "r_verlet");
+
+    // Parameters for the contact model
+    const double k_n = get_real_parameter(parameter_store, "k_n");
+    const double gamma_n = get_real_parameter(parameter_store, "gamma_n");
+    const double k_t = get_real_parameter(parameter_store, "k_t");
+    const double gamma_t = get_real_parameter(parameter_store, "gamma_t");
+    const double mu_t = get_real_parameter(parameter_store, "mu_t");
+    const double phi_t = get_real_parameter(parameter_store, "phi_t");
+    const double k_r = get_real_parameter(parameter_store, "k_r");
+    const double gamma_r = get_real_parameter(parameter_store, "gamma_r");
+    const double mu_r = get_real_parameter(parameter_store, "mu_r");
+    const double phi_r = get_real_parameter(parameter_store, "phi_r");
+    const double k_o = get_real_parameter(parameter_store, "k_o");
+    const double gamma_o = get_real_parameter(parameter_store, "gamma_o");
+    const double mu_o = get_real_parameter(parameter_store, "mu_o");
+    const double phi_o = get_real_parameter(parameter_store, "phi_o");
+
+    // Parameters for the bonded contact model
+    const double k_n_bond = get_real_parameter(parameter_store, "k_n_bond");
+    const double gamma_n_bond = get_real_parameter(parameter_store, "gamma_n_bond");
+    const double k_t_bond = get_real_parameter(parameter_store, "k_t_bond");
+    const double gamma_t_bond = get_real_parameter(parameter_store, "gamma_t_bond");
+    const double k_r_bond = get_real_parameter(parameter_store, "k_r_bond");
+    const double gamma_r_bond = get_real_parameter(parameter_store, "gamma_r_bond");
+    const double k_o_bond = get_real_parameter(parameter_store, "k_o_bond");
+    const double gamma_o_bond = get_real_parameter(parameter_store, "gamma_o_bond");
+    const double d_crit = get_real_parameter(parameter_store, "d_crit"); // Critical separation
+    const double e_crit = get_real_parameter(parameter_store, "e_crit");
+
+    // Parameters for the Van der Waals model
+    const double A = get_real_parameter(parameter_store, "A");
+    const double h0 = get_real_parameter(parameter_store, "h0");
+
+    // Parameters for the coating model
+    const double f_coat_max = get_real_parameter(parameter_store, "f_coat_max");
+    const double f_coat_cutoff = get_real_parameter(parameter_store, "f_coat_cutoff");
+    const double f_coat_drop_rate = get_real_parameter(parameter_store, "f_coat_drop_rate");
 
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
 
-    x0 = load_vtk_aggregate(aggregate_file_path, r_part);
+    x0 = load_aggregate(parameter_store);
 
     // Fill the remaining buffers with zeros
     v0.resize(x0.size());

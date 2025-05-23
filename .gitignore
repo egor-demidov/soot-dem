@@ -21,7 +21,8 @@
 !.github
 !.github/**
 !dist/
-!dist/**
+!dist/soot-dem/example/*.xml
+!dist/soot-dem/example/*.txt
 !src/
 !src/**
 !validation/
