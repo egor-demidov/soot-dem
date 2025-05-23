@@ -59,7 +59,6 @@ int main(int argc, const char ** argv) {
     const long n_dumps = get_integer_parameter(parameter_store, "n_dumps");
     const long dump_period = n_steps / n_dumps;
     const long neighbor_update_period = get_integer_parameter(parameter_store, "neighbor_update_period");
-    const long n_overlap_iter = get_integer_parameter(parameter_store, "n_overlap_iter");
     const long rng_seed = get_integer_parameter(parameter_store, "rng_seed");
 
     // General parameters
