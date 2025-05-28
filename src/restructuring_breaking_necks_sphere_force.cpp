@@ -26,7 +26,7 @@
 #include "random_engine.h"
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
-using coating_model_t = binary_coating_functor<Eigen::Vector3d, double>;
+using coating_model_t = sphere_coating_functor<Eigen::Vector3d, double>;
 
 using binary_force_container_t = binary_force_functor_container<Eigen::Vector3d, double, aggregate_model_t, coating_model_t>;
 using unary_force_container_t = unary_force_functor_container<Eigen::Vector3d, double>;
@@ -128,7 +128,7 @@ int main(int argc, const char ** argv) {
             d_crit, A, h0, x0, x0.size(),
             r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0};
 
-    coating_model_t coating_model(f_coat_cutoff, f_coat_max, f_coat_drop_rate, mass, Eigen::Vector3d::Zero());
+    coating_model_t coating_model(f_coat_max, mass, Eigen::Vector3d::Zero(), r_part, x0, t_tot);
 
     binary_force_container_t binary_force_functors {aggregate_model, coating_model};
 
@@ -148,9 +148,9 @@ int main(int argc, const char ** argv) {
     std::filesystem::create_directory("run");
 
     for (long n = 0; n < n_steps; n ++) {
-        if (n % neighbor_update_period == 0) {
-            system.update_neighbor_list();
-        }
+        // if (n % neighbor_update_period == 0) {
+        //     system.update_neighbor_list();
+        // }
         if (n % dump_period == 0) {
             std::cout << state_printer << std::endl;
 
