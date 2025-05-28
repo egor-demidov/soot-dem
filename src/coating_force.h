@@ -60,14 +60,14 @@ private:
 template <typename field_value_t, typename real_t>
 struct sphere_coating_functor {
     sphere_coating_functor(real_t magnitude, real_t mass, field_value_t field_zero, real_t particle_radius, std::vector<field_value_t> const & initial_position, real_t total_time)
-        : magnitude{magnitude}, mass{mass}, field_zero{field_zero}, r_part{particle_radius}, t_tot{total_time}
+        : magnitude{magnitude}, mass{mass}, r_part{particle_radius}, t_tot{total_time}, field_zero{field_zero}, initial_position(initial_position)
     {
         // Compute center of mass
         field_value_t sum = field_value_t::Zero();
         for (const auto& xi : initial_position) {
             sum += xi;
         }
-        com = sum / static_cast<real_t>(initial_position.size());
+        field_value_t com = sum / static_cast<real_t>(initial_position.size());
 
         // Compute initial radius (max distance from COM)
         initial_radius = 0.0;
@@ -104,7 +104,7 @@ struct sphere_coating_functor {
         real_t dist_i = (x[i] - com_current).norm();
         real_t dist_j = (x[j] - com_current).norm();
 
-        // tollerance = particle radius
+        // tolerance = particle radius
         real_t tolerance = r_part;
 
         bool i_on_surface = std::abs(dist_i - current_radius) < tolerance;
@@ -128,6 +128,7 @@ private:
     const field_value_t field_zero;
     real_t initial_radius;
     real_t shrink_rate;
+    std::vector<field_value_t> initial_position;
 };
 
 #endif //SOOT_AFM_COATING_FORCE_H

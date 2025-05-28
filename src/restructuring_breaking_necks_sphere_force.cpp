@@ -148,9 +148,9 @@ int main(int argc, const char ** argv) {
     std::filesystem::create_directory("run");
 
     for (long n = 0; n < n_steps; n ++) {
-        // if (n % neighbor_update_period == 0) {
-        //     system.update_neighbor_list();
-        // }
+        if (n % neighbor_update_period == 0) {
+            system.update_neighbor_list();
+        }
         if (n % dump_period == 0) {
             std::cout << state_printer << std::endl;
 
