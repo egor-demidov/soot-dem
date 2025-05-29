@@ -91,7 +91,7 @@ struct sphere_coating_functor {
         real_t t) const
     {
         // Compute current sphere radius and make sure it doesn't go below 0
-        real_t current_radius = std::max(initial_radius - shrink_rate * t, 0.0);
+        real_t current_radius = std::max(initial_radius - shrink_rate * current_time, 0.0);
 
         // Compute center of mass
         field_value_t sum = field_value_t::Zero();
@@ -123,12 +123,17 @@ struct sphere_coating_functor {
         return std::make_pair(field_zero, field_zero);
     }
 
+    void set_time(real_t t) const {
+        current_time = t;
+    }
+
 private:
     const real_t magnitude, mass, r_part, t_tot;
     const field_value_t field_zero;
     real_t initial_radius;
     real_t shrink_rate;
     std::vector<field_value_t> initial_position;
+    mutable real_t current_time = 0.0;
 };
 
 #endif //SOOT_AFM_COATING_FORCE_H

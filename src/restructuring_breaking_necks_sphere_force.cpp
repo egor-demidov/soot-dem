@@ -43,10 +43,10 @@ int main(int argc, const char ** argv) {
 
     auto parameter_store = load_parameters(argv[1]);
 
-    print_header(parameter_store, "restructuring_breaking_necks");
+    print_header(parameter_store, "restructuring_breaking_necks_sphere_force");
 
-    if (parameter_store.simulation_type != "restructuring_breaking_necks") {
-        std::cerr << "Parameter file simulation type must be `restructuring_breaking_necks`" << std::endl;
+    if (parameter_store.simulation_type != "restructuring_breaking_necks_sphere_force") {
+        std::cerr << "Parameter file simulation type must be `restructuring_breaking_necks_sphere_force`" << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -160,6 +160,7 @@ int main(int argc, const char ** argv) {
             dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part);
         }
 
+        coating_model.set_time(n * dt);
         system.do_step(dt);
         break_strained_necks(aggregate_model, system.get_x(), k_n_bond, k_t_bond, k_r_bond, k_o_bond, e_crit, r_part);
     }
