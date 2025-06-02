@@ -100,8 +100,8 @@ int main(int argc, const char ** argv) {
 
     // Parameters for the coating model
     const double f_coat_max = get_real_parameter(parameter_store, "f_coat_max");
-    const double f_coat_cutoff = get_real_parameter(parameter_store, "f_coat_cutoff");
-    const double f_coat_drop_rate = get_real_parameter(parameter_store, "f_coat_drop_rate");
+    // const double f_coat_cutoff = get_real_parameter(parameter_store, "f_coat_cutoff");
+    // const double f_coat_drop_rate = get_real_parameter(parameter_store, "f_coat_drop_rate");
 
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
@@ -161,6 +161,7 @@ int main(int argc, const char ** argv) {
         }
 
         coating_model.set_time(n * dt);
+        coating_model.updateCOM(system.get_x());
         system.do_step(dt);
         break_strained_necks(aggregate_model, system.get_x(), k_n_bond, k_t_bond, k_r_bond, k_o_bond, e_crit, r_part);
     }

@@ -93,13 +93,6 @@ struct sphere_coating_functor {
         // Compute current sphere radius and make sure it doesn't go below 0
         real_t current_radius = std::max(initial_radius - shrink_rate * current_time, 0.0);
 
-        // Compute center of mass
-        field_value_t sum = field_value_t::Zero();
-        for (const auto& xi : x) {
-            sum += xi;
-        }
-        field_value_t com_current = sum / static_cast<real_t>(x.size());
-
         // Check if both particles are on the shrinking sphere's surface
         real_t dist_i = (x[i] - com_current).norm();
         real_t dist_j = (x[j] - com_current).norm();
@@ -127,6 +120,15 @@ struct sphere_coating_functor {
         current_time = t;
     }
 
+    // update center of mass
+    void updateCOM(std::vector<field_value_t> particlePos) {
+        field_value_t sum = field_value_t::Zero();
+        for (const auto& xi : particlePos) {
+            sum += xi;
+        }
+        com_current = sum / static_cast<real_t>(particlePos.size());
+    }
+
 private:
     const real_t magnitude, mass, r_part, t_tot;
     const field_value_t field_zero;
@@ -134,6 +136,7 @@ private:
     real_t shrink_rate;
     std::vector<field_value_t> initial_position;
     mutable real_t current_time = 0.0;
+    mutable field_value_t com_current;
 };
 
 #endif //SOOT_AFM_COATING_FORCE_H
