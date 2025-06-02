@@ -28,8 +28,8 @@
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
 using coating_model_t = sphere_coating_functor<Eigen::Vector3d, double>;
 
-using binary_force_container_t = binary_force_functor_container<Eigen::Vector3d, double, aggregate_model_t, coating_model_t>;
-using unary_force_container_t = unary_force_functor_container<Eigen::Vector3d, double>;
+using binary_force_container_t = binary_force_functor_container<Eigen::Vector3d, double, aggregate_model_t>;
+using unary_force_container_t = unary_force_functor_container<Eigen::Vector3d, double, coating_model_t>;
 
 using granular_system_t = granular_system_neighbor_list<Eigen::Vector3d, double, rotational_velocity_verlet_half,
         rotational_step_handler, binary_force_container_t, unary_force_container_t>;
@@ -130,9 +130,9 @@ int main(int argc, const char ** argv) {
 
     coating_model_t coating_model(f_coat_max, mass, Eigen::Vector3d::Zero(), r_part, x0, t_tot);
 
-    binary_force_container_t binary_force_functors {aggregate_model, coating_model};
+    binary_force_container_t binary_force_functors {aggregate_model};
 
-    unary_force_container_t unary_force_functors;
+    unary_force_container_t unary_force_functors {coating_model};
 
     rotational_step_handler<std::vector<Eigen::Vector3d>, Eigen::Vector3d>
             step_handler_instance;
@@ -163,6 +163,7 @@ int main(int argc, const char ** argv) {
 
         coating_model.set_time(n * dt);
         coating_model.updateCOM(system.get_x());
+        coating_model.update_interface_particles(system.get_x());
         system.do_step(dt);
         break_strained_necks(aggregate_model, system.get_x(), k_n_bond, k_t_bond, k_r_bond, k_o_bond, e_crit, r_part);
     }

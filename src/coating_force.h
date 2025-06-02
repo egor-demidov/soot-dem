@@ -62,7 +62,7 @@ struct sphere_coating_functor {
     sphere_coating_functor(real_t magnitude, real_t mass, field_value_t field_zero, real_t particle_radius, std::vector<field_value_t> const & initial_position, real_t total_time)
         : magnitude{magnitude}, mass{mass}, r_part{particle_radius}, t_tot{total_time}, field_zero{field_zero}, initial_position(initial_position)
     {
-        // Compute center of mass
+        // Compute initial center of mass
         field_value_t sum = field_value_t::Zero();
         for (const auto& xi : initial_position) {
             sum += xi;
@@ -83,7 +83,7 @@ struct sphere_coating_functor {
     }
 
     std::pair<field_value_t, field_value_t> operator () (
-        size_t i, size_t j,
+        size_t i,
         std::vector<field_value_t> const & x,
         std::vector<field_value_t> const & v [[maybe_unused]],
         std::vector<field_value_t> const & theta [[maybe_unused]],
@@ -91,26 +91,27 @@ struct sphere_coating_functor {
         real_t t) const
     {
         // Compute current sphere radius and make sure it doesn't go below 0
-        real_t current_radius = std::max(initial_radius - shrink_rate * current_time, 0.0);
+        //real_t current_radius = std::max(initial_radius - shrink_rate * current_time, 0.0);
 
-        // Check if both particles are on the shrinking sphere's surface
-        real_t dist_i = (x[i] - com_current).norm();
-        real_t dist_j = (x[j] - com_current).norm();
+        // Check if particle is on the shrinking sphere's surface
+        if (interface_particles_active[i]) {
 
-        // tolerance = particle radius
-        real_t tolerance = r_part;
+            field_value_t total_force = field_zero;
 
-        bool i_on_surface = std::abs(dist_i - current_radius) < tolerance;
-        bool j_on_surface = std::abs(dist_j - current_radius) < tolerance;
+            // find force acting on particle from all other particles in sphere
+            for (long j = 0; j < interface_particles.size(); ++j) {
+                if (j != i) {
+                    field_value_t distance = x[j] - x[i];
+                    real_t distance_magnitude = distance.norm();
 
-        if (i_on_surface && j_on_surface) {
-            field_value_t distance = x[j] - x[i];
-            real_t distance_magnitude = distance.norm();
+                    field_value_t n = distance / distance_magnitude;
+                    field_value_t f = magnitude * n;
 
-            field_value_t n = distance / distance_magnitude;
-            field_value_t f = magnitude * n;
+                    total_force += f;
+                }
+            }
 
-            return std::make_pair(f / mass, field_zero);
+            return std::make_pair(total_force / mass, field_zero);
         }
 
         return std::make_pair(field_zero, field_zero);
@@ -129,6 +130,20 @@ struct sphere_coating_functor {
         com_current = sum / static_cast<real_t>(particlePos.size());
     }
 
+    // check which particles are on the sphere and add them to the vector; also activate them in the bool vector
+    void update_interface_particles(std::vector<field_value_t> const & particle_positions) {
+        interface_particles.clear();
+        interface_particles_active.assign(particle_positions.size(), false);
+        real_t current_radius = get_radius();
+
+        for (int i = 0; i < particle_positions.size(); i++) {
+            if (abs((particle_positions[i] - com_current).norm() - current_radius) < r_part) {
+                interface_particles.push_back(particle_positions[i]);
+                interface_particles_active[i] = true;
+            }
+        }
+    }
+
     real_t get_radius() {
         return std::max(initial_radius - shrink_rate * current_time, 0.0);
     }
@@ -143,6 +158,8 @@ private:
     real_t initial_radius;
     real_t shrink_rate;
     std::vector<field_value_t> initial_position;
+    std::vector<field_value_t> interface_particles;
+    std::vector<bool> interface_particles_active;
     mutable real_t current_time = 0.0;
     mutable field_value_t com_current;
 };
