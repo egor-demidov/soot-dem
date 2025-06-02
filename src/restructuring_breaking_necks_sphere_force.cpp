@@ -158,6 +158,7 @@ int main(int argc, const char ** argv) {
                            system.get_v(), system.get_a(),
                            system.get_omega(), system.get_alpha(), r_part);
             dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part);
+            dump_sphere("run", n / dump_period, coating_model.get_COM(), coating_model.get_radius(), r_part);
         }
 
         coating_model.set_time(n * dt);

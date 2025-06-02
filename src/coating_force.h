@@ -129,6 +129,14 @@ struct sphere_coating_functor {
         com_current = sum / static_cast<real_t>(particlePos.size());
     }
 
+    real_t get_radius() {
+        return std::max(initial_radius - shrink_rate * current_time, 0.0);
+    }
+
+    field_value_t get_COM() {
+        return com_current;
+    }
+
 private:
     const real_t magnitude, mass, r_part, t_tot;
     const field_value_t field_zero;
