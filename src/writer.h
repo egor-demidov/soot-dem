@@ -38,4 +38,8 @@ bool dump_particles(std::string const & dir, size_t count, std::vector<Eigen::Ve
                     std::vector<Eigen::Vector3d> const & alpha,
                     double r_part);
 
+bool dump_sphere(std::string const & dir, size_t count,
+                 Eigen::Vector3d const & sphereCenter,
+                 double const sphereRadius, double r_part);
+
 #endif //SOOT_AFM_WRITER_H

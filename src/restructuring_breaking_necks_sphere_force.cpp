@@ -26,10 +26,10 @@
 #include "random_engine.h"
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
-using coating_model_t = binary_coating_functor<Eigen::Vector3d, double>;
+using coating_model_t = sphere_coating_functor<Eigen::Vector3d, double>;
 
-using binary_force_container_t = binary_force_functor_container<Eigen::Vector3d, double, aggregate_model_t, coating_model_t>;
-using unary_force_container_t = unary_force_functor_container<Eigen::Vector3d, double>;
+using binary_force_container_t = binary_force_functor_container<Eigen::Vector3d, double, aggregate_model_t>;
+using unary_force_container_t = unary_force_functor_container<Eigen::Vector3d, double, coating_model_t>;
 
 using granular_system_t = granular_system_neighbor_list<Eigen::Vector3d, double, rotational_velocity_verlet_half,
         rotational_step_handler, binary_force_container_t, unary_force_container_t>;
@@ -43,10 +43,10 @@ int main(int argc, const char ** argv) {
 
     auto parameter_store = load_parameters(argv[1]);
 
-    print_header(parameter_store, "restructuring_breaking_necks");
+    print_header(parameter_store, "restructuring_breaking_necks_sphere_force");
 
-    if (parameter_store.simulation_type != "restructuring_breaking_necks") {
-        std::cerr << "Parameter file simulation type must be `restructuring_breaking_necks`" << std::endl;
+    if (parameter_store.simulation_type != "restructuring_breaking_necks_sphere_force") {
+        std::cerr << "Parameter file simulation type must be `restructuring_breaking_necks_sphere_force`" << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -100,8 +100,8 @@ int main(int argc, const char ** argv) {
 
     // Parameters for the coating model
     const double f_coat_max = get_real_parameter(parameter_store, "f_coat_max");
-    const double f_coat_cutoff = get_real_parameter(parameter_store, "f_coat_cutoff");
-    const double f_coat_drop_rate = get_real_parameter(parameter_store, "f_coat_drop_rate");
+    // const double f_coat_cutoff = get_real_parameter(parameter_store, "f_coat_cutoff");
+    // const double f_coat_drop_rate = get_real_parameter(parameter_store, "f_coat_drop_rate");
 
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
@@ -128,11 +128,11 @@ int main(int argc, const char ** argv) {
             d_crit, A, h0, x0, x0.size(),
             r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0};
 
-    coating_model_t coating_model(f_coat_cutoff, f_coat_max, f_coat_drop_rate, mass, Eigen::Vector3d::Zero());
+    coating_model_t coating_model(f_coat_max, mass, Eigen::Vector3d::Zero(), r_part, x0, t_tot);
 
-    binary_force_container_t binary_force_functors {aggregate_model, coating_model};
+    binary_force_container_t binary_force_functors {aggregate_model};
 
-    unary_force_container_t unary_force_functors;
+    unary_force_container_t unary_force_functors {coating_model};
 
     rotational_step_handler<std::vector<Eigen::Vector3d>, Eigen::Vector3d>
             step_handler_instance;
@@ -158,8 +158,22 @@ int main(int argc, const char ** argv) {
                            system.get_v(), system.get_a(),
                            system.get_omega(), system.get_alpha(), r_part);
             dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part);
+            dump_sphere("run", n / dump_period, coating_model.get_COM(), coating_model.get_radius(), r_part);
+
+            // For debugging: write positions of interface particles
+            std::vector<Eigen::Vector3d> interface_particle_xs(coating_model.get_interface_particles().size());
+            for (long i = 0; i < interface_particle_xs.size(); i ++) {
+                interface_particle_xs[i] = system.get_x()[coating_model.get_interface_particles()[i]];
+            }
+            std::stringstream interface_particle_dump_name;
+            interface_particle_dump_name << "run/interface_particles_" << n / dump_period;
+            dump_particles(interface_particle_dump_name.str(), interface_particle_xs, r_part);
+
         }
 
+        coating_model.set_time(n * dt);
+        coating_model.updateCOM(system.get_x());
+        coating_model.update_interface_particles(system.get_x());
         system.do_step(dt);
         break_strained_necks(aggregate_model, system.get_x(), k_n_bond, k_t_bond, k_r_bond, k_o_bond, e_crit, r_part);
     }

@@ -42,9 +42,9 @@
     <!-- Aggregate rotation about z axis (degrees) -->
     <let id="rot_z" type="real">0.0</let>
     <!-- Aggregate file type -->
-    <let id="aggregate_type" type="string">mackowski</let>
+    <let id="aggregate_type" type="string">vtk</let>
     <!-- Aggregate file path -->
-    <let id="aggregate_path" type="path">example_aggregate.txt</let>
+    <let id="aggregate_path" type="path">example_aggregate.vtk</let>
     <!-- Number of overlap removal iterations -->
     <let id="n_overlap_iter" type="integer">10000</let>
 
