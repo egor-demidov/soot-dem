@@ -99,7 +99,7 @@ struct sphere_coating_functor {
             field_value_t total_force = field_zero;
 
             // find force acting on particle from all other particles in sphere
-            for (long j = 0; j < interface_particles.size(); ++j) {
+            for (long j : interface_particles) {
                 if (j != i) {
                     field_value_t distance = x[j] - x[i];
                     real_t distance_magnitude = distance.norm();
@@ -138,7 +138,7 @@ struct sphere_coating_functor {
 
         for (int i = 0; i < particle_positions.size(); i++) {
             if (abs((particle_positions[i] - com_current).norm() - current_radius) < r_part) {
-                interface_particles.push_back(particle_positions[i]);
+                interface_particles.push_back(i);
                 interface_particles_active[i] = true;
             }
         }
@@ -152,13 +152,17 @@ struct sphere_coating_functor {
         return com_current;
     }
 
+    std::vector<long> const & get_interface_particles() const {
+        return interface_particles;
+    }
+
 private:
     const real_t magnitude, mass, r_part, t_tot;
     const field_value_t field_zero;
     real_t initial_radius;
     real_t shrink_rate;
     std::vector<field_value_t> initial_position;
-    std::vector<field_value_t> interface_particles;
+    std::vector<long> interface_particles;
     std::vector<bool> interface_particles_active;
     mutable real_t current_time = 0.0;
     mutable field_value_t com_current;

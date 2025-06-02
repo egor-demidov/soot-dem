@@ -159,6 +159,16 @@ int main(int argc, const char ** argv) {
                            system.get_omega(), system.get_alpha(), r_part);
             dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part);
             dump_sphere("run", n / dump_period, coating_model.get_COM(), coating_model.get_radius(), r_part);
+
+            // For debugging: write positions of interface particles
+            std::vector<Eigen::Vector3d> interface_particle_xs(coating_model.get_interface_particles().size());
+            for (long i = 0; i < interface_particle_xs.size(); i ++) {
+                interface_particle_xs[i] = system.get_x()[coating_model.get_interface_particles()[i]];
+            }
+            std::stringstream interface_particle_dump_name;
+            interface_particle_dump_name << "run/interface_particles_" << n / dump_period;
+            dump_particles(interface_particle_dump_name.str(), interface_particle_xs, r_part);
+
         }
 
         coating_model.set_time(n * dt);
