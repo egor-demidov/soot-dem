@@ -67,12 +67,12 @@ struct sphere_coating_functor {
         for (const auto& xi : initial_position) {
             sum += xi;
         }
-        field_value_t com = sum / static_cast<real_t>(initial_position.size());
+        com_current = sum / static_cast<real_t>(initial_position.size());
 
         // Compute initial radius (max distance from COM)
         initial_radius = 0.0;
         for (const auto& xi : initial_position) {
-            real_t dist = (xi - com).norm();
+            real_t dist = (xi - com_current).norm();
             if (dist > initial_radius) {
                 initial_radius = dist;
             }
