@@ -78,6 +78,14 @@ struct sphere_coating_functor {
             }
         }
 
+        //move sphere
+
+        Eigen::Vector3d vec;
+        vec << -0.1, 1.0, 0.0;
+        vec *= initial_radius*1.45;
+
+        com_current += vec;
+
         // Compute shrinking velocity
         shrink_rate = initial_radius / t_tot;
     }

@@ -172,7 +172,7 @@ int main(int argc, const char ** argv) {
         }
 
         coating_model.set_time(n * dt);
-        coating_model.updateCOM(system.get_x());
+        //coating_model.updateCOM(system.get_x());
         coating_model.update_interface_particles(system.get_x());
         system.do_step(dt);
         break_strained_necks(aggregate_model, system.get_x(), k_n_bond, k_t_bond, k_r_bond, k_o_bond, e_crit, r_part);
