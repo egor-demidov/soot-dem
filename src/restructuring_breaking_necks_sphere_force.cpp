@@ -102,6 +102,7 @@ int main(int argc, const char ** argv) {
     const double f_coat_max = get_real_parameter(parameter_store, "f_coat_max");
     // const double f_coat_cutoff = get_real_parameter(parameter_store, "f_coat_cutoff");
     // const double f_coat_drop_rate = get_real_parameter(parameter_store, "f_coat_drop_rate");
+    const double drag_coefficient = get_real_parameter(parameter_store, "drag_coefficient");
 
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
@@ -128,7 +129,7 @@ int main(int argc, const char ** argv) {
             d_crit, A, h0, x0, x0.size(),
             r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0};
 
-    coating_model_t coating_model(f_coat_max, mass, Eigen::Vector3d::Zero(), r_part, x0, t_tot);
+    coating_model_t coating_model(f_coat_max, mass, Eigen::Vector3d::Zero(), r_part, x0, drag_coefficient, t_tot);
 
     binary_force_container_t binary_force_functors {aggregate_model};
 
@@ -172,7 +173,7 @@ int main(int argc, const char ** argv) {
         }
 
         coating_model.set_time(n * dt);
-        //coating_model.updateCOM(system.get_x());
+        coating_model.updateCOM(system.get_x());
         coating_model.update_interface_particles(system.get_x());
         system.do_step(dt);
         break_strained_necks(aggregate_model, system.get_x(), k_n_bond, k_t_bond, k_r_bond, k_o_bond, e_crit, r_part);
