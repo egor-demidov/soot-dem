@@ -129,7 +129,7 @@ int main(int argc, const char ** argv) {
             d_crit, A, h0, x0, x0.size(),
             r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0};
 
-    coating_model_t coating_model(f_coat_max, mass, Eigen::Vector3d::Zero(), r_part, x0, drag_coefficient, t_tot);
+    coating_model_t coating_model(f_coat_max, mass, Eigen::Vector3d::Zero(), r_part, x0, drag_coefficient, t_tot, dt, mass*10);
 
     binary_force_container_t binary_force_functors {aggregate_model};
 
@@ -159,7 +159,7 @@ int main(int argc, const char ** argv) {
                            system.get_v(), system.get_a(),
                            system.get_omega(), system.get_alpha(), r_part);
             dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part);
-            dump_sphere("run", n / dump_period, coating_model.get_COM(), coating_model.get_radius(), r_part);
+            dump_sphere("run", n / dump_period, coating_model.get_center(), coating_model.get_radius(), r_part);
 
             // For debugging: write positions of interface particles
             std::vector<Eigen::Vector3d> interface_particle_xs(coating_model.get_interface_particles().size());
@@ -173,7 +173,7 @@ int main(int argc, const char ** argv) {
         }
 
         coating_model.set_time(n * dt);
-        coating_model.updateCOM(system.get_x());
+        coating_model.update_center(system.get_x(), system.get_v());
         coating_model.update_interface_particles(system.get_x());
         system.do_step(dt);
         break_strained_necks(aggregate_model, system.get_x(), k_n_bond, k_t_bond, k_r_bond, k_o_bond, e_crit, r_part);

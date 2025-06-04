@@ -59,32 +59,32 @@ private:
 
 template <typename field_value_t, typename real_t>
 struct sphere_coating_functor {
-    sphere_coating_functor(real_t magnitude, real_t mass, field_value_t field_zero, real_t particle_radius, std::vector<field_value_t> const & initial_position, real_t drag_coefficient, real_t total_time)
-        : magnitude{magnitude}, mass{mass}, r_part{particle_radius}, t_tot{total_time}, drag_coefficient(drag_coefficient), field_zero{field_zero}, initial_position(initial_position)
+    sphere_coating_functor(real_t magnitude, real_t mass, field_value_t field_zero, real_t particle_radius, std::vector<field_value_t> const & initial_position, real_t drag_coefficient, real_t total_time, real_t dt, real_t sphere_mass)
+        : magnitude{magnitude}, mass{mass}, r_part{particle_radius}, t_tot{total_time}, drag_coefficient(drag_coefficient), dt(dt), sphere_mass(sphere_mass), field_zero{field_zero}, initial_position(initial_position)
     {
         // Compute initial center of mass
         field_value_t sum = field_value_t::Zero();
         for (const auto& xi : initial_position) {
             sum += xi;
         }
-        com_current = sum / static_cast<real_t>(initial_position.size());
+        current_center = sum / static_cast<real_t>(initial_position.size());
 
         // Compute initial radius (max distance from COM)
         initial_radius = 0.0;
         for (const auto& xi : initial_position) {
-            real_t dist = (xi - com_current).norm();
+            real_t dist = (xi - current_center).norm();
             if (dist > initial_radius) {
                 initial_radius = dist;
             }
         }
 
-        //move sphere
+        //shift sphere
 
-        //Eigen::Vector3d vec;
-        //vec << -0.1, 1.0, 0.0;
-        //vec *= initial_radius*1.45;
+        Eigen::Vector3d vec;
+        vec << -0.1, 1.0, 0.0;
+        vec *= initial_radius*1.45;
 
-        //com_current += vec;
+        current_center += vec;
 
         // Compute shrinking velocity
         shrink_rate = initial_radius / t_tot;
@@ -106,9 +106,9 @@ struct sphere_coating_functor {
 
             field_value_t total_force = field_zero;
 
-            field_value_t difference = com_current - x[i];
+            field_value_t difference = current_center - x[i];
             field_value_t r = difference / difference.norm();
-            field_value_t relative_velocity = shrink_rate * r - (v[i].dot(r))*r;
+            field_value_t relative_velocity = shrink_rate * r - (v[i].dot(r))*r + sphere_velocity;
 
             total_force += relative_velocity * drag_coefficient;
 
@@ -136,12 +136,23 @@ struct sphere_coating_functor {
     }
 
     // update center of mass
-    void updateCOM(std::vector<field_value_t> particlePos) {
-        field_value_t sum = field_value_t::Zero();
-        for (const auto& xi : particlePos) {
-            sum += xi;
+    void update_center(std::vector<field_value_t> const & particlePos, std::vector<field_value_t> const & v) {
+        field_value_t net_force = field_value_t::Zero();
+        for (long i : interface_particles) {
+            field_value_t difference = current_center - particlePos[i];
+            field_value_t r = difference / difference.norm();
+            field_value_t relative_velocity = shrink_rate * r - (v[i].dot(r))*r + sphere_velocity;
+
+            net_force -= relative_velocity * drag_coefficient;
         }
-        com_current = sum / static_cast<real_t>(particlePos.size());
+
+        field_value_t a = net_force/sphere_mass;
+
+        //update center of sphere
+        current_center += sphere_velocity*dt + 0.5*a*dt*dt;
+
+        //update sphere velocity
+        sphere_velocity += a*dt;
     }
 
     // check which particles are on the sphere and add them to the vector; also activate them in the bool vector
@@ -151,7 +162,7 @@ struct sphere_coating_functor {
         real_t current_radius = get_radius();
 
         for (int i = 0; i < particle_positions.size(); i++) {
-            if (abs((particle_positions[i] - com_current).norm() - current_radius) < r_part) {
+            if (abs((particle_positions[i] - current_center).norm() - current_radius) < r_part) {
                 interface_particles.push_back(i);
                 interface_particles_active[i] = true;
             }
@@ -162,8 +173,8 @@ struct sphere_coating_functor {
         return std::max(initial_radius - shrink_rate * current_time, 0.0);
     }
 
-    field_value_t get_COM() {
-        return com_current;
+    field_value_t get_center() {
+        return current_center;
     }
 
     std::vector<long> const & get_interface_particles() const {
@@ -171,7 +182,7 @@ struct sphere_coating_functor {
     }
 
 private:
-    const real_t magnitude, mass, r_part, t_tot, drag_coefficient;
+    const real_t magnitude, mass, r_part, t_tot, drag_coefficient, dt, sphere_mass;
     const field_value_t field_zero;
     real_t initial_radius;
     real_t shrink_rate;
@@ -179,7 +190,7 @@ private:
     std::vector<long> interface_particles;
     std::vector<bool> interface_particles_active;
     mutable real_t current_time = 0.0;
-    mutable field_value_t com_current;
+    mutable field_value_t current_center, sphere_velocity = field_zero;
 };
 
 #endif //SOOT_AFM_COATING_FORCE_H
