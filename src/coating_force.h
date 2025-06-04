@@ -59,8 +59,8 @@ private:
 
 template <typename field_value_t, typename real_t>
 struct sphere_coating_functor {
-    sphere_coating_functor(real_t magnitude, real_t mass, field_value_t field_zero, real_t particle_radius, std::vector<field_value_t> const & initial_position, real_t total_time)
-        : magnitude{magnitude}, mass{mass}, r_part{particle_radius}, t_tot{total_time}, field_zero{field_zero}, initial_position(initial_position)
+    sphere_coating_functor(real_t magnitude, real_t mass, field_value_t field_zero, real_t particle_radius, std::vector<field_value_t> const & initial_position, real_t drag_coefficient, real_t total_time)
+        : magnitude{magnitude}, mass{mass}, r_part{particle_radius}, t_tot{total_time}, drag_coefficient(drag_coefficient), field_zero{field_zero}, initial_position(initial_position)
     {
         // Compute initial center of mass
         field_value_t sum = field_value_t::Zero();
@@ -77,6 +77,14 @@ struct sphere_coating_functor {
                 initial_radius = dist;
             }
         }
+
+        //move sphere
+
+        //Eigen::Vector3d vec;
+        //vec << -0.1, 1.0, 0.0;
+        //vec *= initial_radius*1.45;
+
+        //com_current += vec;
 
         // Compute shrinking velocity
         shrink_rate = initial_radius / t_tot;
@@ -97,6 +105,12 @@ struct sphere_coating_functor {
         if (interface_particles_active[i]) {
 
             field_value_t total_force = field_zero;
+
+            field_value_t difference = com_current - x[i];
+            field_value_t r = difference / difference.norm();
+            field_value_t relative_velocity = shrink_rate * r - (v[i].dot(r))*r;
+
+            total_force += relative_velocity * drag_coefficient;
 
             // find force acting on particle from all other particles in sphere
             for (long j : interface_particles) {
@@ -157,7 +171,7 @@ struct sphere_coating_functor {
     }
 
 private:
-    const real_t magnitude, mass, r_part, t_tot;
+    const real_t magnitude, mass, r_part, t_tot, drag_coefficient;
     const field_value_t field_zero;
     real_t initial_radius;
     real_t shrink_rate;
