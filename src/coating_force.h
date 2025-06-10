@@ -239,17 +239,17 @@ struct hemisphere_coating_model_t {
             total_force += relative_velocity * drag_coefficient;
 
             // find force acting on particle from all other particles in sphere
-            for (long j : interface_particles) {
-                if (j != i) {
-                    field_value_t distance = x[j] - x[i];
-                    real_t distance_magnitude = distance.norm();
+            // for (long j : interface_particles) {
+            //     if (j != i) {
+            //         field_value_t distance = x[j] - x[i];
+            //         real_t distance_magnitude = distance.norm();
 
-                    field_value_t n = distance / distance_magnitude;
-                    field_value_t f = magnitude * n;
+            //         field_value_t n = distance / distance_magnitude;
+            //         field_value_t f = magnitude * n;
 
-                    total_force += f;
-                }
-            }
+            //         total_force += f;
+            //     }
+            // }
 
             return std::make_pair(total_force / mass, field_zero);
         }
