@@ -98,6 +98,11 @@ int main(int argc, const char ** argv) {
     const double A = get_real_parameter(parameter_store, "A");
     const double h0 = get_real_parameter(parameter_store, "h0");
 
+    // Parameters for random neck distribution
+    const double mean_neck_width = get_real_parameter(parameter_store, "mean_neck_strength");
+    const double std_neck_width = get_real_parameter(parameter_store, "std_neck_strength");
+    const double neck_strength_constant = get_real_parameter(parameter_store, "neck_strength_constant");
+
     // Parameters for the coating model
     const double f_coat_max = get_real_parameter(parameter_store, "f_coat_max");
     // const double f_coat_cutoff = get_real_parameter(parameter_store, "f_coat_cutoff");
@@ -148,6 +153,19 @@ int main(int argc, const char ** argv) {
 
     std::filesystem::create_directory("run");
 
+    // assigning neck strengths with a random normal distribution
+    std::normal_distribution neck_width_dist{mean_neck_width, std_neck_width};
+    std::vector<double> neck_strengths;
+    std::vector<bool> bonded_contacts = aggregate_model.get_bonded_contacts();
+
+    int num_necks = std::count(bonded_contacts.begin(), bonded_contacts.end(), true);
+
+    neck_strengths.resize(num_necks);
+    for (long i = 0; i < num_necks; i++) {
+        double neck_width = neck_width_dist(get_random_engine());
+        neck_strengths[i] = neck_strength_constant * neck_width * neck_width;
+    }
+
     for (long n = 0; n < n_steps; n ++) {
         if (n % neighbor_update_period == 0) {
             system.update_neighbor_list();
@@ -176,7 +194,7 @@ int main(int argc, const char ** argv) {
         coating_model.updateCOM(system.get_x());
         coating_model.update_interface_particles(system.get_x());
         system.do_step(dt);
-        break_strained_necks(aggregate_model, system.get_x(), k_n_bond, k_t_bond, k_r_bond, k_o_bond, e_crit, r_part);
+        break_strained_necks(aggregate_model, system.get_x(), k_n_bond, k_t_bond, k_r_bond, k_o_bond, neck_strengths, r_part);
     }
 
     return 0;
