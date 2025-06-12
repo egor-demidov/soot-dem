@@ -49,7 +49,7 @@ add_compile_definitions("COMPILER_STRING=\"${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_
 add_compile_definitions("SYSTEM_STRING=\"${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_VERSION}\"")
 
 set(CMAKE_UTIL_SOURCES src/random_engine.cpp src/writer.cpp src/energy.cpp src/reader.cpp
-        src/break_neck.cpp src/aggregate_stats.cpp
+        src/break_neck.cpp src/aggregate_stats.cpp src/convexity.cpp
         src/parameter_loader.cpp src/io_common.cpp deps/tinyxml2/tinyxml2.cpp)
 
 add_executable(aggregate_deposition src/aggregate_deposition.cpp ${CMAKE_UTIL_SOURCES})
@@ -92,3 +92,7 @@ target_link_libraries(06_sintering ${LIBRARY_LIST})
 target_link_libraries(07_sintering ${LIBRARY_LIST})
 target_link_libraries(08_sintering ${LIBRARY_LIST})
 target_link_libraries(09_sintering ${LIBRARY_LIST})
+
+
+### Experiemntal
+add_executable(test_convexity src/convexity_test.cpp src/convexity.cpp)
