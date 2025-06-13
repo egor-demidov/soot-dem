@@ -103,6 +103,9 @@ int main(int argc, const char ** argv) {
     const double std_neck_width = get_real_parameter(parameter_store, "std_neck_strength");
     const double neck_strength_constant = get_real_parameter(parameter_store, "neck_strength_constant");
 
+    // Neck Path
+    bool has_necks_path = has_path_parameter(parameter_store, "necks_path");
+
     // Parameters for the coating model
     const double f_coat_max = get_real_parameter(parameter_store, "f_coat_max");
     // const double f_coat_cutoff = get_real_parameter(parameter_store, "f_coat_cutoff");
@@ -133,6 +136,19 @@ int main(int argc, const char ** argv) {
             k_o_bond, gamma_o_bond,
             d_crit, A, h0, x0, x0.size(),
             r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0};
+
+    // Load necks if path to necks has been passes
+    if (has_necks_path) {
+        const std::filesystem::path necks_path = get_path_parameter(parameter_store, "necks_path");
+
+        auto bonded_contacts = load_necks(necks_path, x0.size());
+
+        aggregate_model.get_bonded_contacts() = bonded_contacts;
+
+        size_t n_necks = std::count(aggregate_model.get_bonded_contacts().begin(),
+                                    aggregate_model.get_bonded_contacts().end(), true) / 2;
+        std::cout << "Loaded necks " << n_necks << " from file" << std::endl;
+    }
 
     coating_model_t coating_model(f_coat_max, mass, Eigen::Vector3d::Zero(), r_part, x0, drag_coefficient, t_tot);
 

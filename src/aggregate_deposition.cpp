@@ -16,6 +16,7 @@
 #include "rect_substrate.h"
 #include "aggregate.h"
 #include "writer.h"
+#include "reader.h"
 #include "energy.h"
 #include "io_common.h"
 
@@ -141,6 +142,9 @@ int main(int argc, const char ** argv) {
             {-substrate_size / 2.0, substrate_size / 2.0, 0.0}
     };
 
+    // Neck Path
+    bool has_necks_path = has_path_parameter(parameter_store, "necks_path");
+
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
 
@@ -195,6 +199,20 @@ int main(int argc, const char ** argv) {
         k_o_bond, gamma_o_bond,
           d_crit, A, h0, x0, x0.size(),
           r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0};
+
+
+    // Load necks if path to necks has been passes
+    if (has_necks_path) {
+        const std::filesystem::path necks_path = get_path_parameter(parameter_store, "necks_path");
+
+        auto bonded_contacts = load_necks(necks_path, x0.size());
+
+        aggregate_model.get_bonded_contacts() = bonded_contacts;
+
+        size_t n_necks = std::count(aggregate_model.get_bonded_contacts().begin(),
+                                    aggregate_model.get_bonded_contacts().end(), true) / 2;
+        std::cout << "Loaded necks " << n_necks << " from file" << std::endl;
+    }
 
     // Create an instance of rectangular substrate model
     rect_substrate_model_t substrate_model {substrate_vertices, x0.size(), k_n_substrate, gamma_n_substrate, k_t_substrate,
