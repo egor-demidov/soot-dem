@@ -60,6 +60,7 @@ add_executable(aggregation src/aggregation.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(anchored_restructuring src/anchored_restructuring.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(restructuring_breaking_necks src/restructuring_breaking_necks.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(restructuring_breaking_necks_sphere_force src/restructuring_breaking_necks_sphere_force.cpp ${CMAKE_UTIL_SOURCES})
+add_executable(anchored_restructuring_breaking_necks_sphere_force src/anchored_restructuring_breaking_necks_sphere_force.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(mechanics_testing src/mechanics_testing.cpp ${CMAKE_UTIL_SOURCES})
 
 # VALIDATION EXECUTABLES
@@ -81,6 +82,7 @@ target_link_libraries(aggregation ${LIBRARY_LIST})
 target_link_libraries(anchored_restructuring ${LIBRARY_LIST})
 target_link_libraries(restructuring_breaking_necks ${LIBRARY_LIST})
 target_link_libraries(restructuring_breaking_necks_sphere_force ${LIBRARY_LIST})
+target_link_libraries(anchored_restructuring_breaking_necks_sphere_force ${LIBRARY_LIST})
 target_link_libraries(mechanics_testing ${LIBRARY_LIST})
 
 target_link_libraries(01_particles_colliding ${LIBRARY_LIST})

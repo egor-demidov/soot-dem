@@ -98,6 +98,13 @@ int main(int argc, const char ** argv) {
     const double A = get_real_parameter(parameter_store, "A");
     const double h0 = get_real_parameter(parameter_store, "h0");
 
+    // Neck Path
+    bool has_necks_path = has_path_parameter(parameter_store, "necks_path");
+
+    // Neck strength
+    bool has_neck_strength_parameters = has_real_parameter(parameter_store, "mean_neck_strength") && has_real_parameter(parameter_store, "std_neck_strength") && has_real_parameter(parameter_store, "neck_strength_constant");
+
+
     // Parameters for the coating model
     const double f_coat_max = get_real_parameter(parameter_store, "f_coat_max");
     const double f_coat_cutoff = get_real_parameter(parameter_store, "f_coat_cutoff");
@@ -127,6 +134,25 @@ int main(int argc, const char ** argv) {
             k_o_bond, gamma_o_bond,
             d_crit, A, h0, x0, x0.size(),
             r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0};
+            
+    // Load necks if path to necks has been passes or send errors is no neck parameters passes or both
+    if(has_necks_path && has_neck_strength_parameters){
+        std::cerr << "Both `necks_path` and `neck strength parameters` were provided, but are mutually exclusive" << std::endl;
+        exit(EXIT_FAILURE);
+    }else if(!has_necks_path && !has_neck_strength_parameters){
+        std::cerr << "Either `necks_path` or `neck strength parameters` must be provided for this simulation type" << std::endl;
+        exit(EXIT_FAILURE);
+    }else if (has_necks_path) {
+        const std::filesystem::path necks_path = get_path_parameter(parameter_store, "necks_path");
+
+        auto bonded_contacts = load_necks(necks_path, x0.size());
+
+        aggregate_model.get_bonded_contacts() = bonded_contacts;
+
+        size_t n_necks = std::count(aggregate_model.get_bonded_contacts().begin(),
+                                    aggregate_model.get_bonded_contacts().end(), true) / 2;
+        std::cout << "Loaded necks " << n_necks << " from file" << std::endl;
+    }
 
     coating_model_t coating_model(f_coat_cutoff, f_coat_max, f_coat_drop_rate, mass, Eigen::Vector3d::Zero());
 
@@ -147,6 +173,35 @@ int main(int argc, const char ** argv) {
 
     std::filesystem::create_directory("run");
 
+    // assigning neck strengths with a random normal distribution
+    std::vector<double> neck_strengths;
+    
+    if(has_necks_path){
+        const std::filesystem::path necks_path = get_path_parameter(parameter_store, "necks_path");
+        neck_strengths = load_neck_strengths(necks_path);
+
+        for(int i = 0; i < neck_strengths.size(); i++){
+            std::cout << neck_strengths[i] << " ";
+        }
+        std::cout << std::endl;
+    }else{
+        // Parameters for random neck distribution
+        const double mean_neck_width = get_real_parameter(parameter_store, "mean_neck_strength");
+        const double std_neck_width = get_real_parameter(parameter_store, "std_neck_strength");
+        const double neck_strength_constant = get_real_parameter(parameter_store, "neck_strength_constant");
+
+        std::normal_distribution neck_width_dist{mean_neck_width, std_neck_width};
+        std::vector<bool> bonded_contacts = aggregate_model.get_bonded_contacts();
+
+        int num_necks = std::count(bonded_contacts.begin(), bonded_contacts.end(), true)/2;
+
+        neck_strengths.resize(num_necks);
+        for (long i = 0; i < num_necks; i++) {
+            double neck_width = neck_width_dist(get_random_engine());
+            neck_strengths[i] = neck_strength_constant * neck_width * neck_width;
+        }
+    }
+
     for (long n = 0; n < n_steps; n ++) {
         if (n % neighbor_update_period == 0) {
             system.update_neighbor_list();
@@ -157,11 +212,11 @@ int main(int argc, const char ** argv) {
             dump_particles("run", n / dump_period, system.get_x(),
                            system.get_v(), system.get_a(),
                            system.get_omega(), system.get_alpha(), r_part);
-            dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part);
+            dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part, neck_strengths);
         }
 
         system.do_step(dt);
-        break_strained_necks(aggregate_model, system.get_x(), k_n_bond, k_t_bond, k_r_bond, k_o_bond, e_crit, r_part);
+        break_strained_necks(aggregate_model, system.get_x(), k_n_bond, k_t_bond, k_r_bond, k_o_bond, neck_strengths, r_part);
     }
 
     return 0;

@@ -123,3 +123,36 @@ std::vector<bool> load_necks(std::filesystem::path const & path, size_t n_part) 
 
     return bonded_contacts;
 }
+
+std::vector<double> load_neck_strengths(std::filesystem::path const & path) {
+    std::ifstream ifs(path);
+
+    if (!ifs.good()) {
+        std::cerr << "Unable to read the necks file: " << path << std::endl;
+        return {};
+    }
+
+    std::string _;
+    size_t neck_count = 0;
+
+    std::getline(ifs, _);
+    std::getline(ifs, _);
+    std::getline(ifs, _);
+    std::getline(ifs, _);
+    ifs >> _ >> neck_count >> _;
+
+    // Find the line starting with "strengths"
+    while (std::getline(ifs, _)) {
+        if (_.rfind("strengths", 0) == 0) {
+            break;
+        }
+    }
+
+    // Read strength values
+    std::vector<double> strengths(neck_count);
+    for (size_t i = 0; i < neck_count; ++i) {
+        ifs >> strengths[i];
+    }
+
+    return strengths;
+}

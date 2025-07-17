@@ -135,6 +135,63 @@ void populate_node_indices(AggregateGraph & graph, std::vector<GraphEdge> const 
     }
 }
 
+bool node_in_edges(int index, std::vector<GraphEdge> const & edges) {
+    for (auto [i, j] : edges) {
+        if (index == i || index == j) return true;
+    }
+    return false;
+}
+
+std::vector<AggregateGraph> find_aggregates(std::vector<Eigen::Vector3d> const & x, double r_part, double d_crit) {
+    // Build graphs of aggregates to write them out separately
+
+    std::vector<AggregateGraph> graphs;
+    std::vector<GraphEdge> edges;
+
+    for (int i = 0; i < x.size() - 1; i ++) {
+        // Iterate over neighbors
+        for (int j = i+1; j < x.size(); j ++) {
+            Eigen::Vector3d distance = x[j] - x[i];
+            if (sqrt(distance.dot(distance)) - 2.0 * r_part > d_crit)
+                continue;
+
+            // Create an edge
+            edges.emplace_back(i, j);
+        }
+    }
+
+    std::vector<bool> visited_edges(edges.size(), false);
+
+    // Iterate over edges
+    for (int k = 0; k < edges.size(); k ++) {
+        if (visited_edges[k])
+            continue;
+
+        // Mark as visited
+        visited_edges[k] = true;
+
+        AggregateGraph graph;
+        graph.edgeIndices.emplace_back(k);
+        recursive_edge_traversal(graph, visited_edges, edges);
+        graphs.emplace_back(graph);
+    }
+
+    for (auto & graph : graphs) {
+        populate_node_indices(graph, edges);
+    }
+
+    // Find and add single-monomer aggregates
+    for (size_t i = 0; i < x.size(); i ++) {
+        if (!node_in_edges(i, edges)) {
+            std::vector<int> edgeIndices, nodeIndices = {int(i)};
+            AggregateGraph graph {edgeIndices, nodeIndices};
+            graphs.emplace_back(graph);
+        }
+    }
+
+    return graphs;
+}
+
 int main(int argc, char ** argv) {
     if (argc < 2) {
         std::cerr << "Path to the input file must be provided as an argument" << std::endl;
@@ -247,6 +304,8 @@ int main(int argc, char ** argv) {
 
     std::filesystem::create_directory("run");
 
+    bool oneAggregate = false;
+
     for (long n = 0; n < n_steps; n ++) {
         if (n % neighbor_update_period == 0) {
             system.update_neighbor_list();
@@ -257,11 +316,21 @@ int main(int argc, char ** argv) {
             dump_particles("run", n / dump_period, system.get_x(),
                            system.get_v(), system.get_a(),
                            system.get_omega(), system.get_alpha(), r_part);
+
+            if(find_aggregates(system.get_x(), r_part, d_crit).size() == 1){
+                oneAggregate = true;
+                break;
+            }
         }
 
         system.do_step(dt);
 
         bounce_off_walls(system.get_x(), system.get_v(), r_part, box_size);
+    }
+
+    if(!oneAggregate){
+        std::cerr << "Aggregation incomplete! More than one aggregate remains!" << std::endl;
+        exit(EXIT_FAILURE);
     }
 
     // Build graphs of aggregates to write them out separately
@@ -314,6 +383,8 @@ int main(int argc, char ** argv) {
 
         dump_particles(name, aggregate, r_part);
     }
+
+    std::cout << "radius of gyration: "<< r_gyration(system.get_x()) << std::endl;
 
     return 0;
 }
