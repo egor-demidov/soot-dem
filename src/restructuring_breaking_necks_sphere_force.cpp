@@ -102,7 +102,7 @@ int main(int argc, const char ** argv) {
     bool has_necks_path = has_path_parameter(parameter_store, "necks_path");
 
     // Neck strength
-    bool has_neck_strength_parameters = has_real_parameter(parameter_store, "mean_neck_strength") && has_real_parameter(parameter_store, "std_neck_strength") && has_real_parameter(parameter_store, "neck_strength_constant");
+    bool has_neck_strength_parameters = has_real_parameter(parameter_store, "mean_neck_radius") && has_real_parameter(parameter_store, "std_neck_radius") && has_real_parameter(parameter_store, "neck_strength_constant");
 
     // Parameters for the coating model
     const double f_coat_max = get_real_parameter(parameter_store, "f_coat_max");
@@ -186,8 +186,8 @@ int main(int argc, const char ** argv) {
         std::cout << std::endl;
     }else{
         // Parameters for random neck distribution
-        const double mean_neck_width = get_real_parameter(parameter_store, "mean_neck_strength");
-        const double std_neck_width = get_real_parameter(parameter_store, "std_neck_strength");
+        const double mean_neck_width = get_real_parameter(parameter_store, "mean_neck_radius");
+        const double std_neck_width = get_real_parameter(parameter_store, "std_neck_radius");
         const double neck_strength_constant = get_real_parameter(parameter_store, "neck_strength_constant");
 
         std::normal_distribution neck_width_dist{mean_neck_width, std_neck_width};
