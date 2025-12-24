@@ -20,6 +20,15 @@ public:
                      typename field_container_t::const_iterator theta_begin_itr [[maybe_unused]],
                      typename field_container_t::const_iterator omega_begin_itr [[maybe_unused]],
                      typename field_container_t::const_iterator alpha_begin_itr [[maybe_unused]]) const {}
+
+    void increment_omega(long n,
+                     field_value_t const & dx [[maybe_unused]],
+                     typename field_container_t::iterator x_begin_itr [[maybe_unused]],
+                     typename field_container_t::const_iterator v_begin_itr [[maybe_unused]],
+                     typename field_container_t::const_iterator a_begin_itr [[maybe_unused]],
+                     typename field_container_t::const_iterator theta_begin_itr [[maybe_unused]],
+                     typename field_container_t::const_iterator omega_begin_itr [[maybe_unused]],
+                     typename field_container_t::const_iterator alpha_begin_itr [[maybe_unused]]) const {}
 };
 
 #endif //MECHANICAL_TESTING_STEP_HANDLER_H
