@@ -32,66 +32,7 @@ struct filling_angle_coating_functor {
         long n_particles = x0.size();
         angle_lists.resize(n_particles);
 
-        // Iterate over triplets
-        for (long i = 0; i < n_particles - 2; i ++) {
-            for (long j = i + 1; j < n_particles - 1; j ++) {
-                for (long k = j + 1; k < n_particles; k ++) {
-
-                    real_t d_ij = (x0[i] - x0[j]).norm() - 2.0 * r_part;
-                    real_t d_ik = (x0[i] - x0[k]).norm() - 2.0 * r_part;
-                    real_t d_jk = (x0[j] - x0[k]).norm() - 2.0 * r_part;
-
-                    if (d_ij < d_crit && d_ik < d_crit) {
-                        // Create angle jik...
-                        field_value_t ij = (x0[j] - x0[i]).normalized();
-                        field_value_t ik = (x0[k] - x0[i]).normalized();
-                        real_t alpha = acos(ij.dot(ik));
-                        angles.push_back(angle{j, i, k, alpha});
-
-                        // assert(std::prev(angles.crend())->i == j);
-                        // assert(std::prev(angles.crend())->j == i);
-                        // assert(std::prev(angles.crend())->k == k);
-
-                        // Add reference to this angle to non-central particles
-                        angle_lists[j].push_back(std::prev(angles.cend()));
-                        angle_lists[k].push_back(std::prev(angles.cend()));
-                    }
-
-                    if (d_ij < d_crit && d_jk < d_crit) {
-                        // Create angle ijk...
-                        field_value_t ji = (x0[i] - x0[j]).normalized();
-                        field_value_t jk = (x0[k] - x0[j]).normalized();
-                        real_t alpha = acos(ji.dot(jk));
-                        angles.push_back(angle{i, j, k, alpha});
-
-                        // assert(std::prev(angles.crend())->i == i);
-                        // assert(std::prev(angles.crend())->j == j);
-                        // assert(std::prev(angles.crend())->k == k);
-
-                        // Add reference to this angle to non-central particles
-                        angle_lists[i].push_back(std::prev(angles.cend()));
-                        angle_lists[k].push_back(std::prev(angles.cend()));
-                    }
-
-                    if (d_ik < d_crit && d_jk < d_crit) {
-                        // Create angle ikj...
-                        field_value_t ki = (x0[i] - x0[k]).normalized();
-                        field_value_t kj = (x0[j] - x0[k]).normalized();
-                        real_t alpha = acos(ki.dot(kj));
-                        angles.push_back(angle{i, k, j, alpha});
-
-                        // assert(std::prev(angles.crend())->i == i);
-                        // assert(std::prev(angles.crend())->j == k);
-                        // assert(std::prev(angles.crend())->k == j);
-
-                        // Add reference to this angle to non-central particles
-                        angle_lists[i].push_back(std::prev(angles.cend()));
-                        angle_lists[j].push_back(std::prev(angles.cend()));
-                    }
-
-                }
-            }
-        }
+        detect_and_update_angles(x0);
 
         // for (auto const & ang : angles) {
         //     std::cout << ang.i << ", " << ang.j << ", " << ang.k << ", " << ang.alpha << std::endl;
@@ -106,10 +47,68 @@ struct filling_angle_coating_functor {
         // }
     }
 
-    // TODO: add function update_angles()
+    void detect_and_update_angles(std::vector<field_value_t> const & x) {
+        // TODO: modify this function to use neighbor lists instead
+
+        std::for_each(angle_lists.begin(), angle_lists.end(), [] (auto & angle_list) {
+            angle_list.clear();
+        });
+        angles.clear();
+
+        long n_particles = x.size();
+
+        // Iterate over triplets
+        for (long i = 0; i < n_particles - 2; i ++) {
+            for (long j = i + 1; j < n_particles - 1; j ++) {
+                for (long k = j + 1; k < n_particles; k ++) {
+
+                    real_t d_ij = (x[i] - x[j]).norm() - 2.0 * r_part;
+                    real_t d_ik = (x[i] - x[k]).norm() - 2.0 * r_part;
+                    real_t d_jk = (x[j] - x[k]).norm() - 2.0 * r_part;
+
+                    if (d_ij < d_crit && d_ik < d_crit) {
+                        // Create angle jik...
+                        field_value_t ij = (x[j] - x[i]).normalized();
+                        field_value_t ik = (x[k] - x[i]).normalized();
+                        real_t alpha = acos(ij.dot(ik));
+                        angles.push_back(angle{j, i, k, alpha});
+
+                        // Add reference to this angle to non-central particles
+                        angle_lists[j].push_back(std::prev(angles.cend()));
+                        angle_lists[k].push_back(std::prev(angles.cend()));
+                    }
+
+                    if (d_ij < d_crit && d_jk < d_crit) {
+                        // Create angle ijk...
+                        field_value_t ji = (x[i] - x[j]).normalized();
+                        field_value_t jk = (x[k] - x[j]).normalized();
+                        real_t alpha = acos(ji.dot(jk));
+                        angles.push_back(angle{i, j, k, alpha});
+
+                        // Add reference to this angle to non-central particles
+                        angle_lists[i].push_back(std::prev(angles.cend()));
+                        angle_lists[k].push_back(std::prev(angles.cend()));
+                    }
+
+                    if (d_ik < d_crit && d_jk < d_crit) {
+                        // Create angle ikj...
+                        field_value_t ki = (x[i] - x[k]).normalized();
+                        field_value_t kj = (x[j] - x[k]).normalized();
+                        real_t alpha = acos(ki.dot(kj));
+                        angles.push_back(angle{i, k, j, alpha});
+
+                        // Add reference to this angle to non-central particles
+                        angle_lists[i].push_back(std::prev(angles.cend()));
+                        angle_lists[j].push_back(std::prev(angles.cend()));
+                    }
+
+                }
+            }
+        }
+    }
 
     void update_angles(std::vector<field_value_t> const & x) {
-        // WARNING: currently new angles are not detected, only angle values are recomputed
+        // WARNING: new angles are not detected, only angle values are recomputed
 
         for (auto & ang : angles) {
             field_value_t ji = (x[ang.i] - x[ang.j]).normalized();

@@ -109,18 +109,19 @@ int main(int argc, const char ** argv) {
     const double f_coat_max = get_real_parameter(parameter_store, "f_coat_max");
     // const double f_coat_cutoff = get_real_parameter(parameter_store, "f_coat_cutoff");
     const double f_coat_drop_rate = get_real_parameter(parameter_store, "f_coat_drop_rate");
+    const double filling_angle = get_real_parameter(parameter_store, "filling_angle");
 
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
 
-    // x0 = load_aggregate(parameter_store);
+    x0 = load_aggregate(parameter_store);
 
-    x0 = {
-        {0.0, 0.0, 0.0},
-        {2.0 * r_part, 0.0, 0.0},
-        {2.0 * r_part, 2.0 * r_part, 0.0},
-        {2.0 * r_part * (1 + sin(M_PI / 4)), 2.0 * r_part * (1.0 + sin(M_PI / 4)), 0.0}
-    };
+    // x0 = {
+        // {0.0, 0.0, 0.0},
+        // {2.0 * r_part, 0.0, 0.0},
+        // {2.0 * r_part, 2.0 * r_part, 0.0},
+        // {2.0 * r_part * (1 + sin(M_PI / 4)), 2.0 * r_part * (1.0 + sin(M_PI / 4)), 0.0}
+    // };
 
     // Fill the remaining buffers with zeros
     v0.resize(x0.size());
@@ -146,10 +147,10 @@ int main(int argc, const char ** argv) {
     if(has_necks_path && has_neck_strength_parameters){
         std::cerr << "Both `necks_path` and neck strength parameters were provided, but are mutually exclusive" << std::endl;
         exit(EXIT_FAILURE);
-    }else if(!has_necks_path && !has_neck_strength_parameters){
+    } else if(!has_necks_path && !has_neck_strength_parameters){
         std::cerr << "Either `necks_path` or neck strength parameters must be provided for this simulation type" << std::endl;
         exit(EXIT_FAILURE);
-    }else if (has_necks_path) {
+    } else if (has_necks_path) {
         const std::filesystem::path necks_path = get_path_parameter(parameter_store, "necks_path");
 
         auto bonded_contacts = load_necks(necks_path, x0.size());
@@ -165,7 +166,7 @@ int main(int argc, const char ** argv) {
         r_part,
         d_crit,
         f_coat_max,
-        80.0,
+        filling_angle,
         f_coat_drop_rate,
         mass,
         Eigen::Vector3d::Zero(),
@@ -220,7 +221,7 @@ int main(int argc, const char ** argv) {
 
     // TODO: REMOVE BEFORE PRODUCTION
     // BREAKS ALL NECKS
-    std::fill(aggregate_model.get_bonded_contacts().begin(), aggregate_model.get_bonded_contacts().end(), false);
+    // std::fill(aggregate_model.get_bonded_contacts().begin(), aggregate_model.get_bonded_contacts().end(), false);
 
     for (long n = 0; n < n_steps; n ++) {
         if (n % neighbor_update_period == 0) {
@@ -236,7 +237,14 @@ int main(int argc, const char ** argv) {
         }
 
         system.do_step(dt);
-        coating_model.update_angles(system.get_x());
+
+        if (n % neighbor_update_period == 0) {
+            coating_model.update_angles(system.get_x());
+            // coating_model.detect_and_update_angles(system.get_x());
+        } else {
+            coating_model.update_angles(system.get_x());
+        }
+
         break_strained_necks(aggregate_model, system.get_x(), k_n_bond, k_t_bond, k_r_bond, k_o_bond, neck_strengths, r_part);
     }
 
