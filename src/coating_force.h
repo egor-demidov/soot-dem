@@ -14,7 +14,7 @@ struct filling_angle_coating_functor {
         real_t r_part,                          // Primary particle radius
         real_t d_crit,                          // Critical separation between particles to consider them neighbors
         real_t magnitude,                       // Magnitude of the attractive force (related to surface tension)
-        real_t filling_angle,                   // Filling angle (corresponds to coating volume)
+        real_t filling_angle,                   // Filling angle in degrees (corresponds to coating volume)
         real_t drop_rate,                       // Smoothness of the sigmoid function
         real_t mass,                            // Mass of primary particle
         field_value_t field_zero,               // Zero vector
@@ -23,7 +23,7 @@ struct filling_angle_coating_functor {
         : r_part{r_part}
         , d_crit{d_crit}
         , magnitude{magnitude}
-        , filling_angle{filling_angle}
+        , filling_angle{filling_angle * M_PI / 180.0}
         , drop_rate{drop_rate}
         , mass {mass}
         , field_zero{field_zero}
@@ -46,11 +46,15 @@ struct filling_angle_coating_functor {
                         field_value_t ij = (x0[j] - x0[i]).normalized();
                         field_value_t ik = (x0[k] - x0[i]).normalized();
                         real_t alpha = acos(ij.dot(ik));
-                        angles.push_back(j, i, k, alpha);
+                        angles.push_back(angle{j, i, k, alpha});
+
+                        // assert(std::prev(angles.crend())->i == j);
+                        // assert(std::prev(angles.crend())->j == i);
+                        // assert(std::prev(angles.crend())->k == k);
 
                         // Add reference to this angle to non-central particles
-                        angle_lists[j] = angles.back();
-                        angle_lists[k] = angles.back();
+                        angle_lists[j].push_back(std::prev(angles.cend()));
+                        angle_lists[k].push_back(std::prev(angles.cend()));
                     }
 
                     if (d_ij < d_crit && d_jk < d_crit) {
@@ -58,11 +62,15 @@ struct filling_angle_coating_functor {
                         field_value_t ji = (x0[i] - x0[j]).normalized();
                         field_value_t jk = (x0[k] - x0[j]).normalized();
                         real_t alpha = acos(ji.dot(jk));
-                        angles.push_back(i, j, k, alpha);
+                        angles.push_back(angle{i, j, k, alpha});
+
+                        // assert(std::prev(angles.crend())->i == i);
+                        // assert(std::prev(angles.crend())->j == j);
+                        // assert(std::prev(angles.crend())->k == k);
 
                         // Add reference to this angle to non-central particles
-                        angle_lists[i] = angles.back();
-                        angle_lists[k] = angles.back();
+                        angle_lists[i].push_back(std::prev(angles.cend()));
+                        angle_lists[k].push_back(std::prev(angles.cend()));
                     }
 
                     if (d_ik < d_crit && d_jk < d_crit) {
@@ -70,16 +78,32 @@ struct filling_angle_coating_functor {
                         field_value_t ki = (x0[i] - x0[k]).normalized();
                         field_value_t kj = (x0[j] - x0[k]).normalized();
                         real_t alpha = acos(ki.dot(kj));
-                        angles.push_back(i, k, j, alpha);
+                        angles.push_back(angle{i, k, j, alpha});
+
+                        // assert(std::prev(angles.crend())->i == i);
+                        // assert(std::prev(angles.crend())->j == k);
+                        // assert(std::prev(angles.crend())->k == j);
 
                         // Add reference to this angle to non-central particles
-                        angle_lists[i] = angles.back();
-                        angle_lists[j] = angles.back();
+                        angle_lists[i].push_back(std::prev(angles.cend()));
+                        angle_lists[j].push_back(std::prev(angles.cend()));
                     }
 
                 }
             }
         }
+
+        // for (auto const & ang : angles) {
+        //     std::cout << ang.i << ", " << ang.j << ", " << ang.k << ", " << ang.alpha << std::endl;
+        // }
+
+        // for (int i = 0; i < angle_lists.size(); i ++) {
+        //     std::cout << "Particle " << i << ": ";
+        //     for (auto const & ang : angle_lists[i]) {
+        //         std::cout << ang->i << ", " << ang->j << ", " << ang->k << ", " << ang->alpha << std::endl;
+        //     }
+        //     std::cout << "\n";
+        // }
     }
 
     // TODO: add function update_angles()
@@ -113,7 +137,7 @@ struct filling_angle_coating_functor {
             f += n * 0.5 * magnitude * (1.0 - tanh(drop_rate * (ang_itr->alpha - 2.0 * filling_angle)));
         }
 
-        return std::make_pair(f / mass, 0.0);
+        return std::make_pair(f / mass, field_zero);
     }
 
 private:
@@ -124,7 +148,7 @@ private:
     };
 
     std::list<angle> angles;
-    std::vector<typename std::list<angle>::iterator> angle_lists;
+    std::vector<std::list<typename std::list<angle>::const_iterator>> angle_lists;
 
     const real_t r_part, d_crit, magnitude, filling_angle, drop_rate, mass;
     const field_value_t field_zero;
