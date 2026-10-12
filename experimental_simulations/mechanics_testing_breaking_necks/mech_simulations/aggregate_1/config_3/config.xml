@@ -5,7 +5,8 @@
     <let id="applied_particle_i" type="integer">149</let>
     <let id="applied_particle_j" type="integer">110</let>
     <let id="applied_force_magnitude" type="real">1e-9</let>
-    <let id="t_tot" type="real">1e-8</let>
+    <let id="applied_force_ramp_time" type="real">5.0e-8</let>
+    <let id="t_tot" type="real">5e-8</let>
     <!-- RNG seed (to determine which necks to break) -->
     <let id="rng_seed" type="integer">48564</let>
 

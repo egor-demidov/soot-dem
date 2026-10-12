@@ -26,8 +26,29 @@
 #include "parameter_loader.h"
 #include "random_engine.h"
 
+
+struct AppliedForceRamp {
+public:
+    AppliedForceRamp(
+        double ramp_t,
+        double max_magnitude
+    )
+        : ramp_t_(ramp_t)
+        , ramp_slope_(max_magnitude / ramp_t)
+        , max_magnitude_(max_magnitude)
+    {}
+
+    double operator () (double t) const noexcept {
+        return std::min(ramp_slope_ * t, max_magnitude_);
+    }
+
+private:
+    const double ramp_t_, ramp_slope_, max_magnitude_;
+};
+
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
-using applied_force_model_t = unary_applied_force_functor<Eigen::Vector3d, double>;
+using applied_force_model_t = unary_applied_force_functor<Eigen::Vector3d, double, AppliedForceRamp>;
+// using applied_force_magnitude_t = ConstantAppliedForce<double>;
 
 using binary_force_container_t = binary_force_functor_container<Eigen::Vector3d, double, aggregate_model_t>;
 using unary_force_container_t = unary_force_functor_container<Eigen::Vector3d, double, applied_force_model_t>;
@@ -102,6 +123,7 @@ int main(int argc, const char ** argv) {
     const long applied_particle_i = get_integer_parameter(parameter_store, "applied_particle_i");
     const long applied_particle_j = get_integer_parameter(parameter_store, "applied_particle_j");
     const double applied_force_magnitude = get_real_parameter(parameter_store, "applied_force_magnitude");
+    const double applied_force_ramp_time = get_real_parameter(parameter_store, "applied_force_ramp_time");
 
     // Parameters for neck breakage
     const double neck_radius = get_real_parameter(parameter_store, "neck_radius");
@@ -140,7 +162,7 @@ int main(int argc, const char ** argv) {
             r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0};
             
     applied_force_model_t applied_force_model(applied_particle_i, applied_particle_j,
-        applied_force_magnitude, mass, Eigen::Vector3d::Zero());
+        mass, Eigen::Vector3d::Zero(), AppliedForceRamp(applied_force_ramp_time, applied_force_magnitude));
 
     binary_force_container_t binary_force_functors {aggregate_model};
 
@@ -179,6 +201,10 @@ int main(int argc, const char ** argv) {
 
     std::filesystem::create_directory("run");
 
+    std::ofstream applied_force_log("applied_force_log.csv");
+
+    applied_force_log << "t, applied_i_x, applied_i_y, applied_i_z, applied_j_x, applied_j_y, applied_j_z, net_i_x, net_i_y, net_i_z, net_j_x, net_j_y, net_j_z\n";
+
     for (long n = 0; n < n_steps; n ++) {
         if (n % neighbor_update_period == 0) {
             system.update_neighbor_list();
@@ -198,6 +224,28 @@ int main(int argc, const char ** argv) {
                            system.get_omega(), system.get_alpha(), r_part);
             dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part,
                        k_n_bond, k_t_bond, k_r_bond, k_o_bond, aggregate_model.get_sinter_model().get_contact_springs(), x0.size());
+
+            double t = static_cast<double>(n) * dt;
+            auto [applied_a_i, applied_alpha_i] = applied_force_model(applied_particle_i, system.get_x(), system.get_v(), system.get_theta(), system.get_omega(), t);
+            auto [applied_a_j, applied_alpha_j] = applied_force_model(applied_particle_j, system.get_x(), system.get_v(), system.get_theta(), system.get_omega(), t);
+            auto applied_force_i = applied_a_i * mass;
+            auto applied_force_j = applied_a_j * mass;
+            auto net_force_i = system.get_a()[applied_particle_i] * mass;
+            auto net_force_j = system.get_a()[applied_particle_j] * mass;
+
+            applied_force_log << t << ", "
+                                << applied_force_i[0] << ", "
+                                << applied_force_i[1] << ", "
+                                << applied_force_i[2] << ", "
+                                << applied_force_j[0] << ", "
+                                << applied_force_j[1] << ", "
+                                << applied_force_j[2] << ", "
+                                << net_force_i[0] << ", "
+                                << net_force_i[1] << ", "
+                                << net_force_i[2] << ", "
+                                << net_force_j[0] << ", "
+                                << net_force_j[1] << ", "
+                                << net_force_j[2] << std::endl;
         }
 
         system.do_step(dt);

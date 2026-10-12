@@ -70,12 +70,12 @@
     <!-- PARTICLE-PARTICLE VAN DER WAALS PARAMETERS -->
 
     <!-- Hamaker constant -->
-    <let id="A" type="real">1.0e-19</let>
+    <let id="A" type="real">0.0</let>
     <!-- Hamaker saturation distance -->
     <let id="h0" type="real">1.0e-9</let>
 
     <!-- Verlet (cutoff) radius for neighbor lists -->
-    <let id="r_verlet" type="real">42e-9</let>
+    <let id="r_verlet" type="real">30e-9</let>
 
     <!-- NECK BREAKAGE PARAMETERS -->
     <!-- Radius of the thinnest part of the neck, nm -->
