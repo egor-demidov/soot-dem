@@ -28,6 +28,7 @@
 !validation/
 !validation/**
 !neck_strength_parametrization/
+!*.py
 
 !experimental_simulations/
 !experimental_simulations/mechanics_testing_breaking_necks/

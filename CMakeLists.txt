@@ -79,6 +79,10 @@ add_executable(09_sintering validation/09_sintering.cpp ${CMAKE_UTIL_SOURCES})
 # NECK STRENGTH PARAMETRIZATION EXECUTABLE
 add_executable(tensile_deformation neck_strength_parametrization/tensile_deformation.cpp
         neck_strength_parametrization/force_writer.cpp ${CMAKE_UTIL_SOURCES})
+add_executable(shear_deformation neck_strength_parametrization/shear_deformation.cpp
+        neck_strength_parametrization/force_writer.cpp ${CMAKE_UTIL_SOURCES})
+add_executable(torsion_deformation neck_strength_parametrization/torsion_deformation.cpp
+        neck_strength_parametrization/force_writer.cpp ${CMAKE_UTIL_SOURCES})
 
 target_link_libraries(aggregate_deposition ${LIBRARY_LIST})
 target_link_libraries(restructuring ${LIBRARY_LIST})
@@ -104,3 +108,5 @@ target_link_libraries(08_sintering ${LIBRARY_LIST})
 target_link_libraries(09_sintering ${LIBRARY_LIST})
 
 target_link_libraries(tensile_deformation ${LIBRARY_LIST})
+target_link_libraries(shear_deformation ${LIBRARY_LIST})
+target_link_libraries(torsion_deformation ${LIBRARY_LIST})

@@ -135,7 +135,7 @@ int main() {
         if (n % dump_period == 0) {
             std::cout << state_printer << std::endl;
 
-            dump_particles("run", n / dump_period, system.get_x(),
+            dump_particles("run", n / dump_period, system.get_x(), system.get_theta(),
                            system.get_v(), system.get_a(),
                            system.get_omega(), system.get_alpha(), r_part);
             dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part);
@@ -143,9 +143,9 @@ int main() {
             force_writer.add_line(n / dump_period,
                     system.get_x()[1] - system.get_x()[0],
                     (system.get_x()[1] - system.get_x()[0]).norm() - 2.0 * r_part,
-                    std::get<0>(aggregate_model.get_sinter_model().get_contact_springs()[0]),
-                    std::get<1>(aggregate_model.get_sinter_model().get_contact_springs()[0]),
-                    std::get<2>(aggregate_model.get_sinter_model().get_contact_springs()[0]),
+                    std::get<0>(aggregate_model.get_sinter_model().get_contact_springs()[1]),
+                    std::get<1>(aggregate_model.get_sinter_model().get_contact_springs()[1]),
+                    std::get<2>(aggregate_model.get_sinter_model().get_contact_springs()[1]),
                     system.get_a()[0] * mass,
                     system.get_alpha()[0] * mass);
         }
