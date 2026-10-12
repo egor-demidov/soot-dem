@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<include_file>
+
+    <!-- GENERAL PARAMETERS -->
+
+    <!-- Integration time step -->
+    <let id="dt" type="real">5e-15</let>
+    <!-- Number of data dumps -->
+    <let id="n_dumps" type="integer">200</let>
+    <!-- Neighbor list update period -->
+    <let id="neighbor_update_period" type="integer">20</let>
+    <!-- Material density -->
+    <let id="rho" type="real">1700.0</let>
+    <!-- Particle radius -->
+    <let id="r_part" type="real">14e-9</let>
+
+    <!-- PARTICLE-PARTICLE FRICTIONAL CONTACT PARAMETERS -->
+
+    <!-- Normal stiffness -->
+    <let id="k_n" type="real">10000.0</let>
+    <!-- Normal damping coefficient -->
+    <let id="gamma_n" type="real">5e-9</let>
+    <!-- Tangential stiffness -->
+    <let id="k_t" type="real">10000.0</let>
+    <!-- Tangential damping coefficient -->
+    <let id="gamma_t" type="real">1e-9</let>
+    <!-- Tangential static friction coefficient -->
+    <let id="mu_t" type="real">1.0</let>
+    <!-- Tangential dynamic to static friction ratio -->
+    <let id="phi_t" type="real">1.0</let>
+    <!-- Rolling stiffness -->
+    <let id="k_r" type="real">10000.0</let>
+    <!-- Rolling damping coefficient -->
+    <let id="gamma_r" type="real">2.5e-10</let>
+    <!-- Rolling static friction coefficient -->
+    <let id="mu_r" type="real">0.1</let>
+    <!-- Rolling dynamic to static friction ratio -->
+    <let id="phi_r" type="real">1.0</let>
+    <!-- Torsion stiffness -->
+    <let id="k_o" type="real">10000.0</let>
+    <!-- Torsion damping coefficient -->
+    <let id="gamma_o" type="real">2.5e-10</let>
+    <!-- Torsion static friction coefficient -->
+    <let id="mu_o" type="real">0.1</let>
+    <!-- Torsion dynamic to static friction ratio -->
+    <let id="phi_o" type="real">1.0</let>
+
+    <!-- PARTICLE-PARTICLE BOND PARAMETERS -->
+
+    <!-- Normal stiffness coefficient -->
+    <let id="k_n_bond" type="real">1000000.0</let>
+    <!-- Normal damping coefficient -->
+    <let id="gamma_n_bond" type="real">1.25e-6</let>
+    <!-- Tangential stiffness coefficient -->
+    <let id="k_t_bond" type="real">10000000.0</let>
+    <!-- Tangential damping coefficient -->
+    <let id="gamma_t_bond" type="real">2.5e-7</let>
+    <!-- Rolling stiffness coefficient -->
+    <let id="k_r_bond" type="real">10000000.0</let>
+    <!-- Rolling damping coefficient -->
+    <let id="gamma_r_bond" type="real">6.25e-8</let>
+    <!-- Torsion stiffness coefficient -->
+    <let id="k_o_bond" type="real">10000000.0</let>
+    <!-- Torsion damping coefficient -->
+    <let id="gamma_o_bond" type="real">6.25e-8</let>
+    <!-- Critical inter-particle separation for bond creation -->
+    <let id="d_crit" type="real">1e-9</let>
+
+    <!-- PARTICLE-PARTICLE VAN DER WAALS PARAMETERS -->
+
+    <!-- Hamaker constant -->
+    <let id="A" type="real">1.0e-19</let>
+    <!-- Hamaker saturation distance -->
+    <let id="h0" type="real">1.0e-9</let>
+
+    <!-- Verlet (cutoff) radius for neighbor lists -->
+    <let id="r_verlet" type="real">42e-9</let>
+
+    <!-- NECK BREAKAGE PARAMETERS -->
+    <!-- Radius of the thinnest part of the neck, nm -->
+    <let id="neck_radius" type="real">8e-9</let>
+    <!-- Normal yield strength, Pa -->
+    <let id="normal_strength" type="real">10.0e9</let>
+    <!-- Shear yield strength, Pa -->
+    <let id="shear_strength" type="real">10.0e9</let>
+
+</include_file>
+

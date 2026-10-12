@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<include_file>
+
+    <!-- Aggregate file type -->
+    <let id="aggregate_type" type="string">vtk</let>
+    <!-- Aggregate file path -->
+    <let id="aggregate_path" type="path">../../aggregate_bank/aggregate_1/final_aggregate.vtk</let>
+
+    <include>../common_mech_testing.xml</include>
+
+</include_file>

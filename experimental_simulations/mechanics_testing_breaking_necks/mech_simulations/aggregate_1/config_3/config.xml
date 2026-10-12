@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<simulation type="mechanics_testing_breaking_necks">
+
+    <let id="applied_particle_i" type="integer">149</let>
+    <let id="applied_particle_j" type="integer">110</let>
+    <let id="applied_force_magnitude" type="real">1e-9</let>
+    <let id="t_tot" type="real">1e-8</let>
+    <!-- RNG seed (to determine which necks to break) -->
+    <let id="rng_seed" type="integer">48564</let>
+
+    <include>../common_aggregate.xml</include>
+
+</simulation>

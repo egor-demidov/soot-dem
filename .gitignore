@@ -28,3 +28,12 @@
 !validation/
 !validation/**
 !neck_strength_parametrization/
+
+!experimental_simulations/
+!experimental_simulations/mechanics_testing_breaking_necks/
+!experimental_simulations/mechanics_testing_breaking_necks/aggregate_bank/
+!experimental_simulations/mechanics_testing_breaking_necks/aggregate_bank/aggregate_*/
+!experimental_simulations/mechanics_testing_breaking_necks/aggregate_bank/aggregate_*/final_aggregate.vtk
+!experimental_simulations/mechanics_testing_breaking_necks/mech_simulations/
+!experimental_simulations/mechanics_testing_breaking_necks/mech_simulations/aggregate_*/
+!experimental_simulations/mechanics_testing_breaking_necks/mech_simulations/aggregate_*/config_*/
