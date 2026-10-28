@@ -1,15 +1,15 @@
 BlockForestParameters
 {
-   cellsPerBlock                 < 60, 60, 60 >;
+   cellsPerBlock                 < 96, 60, 60 >;
    periodicity                   < 1, 1, 0 >;
    loadBalancingFrequency        0;
-   printLoadBalancingStatistics  true;
+   printLoadBalancingStatistics  false;
 }
 
 DomainParameters
 {
    dropDiameter      20;
-   domainSizeFactor  < 3, 3, 3 >;    // values multiplied with dropDiameter
+   domainSizeFactor  < 4.8, 3, 3 >;    // values multiplied with dropDiameter
 }
 
 PhysicsParameters

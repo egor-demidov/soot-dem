@@ -262,18 +262,24 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         throw std::runtime_error("DEM particle-position callback is missing");
     }
 
-    const Eigen::Vector3d demReferencePositionSI = dem.particlePositionSI();
+    if (dem.particleCount == 0 || dem.particleCount > 2) {
+        throw std::runtime_error("Expected one or two DEM particles");
+    }
+
+    // Use particle 0's initial position as the common reference.
+    const Eigen::Vector3d demReferencePositionSI =
+        dem.particlePositionSI(0);
 
     if (!dem.particleVelocitySI || !dem.particleAngularVelocitySI) {
         throw std::runtime_error("DEM velocity callbacks are missing");
     }
 
-    const Eigen::Vector3d initialVelocityLB = dem.particleVelocitySI() * (units.dtSI / units.dxSI);
+    const Eigen::Vector3d initialVelocityLB = dem.particleVelocitySI(0) * (units.dtSI / units.dxSI);
 
-    const Eigen::Vector3d initialAngularVelocityLB = dem.particleAngularVelocitySI() * units.dtSI;
+    const Eigen::Vector3d initialAngularVelocityLB = dem.particleAngularVelocitySI(0) * units.dtSI;
 
     WALBERLA_LOG_INFO_ON_ROOT("DEM initial velocity [m/s] = "
-                              << dem.particleVelocitySI().transpose()
+                              << dem.particleVelocitySI(0).transpose()
                               << ", velocity LB = " << initialVelocityLB.transpose()
                               << ", angular velocity LB = " << initialAngularVelocityLB.transpose());
 
@@ -420,7 +426,43 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         return lbAnchor + (positionSI - demReferencePositionSI) / units.dxSI;
     };
 
-    Eigen::Vector3d solidCenterEigen = demPositionToLb(dem.particlePositionSI());
+    struct ParticleLbState {
+        Eigen::Vector3d center;
+        std::vector<SphereTriangle> surface;
+    };
+
+    std::vector<ParticleLbState> particles;
+    particles.reserve(dem.particleCount);
+
+    for (std::size_t i = 0; i < dem.particleCount; ++i) {
+        const Eigen::Vector3d centerLB =
+            demPositionToLb(dem.particlePositionSI(i));
+
+        for (int axis = 0; axis < 3; ++axis) {
+            const double margin = double(solidRadius) + 2.0;
+
+            if (centerLB[axis] <= margin ||
+                centerLB[axis] >= double(domainSize[axis]) - margin)
+            {
+                throw std::runtime_error(
+                    "Initial particle is too close to a domain boundary"
+                );
+            }
+        }
+
+        particles.push_back({
+            centerLB,
+            makeSphereSurface(centerLB, double(solidRadius), 4)
+        });
+
+        WALBERLA_LOG_INFO_ON_ROOT(
+            "Initial particle " << i
+            << " center LB = " << centerLB.transpose()
+        );
+    }
+
+    // Existing single-particle code still uses these during the refactor.
+    Eigen::Vector3d solidCenterEigen = particles.at(0).center;
 
     Vector3<real_t> solidCenter(real_c(solidCenterEigen.x()), real_c(solidCenterEigen.y()),
                                 real_c(solidCenterEigen.z()));
@@ -457,19 +499,97 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     using BoundaryHandling_T = FreeSurfaceBoundaryHandling_T::BoundaryHandling_T;
     using UBB_T = FreeSurfaceBoundaryHandling_T::UBB_T;
 
-    for (auto blockIt = blockForest->begin(); blockIt != blockForest->end(); ++blockIt) {
-        auto *handling = blockIt->getData<BoundaryHandling_T>(freeSurfaceBoundaryHandling->getHandlingID());
+    auto particleOwnerAt =
+    [&](const Eigen::Vector3d& position) -> std::size_t
+    {
+        std::size_t owner = particles.size();
+        double nearestDistanceSquared =
+            double(solidRadius) * double(solidRadius);
 
-        auto *flags = handling->getFlagField();
+        for (std::size_t i = 0; i < particles.size(); ++i) {
+            const double distanceSquared =
+                (position - particles[i].center).squaredNorm();
 
-        // Include ghost cells so neighboring blocks see consistent geometry.
-        for (const auto &cell : flags->xyzSizeWithGhostLayer()) {
-            const auto position = blockForest->getBlockLocalCellCenter(*blockIt, cell);
-
-            if ((position - solidCenter).length() <= solidRadius) {
-                handling->forceBoundary(FreeSurfaceBoundaryHandling_T::ubbFlagID, cell.x(), cell.y(),
-                                        cell.z(), UBB_T::Velocity(real_c(0), real_c(0), real_c(0)));
+            if (distanceSquared <= nearestDistanceSquared) {
+                owner = i;
+                nearestDistanceSquared = distanceSquared;
             }
+        }
+
+        return owner;
+    };
+
+    auto isSolidAfterMove =
+    [&](const Eigen::Vector3d& position,
+        std::size_t movingParticle,
+        const Eigen::Vector3d& proposedCenter) -> bool
+    {
+        const double radiusSquared =
+            double(solidRadius) * double(solidRadius);
+
+        for (std::size_t i = 0; i < particles.size(); ++i) {
+            const Eigen::Vector3d& center =
+                i == movingParticle
+                    ? proposedCenter
+                    : particles[i].center;
+
+            if ((position - center).squaredNorm() <= radiusSquared) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    for (auto& block : *blockForest) {
+        auto* handling = block.getData<BoundaryHandling_T>(
+            freeSurfaceBoundaryHandling->getHandlingID()
+        );
+
+        auto* flags = handling->getFlagField();
+
+        for (const auto& cell : flags->xyzSizeWithGhostLayer()) {
+            const auto p =
+                blockForest->getBlockLocalCellCenter(block, cell);
+
+            const Eigen::Vector3d position{
+                double(p[0]), double(p[1]), double(p[2])
+            };
+
+            const std::size_t owner = particleOwnerAt(position);
+
+            if (owner == particles.size()) {
+                continue;
+            }
+
+            Eigen::Vector3d velocityLB = Eigen::Vector3d::Zero();
+            Eigen::Vector3d angularVelocityLB = Eigen::Vector3d::Zero();
+
+            if (advanceDEM) {
+                velocityLB =
+                    dem.particleVelocitySI(owner)
+                    * (units.dtSI / units.dxSI);
+
+                angularVelocityLB =
+                    dem.particleAngularVelocitySI(owner)
+                    * units.dtSI;
+            }
+
+            const Eigen::Vector3d wallVelocityLB =
+                velocityLB
+                + angularVelocityLB.cross(
+                    position - particles[owner].center
+                );
+
+            handling->forceBoundary(
+                FreeSurfaceBoundaryHandling_T::ubbFlagID,
+                cell.x(), cell.y(), cell.z(),
+                UBB_T::Velocity(
+                    real_c(wallVelocityLB.x()),
+                    real_c(wallVelocityLB.y()),
+                    real_c(wallVelocityLB.z())
+                )
+            );
         }
     }
 
@@ -515,13 +635,15 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         Eigen::Vector3d coveredLiquidMomentumLB = Eigen::Vector3d::Zero();
     };
 
-    auto detectParticleCellChanges = [&](const Eigen::Vector3d &proposedCenterLB) {
+    auto detectParticleCellChanges =
+    [&](std::size_t movingParticle,
+        const Eigen::Vector3d& proposedCenterLB)
+    {
+        if (movingParticle >= particles.size()) {
+            throw std::out_of_range("Invalid moving particle index");
+        }
+
         ParticleCellChanges changes;
-
-        const real_t radiusSquared = solidRadius * solidRadius;
-
-        const Vector3<real_t> proposedCenter(real_c(proposedCenterLB.x()), real_c(proposedCenterLB.y()),
-                                             real_c(proposedCenterLB.z()));
 
         for (auto &block : *blockForest) {
             const auto *flags = block.getData<FlagField_T>(flagFieldID);
@@ -544,13 +666,17 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
 
                 const auto position = blockForest->getBlockLocalCellCenter(block, cell);
 
-                const auto displacement = position - proposedCenter;
+                const Eigen::Vector3d positionLB{
+                    double(position[0]),
+                    double(position[1]),
+                    double(position[2])
+                };
 
-                const real_t distanceSquared = displacement[0] * displacement[0] +
-                                               displacement[1] * displacement[1] +
-                                               displacement[2] * displacement[2];
-
-                const bool becomesParticle = distanceSquared <= radiusSquared;
+                const bool becomesParticle = isSolidAfterMove(
+                    positionLB,
+                    movingParticle,
+                    proposedCenterLB
+                );
 
                 if (!wasParticle && becomesParticle) {
                     ++changes.covered;
@@ -605,12 +731,20 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         Eigen::Vector3d oldCenterLB;
     };
 
-    auto remapParticle = [&](const Eigen::Vector3d &shiftedCenter) -> RemapResult {
+    auto remapParticle =
+    [&](std::size_t movingParticle,
+        const Eigen::Vector3d& shiftedCenter) -> RemapResult
+    {
+        if (movingParticle >= particles.size()) {
+            throw std::out_of_range("Invalid moving particle index");
+        }
+
         if (!shiftedCenter.allFinite()) {
             throw std::runtime_error("Non-finite proposed particle center");
         }
 
-        const auto shifted = detectParticleCellChanges(shiftedCenter);
+        const auto shifted =
+            detectParticleCellChanges(movingParticle, shiftedCenter);
 
         struct InterfaceRecipient {
             IBlock *block;
@@ -635,7 +769,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                                                  static_cast<double>(p[2])};
 
                 // A recipient must remain outside the proposed particle.
-                if ((positionLB - shiftedCenter).squaredNorm() <= double(solidRadius) * double(solidRadius)) {
+                if (isSolidAfterMove(positionLB, movingParticle, shiftedCenter)) {
                     continue;
                 }
 
@@ -717,8 +851,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                                                          static_cast<double>(p[2])};
 
                         // Never route through the proposed solid.
-                        if ((positionLB - shiftedCenter).squaredNorm() <=
-                            double(solidRadius) * double(solidRadius)) {
+                        if (isSolidAfterMove(positionLB, movingParticle, shiftedCenter)) {
                             continue;
                         }
 
@@ -875,7 +1008,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                                                  static_cast<double>(p[2])};
 
                 // Only use neighbors surviving the proposed move.
-                if ((positionLB - shiftedCenter).squaredNorm() <= double(solidRadius) * double(solidRadius)) {
+                if (isSolidAfterMove(positionLB, movingParticle, shiftedCenter)) {
                     continue;
                 }
 
@@ -974,7 +1107,8 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         Eigen::Vector3d fluidAngularMomentumChangeLB = Eigen::Vector3d::Zero();
 
         // Use one fixed reference point for every angular-momentum term.
-        const Eigen::Vector3d angularReferenceLB = solidCenterEigen;
+        const Eigen::Vector3d angularReferenceLB =
+            particles.at(movingParticle).center;
 
         auto accumulateMomentumChange = [&](const Eigen::Vector3d &positionLB,
                                             const Eigen::Vector3d &momentumChangeLB) {
@@ -1128,7 +1262,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                 const Eigen::Vector3d positionLB = cellCenterEigen(*block, neighbor);
 
                 // A cell covered by the new sphere becomes solid instead.
-                if ((positionLB - shiftedCenter).squaredNorm() <= double(solidRadius) * double(solidRadius)) {
+                if (isSolidAfterMove(positionLB, movingParticle, shiftedCenter)) {
                     continue;
                 }
 
@@ -1226,8 +1360,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                         const Eigen::Vector3d positionLB = cellCenterEigen(*state.block, neighbor);
 
                         // The destination must remain outside the particle.
-                        if ((positionLB - shiftedCenter).squaredNorm() <=
-                            double(solidRadius) * double(solidRadius)) {
+                        if (isSolidAfterMove(positionLB, movingParticle, shiftedCenter)) {
                             continue;
                         }
 
@@ -1337,8 +1470,10 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         // and liquid-to-interface promotions.
         // Decide topology from the COMPLETE proposed state, not commit order.
         auto proposedCellIsGas = [&](IBlock *block, const Cell &cell) {
-            if ((cellCenterEigen(*block, cell) - shiftedCenter).squaredNorm() <=
-                double(solidRadius) * double(solidRadius))
+            if (isSolidAfterMove(
+                cellCenterEigen(*block, cell),
+                movingParticle,
+                shiftedCenter))
                 return false;
             const auto planned = std::find_if(plannedFluidCells.begin(), plannedFluidCells.end(),
                                               [&](const PlannedFluidCell &candidate) {
@@ -1427,7 +1562,8 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         const Eigen::Vector3d momentumPredictionErrorLB =
             afterRemap.second - beforeRemap.second - fluidMomentumChangeLB;
 
-        const auto geometryAfterRemap = detectParticleCellChanges(shiftedCenter);
+        const auto geometryAfterRemap =
+            detectParticleCellChanges(movingParticle, shiftedCenter);
 
         const double remapMassTolerance = 1e-10 * std::max(1.0, std::abs(beforeRemap.first));
         if (std::abs(afterRemap.first - beforeRemap.first) > remapMassTolerance ||
@@ -1436,12 +1572,25 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
             throw std::runtime_error("Particle remap failed its mass, momentum, or geometry check");
 
         // Synchronize all geometric representations with the remapped sphere.
-        solidCenterEigen = shiftedCenter;
+        auto& particle = particles.at(movingParticle);
 
-        solidCenter = Vector3<real_t>(real_c(solidCenterEigen.x()), real_c(solidCenterEigen.y()),
-                                      real_c(solidCenterEigen.z()));
+        particle.center = shiftedCenter;
+        particle.surface = makeSphereSurface(
+            particle.center, double(solidRadius), 4
+        );
 
-        solidSurface = makeSphereSurface(solidCenterEigen, double(solidRadius), 4);
+        // Preserve the existing particle-0 aliases during the refactor.
+        if (movingParticle == 0) {
+            solidCenterEigen = particle.center;
+
+            solidCenter = Vector3<real_t>(
+                real_c(particle.center.x()),
+                real_c(particle.center.y()),
+                real_c(particle.center.z())
+            );
+
+            solidSurface = particle.surface;
+        }
 
         return RemapResult{particleRemapImpulseLB, particleRemapAngularImpulseLB, angularReferenceLB};
     }; // End remapParticle.
@@ -1480,44 +1629,115 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
 
     uint_t sphereLinkCount = uint_c(0);
 
-    auto updateSphereWallVelocity = [&](const Eigen::Vector3d &velocityLB,
-                                        const Eigen::Vector3d &angularVelocityLB) {
-        for (auto &block : *blockForest) {
-            auto *handling = block.getData<BoundaryHandling_T>(freeSurfaceBoundaryHandling->getHandlingID());
+    auto updateSphereWallVelocity = [&]() {
+    std::vector<Eigen::Vector3d> velocitiesLB(
+        particles.size(), Eigen::Vector3d::Zero()
+    );
 
-            auto *flags = handling->getFlagField();
+    std::vector<Eigen::Vector3d> angularVelocitiesLB(
+        particles.size(), Eigen::Vector3d::Zero()
+    );
 
-            const auto particleMask = flags->getFlag(FreeSurfaceBoundaryHandling_T::ubbFlagID);
+    for (std::size_t i = 0; i < particles.size(); ++i) {
+        if (advanceDEM) {
+            velocitiesLB[i] =
+                dem.particleVelocitySI(i)
+                * (units.dtSI / units.dxSI);
 
-            auto &ubb =
-                handling->template getBoundaryCondition<UBB_T>(FreeSurfaceBoundaryHandling_T::ubbBoundaryID);
-
-            for (const auto &cell : flags->xyzSizeWithGhostLayer()) {
-                if ((flags->get(cell.x(), cell.y(), cell.z()) & particleMask) == 0)
-                    continue;
-
-                const auto position = blockForest->getBlockLocalCellCenter(block, cell);
-
-                const Eigen::Vector3d displacement(position[0] - solidCenter[0], position[1] - solidCenter[1],
-                                                   position[2] - solidCenter[2]);
-
-                const Eigen::Vector3d wallVelocity = velocityLB + angularVelocityLB.cross(displacement);
-
-                const UBB_T::Velocity configuration(real_c(wallVelocity.x()), real_c(wallVelocity.y()),
-                                                    real_c(wallVelocity.z()));
-
-                ubb.registerCell(particleMask, cell.x(), cell.y(), cell.z(), configuration);
-            }
+            angularVelocitiesLB[i] =
+                dem.particleAngularVelocitySI(i)
+                * units.dtSI;
         }
-    };
+
+        if (!velocitiesLB[i].allFinite() ||
+            !angularVelocitiesLB[i].allFinite())
+        {
+            throw std::runtime_error(
+                "DEM supplied non-finite particle velocity"
+            );
+        }
+    }
+
+    for (auto& block : *blockForest) {
+        auto* handling = block.getData<BoundaryHandling_T>(
+            freeSurfaceBoundaryHandling->getHandlingID()
+        );
+
+        auto* flags = handling->getFlagField();
+
+        const auto particleMask = flags->getFlag(
+            FreeSurfaceBoundaryHandling_T::ubbFlagID
+        );
+
+        auto& ubb =
+            handling->template getBoundaryCondition<UBB_T>(
+                FreeSurfaceBoundaryHandling_T::ubbBoundaryID
+            );
+
+        for (const auto& cell : flags->xyzSizeWithGhostLayer()) {
+            if ((flags->get(cell.x(), cell.y(), cell.z())
+                 & particleMask) == 0)
+            {
+                continue;
+            }
+
+            const Eigen::Vector3d position =
+                cellCenterEigen(block, cell);
+
+            const std::size_t owner = particleOwnerAt(position);
+
+            if (owner == particles.size()) {
+                throw std::runtime_error(
+                    "Solid boundary cell has no particle owner"
+                );
+            }
+
+            const Eigen::Vector3d wallVelocity =
+                velocitiesLB[owner]
+                + angularVelocitiesLB[owner].cross(
+                    position - particles[owner].center
+                );
+
+            const UBB_T::Velocity configuration(
+                real_c(wallVelocity.x()),
+                real_c(wallVelocity.y()),
+                real_c(wallVelocity.z())
+            );
+
+            ubb.registerCell(
+                particleMask,
+                cell.x(), cell.y(), cell.z(),
+                configuration
+            );
+        }
+    }
+};
 
     double movingWallMassCorrectionLB = 0.0;
+
+    std::vector<Eigen::Vector3d> particleWallForcesLB(
+    particles.size(), Eigen::Vector3d::Zero()
+);
+
+    std::vector<Eigen::Vector3d> particleWallTorquesLB(
+        particles.size(), Eigen::Vector3d::Zero()
+    );
+
+    std::vector<uint_t> particleWallLinkCounts(
+        particles.size(), uint_c(0)
+    );
 
     auto measureSphereForce = [&]() {
         sphereForceLB = Vector3<real_t>(real_c(0), real_c(0), real_c(0));
         sphereTorqueLB.setZero();
         sphereLinkCount = uint_c(0);
         movingWallMassCorrectionLB = 0.0;
+
+        for (std::size_t i = 0; i < particles.size(); ++i) {
+            particleWallForcesLB[i].setZero();
+            particleWallTorquesLB[i].setZero();
+            particleWallLinkCounts[i] = uint_c(0);
+        }
 
         for (auto &block : *blockForest) {
             const auto *pdfs = block.getData<PdfField_T>(pdfFieldID);
@@ -1564,8 +1784,18 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                     // belonging to our sphere.
                     const auto neighborPosition = blockForest->getBlockLocalCellCenter(block, neighbor);
 
-                    if ((neighborPosition - solidCenter).length() > solidRadius) {
-                        continue;
+                    const Eigen::Vector3d solidCellPosition{
+                        double(neighborPosition[0]),
+                        double(neighborPosition[1]),
+                        double(neighborPosition[2])
+                    };
+
+                    const std::size_t owner = particleOwnerAt(solidCellPosition);
+
+                    if (owner == particles.size()) {
+                        throw std::runtime_error(
+                            "Particle boundary link has no particle owner"
+                        );
                     }
 
                     const real_t outgoingPDF = pdfs->get(cell.x(), cell.y(), cell.z(), d.toIdx());
@@ -1607,9 +1837,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                                                    double(momentumTransfer) * double(d.cy()),
                                                    double(momentumTransfer) * double(d.cz()));
 
-                    sphereForceLB[0] += real_c(linkForce.x());
-                    sphereForceLB[1] += real_c(linkForce.y());
-                    sphereForceLB[2] += real_c(linkForce.z());
+                    particleWallForcesLB[owner] += linkForce;
 
                     const auto fluidPosition = blockForest->getBlockLocalCellCenter(block, cell);
 
@@ -1618,35 +1846,37 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                         0.5 * double(fluidPosition[1] + neighborPosition[1]),
                         0.5 * double(fluidPosition[2] + neighborPosition[2]));
 
-                    sphereTorqueLB += (boundaryPosition - solidCenterEigen).cross(linkForce);
+                    particleWallTorquesLB[owner] +=
+                        (boundaryPosition - particles[owner].center).cross(linkForce);
 
-                    ++sphereLinkCount;
+                    ++particleWallLinkCounts[owner];
                 }
             }
         }
+
+        // Temporary particle-0 aliases for code updated in the next step.
+        sphereForceLB = Vector3<real_t>(
+            real_c(particleWallForcesLB[0].x()),
+            real_c(particleWallForcesLB[0].y()),
+            real_c(particleWallForcesLB[0].z())
+        );
+
+        sphereTorqueLB = particleWallTorquesLB[0];
+
+        sphereLinkCount = uint_c(0);
+        for (const auto count : particleWallLinkCounts) {
+            sphereLinkCount += count;
+        }
+
     };
 
     timeloop.addFuncBeforeTimeStep(
-        [&]() {
-            const Eigen::Vector3d velocitySI =
-                advanceDEM ? dem.particleVelocitySI() : Eigen::Vector3d::Zero();
-
-            const Eigen::Vector3d angularVelocitySI =
-                advanceDEM ? dem.particleAngularVelocitySI() : Eigen::Vector3d::Zero();
-
-            if (!velocitySI.allFinite() || !angularVelocitySI.allFinite()) {
-                throw std::runtime_error("DEM supplied non-finite particle velocity");
-            }
-
-            const Eigen::Vector3d angularVelocityLB = angularVelocitySI * units.dtSI;
-
-            const Eigen::Vector3d velocityLB = velocitySI * (units.dtSI / units.dxSI);
-
-            updateSphereWallVelocity(velocityLB, angularVelocityLB);
-
-            measureSphereForce();
-        },
-        "Apply DEM wall velocity and measure fluid load");
+    [&]() {
+        updateSphereWallVelocity();
+        measureSphereForce();
+    },
+    "Apply DEM wall velocities and measure fluid loads"
+);
 
     // Laplace pressure = 2 * surface tension * curvature; curvature computation is not necessary with 0
     // surface tension
@@ -1730,11 +1960,21 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
 
                 // Collect planes within three lattice spacings
                 // of the analytic sphere surface.
-                const double surfaceDistance =
-                    std::abs((center - solidCenterEigen).norm() - double(solidRadius));
+                bool nearParticle = false;
 
-                if (surfaceDistance > 3.0)
-                    continue;
+for (const auto& particle : particles) {
+    const double surfaceDistance =
+        std::abs((center - particle.center).norm()
+                 - double(solidRadius));
+
+    if (surfaceDistance <= 3.0) {
+        nearParticle = true;
+        break;
+    }
+}
+
+if (!nearParticle)
+    continue;
 
                 const real_t fraction = fill->get(cell.x(), cell.y(), cell.z());
 
@@ -1787,6 +2027,13 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     capillary_coupling::MomentumState stepBefore, rawResidual, correctedResidual;
     ContactLineLoad stepLoad;
     SurfaceLineResult stepLine;
+    std::vector<ContactLineLoad> particleStepLoads(
+    particles.size()
+);
+
+    std::vector<SurfaceLineResult> particleStepLines(
+        particles.size()
+    );
     double maxAppliedCorrectionLB = 0.0;
 
     // A numerical conservation projection, not an alternative physical capillary law.
@@ -1794,18 +2041,79 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     // left after that treatment, so the full line load is not applied twice.
     timeloop.add() << Sweep(
         [&](IBlock *) {
-            stepLine = reconstructSurfaceLine(solidSurface, interfacePlanes, solidCenterEigen,
-                                              double(surfaceTension), 3.0, double(contactAngle));
-            if (stepLine.invalidSegments != 0 || stepLine.badEndpoints != 0)
-                throw std::runtime_error(
-                    "Invalid or open contact-line reconstruction; refusing to apply its load");
+            stepLoad = ContactLineLoad{};
+stepLine = SurfaceLineResult{};
 
-            stepLoad.force = Eigen::Vector3d{double(sphereForceLB[0]), double(sphereForceLB[1]),
-                                             double(sphereForceLB[2])} +
-                             stepLine.load.force;
-            stepLoad.torque = sphereTorqueLB + stepLine.load.torque;
-            if (!stepLoad.force.allFinite() || !stepLoad.torque.allFinite())
-                throw std::runtime_error("Non-finite particle load");
+// Fluid angular momentum currently uses particle 0's center
+// as its reference point.
+const Eigen::Vector3d angularOrigin = solidCenterEigen;
+
+for (std::size_t i = 0; i < particles.size(); ++i) {
+    const auto& particle = particles[i];
+
+    auto& line = particleStepLines[i];
+
+    line = reconstructSurfaceLine(
+        particle.surface,
+        interfacePlanes,
+        particle.center,
+        double(surfaceTension),
+        3.0,
+        double(contactAngle)
+    );
+
+    if (line.invalidSegments != 0 || line.badEndpoints != 0) {
+        throw std::runtime_error(
+            "Invalid or open contact line for particle "
+            + std::to_string(i)
+        );
+    }
+
+    auto& load = particleStepLoads[i];
+
+    load.force =
+        particleWallForcesLB[i] + line.load.force;
+
+    // This torque is about this particle's own center.
+    load.torque =
+        particleWallTorquesLB[i] + line.load.torque;
+
+    if (!load.force.allFinite() || !load.torque.allFinite()) {
+        throw std::runtime_error(
+            "Non-finite load for particle "
+            + std::to_string(i)
+        );
+    }
+
+    // Aggregate loads about the SAME reference point used
+    // by the fluid angular-momentum measurement.
+    stepLoad.force += load.force;
+
+    stepLoad.torque +=
+        load.torque
+        + (particle.center - angularOrigin).cross(load.force);
+
+    // Combined contact-line geometry for existing output.
+    stepLine.segments.insert(
+        stepLine.segments.end(),
+        line.segments.begin(),
+        line.segments.end()
+    );
+
+    stepLine.length += line.length;
+    stepLine.unsupportedTriangles += line.unsupportedTriangles;
+    stepLine.degenerateTriangles += line.degenerateTriangles;
+    stepLine.invalidSegments += line.invalidSegments;
+    stepLine.badEndpoints += line.badEndpoints;
+
+    stepLine.load.force += line.load.force;
+
+    stepLine.load.torque +=
+        line.load.torque
+        + (particle.center - angularOrigin).cross(
+            line.load.force
+        );
+}
 
             const auto after = measureLiquidState();
             rawResidual.linear = after.linear - stepBefore.linear + stepLoad.force;
@@ -1842,9 +2150,27 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                         // included in the measured residual.
                         if (fraction <= 1e-12)
                             continue;
-                        const Eigen::Vector3d position = cellCenterEigen(block, cell);
-                        if ((position - solidCenterEigen).norm() > double(solidRadius) + 3.0)
-                            continue;
+                        const Eigen::Vector3d position =
+    cellCenterEigen(block, cell);
+
+const double supportRadius = double(solidRadius) + 3.0;
+const double supportRadiusSquared =
+    supportRadius * supportRadius;
+
+bool nearParticle = false;
+
+for (const auto& particle : particles) {
+    if ((position - particle.center).squaredNorm()
+        <= supportRadiusSquared)
+    {
+        nearParticle = true;
+        break;
+    }
+}
+
+if (!nearParticle) {
+    continue;
+}
                         const double density = double(pdfs->getDensity(cell.x(), cell.y(), cell.z()));
                         if (!std::isfinite(density) || density <= 0.0)
                             throw std::runtime_error("Invalid liquid density before projection");
@@ -1986,7 +2312,12 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
 
         out << std::setprecision(17);
 
-        const std::size_t triangleCount = solidSurface.size();
+        std::size_t triangleCount = 0;
+
+        for (const auto& particle : particles) {
+            triangleCount += particle.surface.size();
+        }
+
         const std::size_t pointCount = 3 * triangleCount;
 
         out << "<?xml version=\"1.0\"?>\n"
@@ -1998,13 +2329,31 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                "NumberOfStrips=\"0\" NumberOfPolys=\""
             << triangleCount << "\">\n";
 
+        out << "<CellData Scalars=\"particle_id\">\n"
+        << "<DataArray type=\"Int32\" Name=\"particle_id\" "
+           "NumberOfComponents=\"1\" format=\"ascii\">\n";
+
+            for (std::size_t i = 0; i < particles.size(); ++i) {
+                for (std::size_t triangle = 0;
+                     triangle < particles[i].surface.size(); ++triangle)
+                {
+                    out << i << '\n';
+                }
+            }
+
+        out << "</DataArray>\n</CellData>\n";
+
         out << "<Points>\n"
             << "<DataArray type=\"Float64\" "
                "NumberOfComponents=\"3\" format=\"ascii\">\n";
 
-        for (const auto &triangle : solidSurface) {
-            for (const auto &point : triangle) {
-                out << point.x() << ' ' << point.y() << ' ' << point.z() << '\n';
+        for (const auto& particle : particles) {
+            for (const auto& triangle : particle.surface) {
+                for (const auto& point : triangle) {
+                    out << point.x() << ' '
+                        << point.y() << ' '
+                        << point.z() << '\n';
+                }
             }
         }
 
@@ -2055,9 +2404,13 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
 
     WcTimingPool timingPool;
 
-    Eigen::Vector3d forceSumSI = Eigen::Vector3d::Zero();
+    DemLbParameters::Field forceSumSI(
+    particles.size(), Eigen::Vector3d::Zero()
+);
 
-    Eigen::Vector3d torqueSumSI = Eigen::Vector3d::Zero();
+    DemLbParameters::Field torqueSumSI(
+        particles.size(), Eigen::Vector3d::Zero()
+    );
 
     if (!dem.advanceDemStep || !dem.applyRemapImpulseSI || !dem.submitFluidLoadSI) {
         throw std::runtime_error("Missing DEM coupling callbacks");
@@ -2066,13 +2419,79 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     // Verify the complete exchange, including the actual DEM integrator and remapper.
     const double linearImpulseScaleSI = units.forceScaleSI * units.dtSI;
     const double angularImpulseScaleSI = units.torqueScaleSI * units.dtSI;
-    const auto initialFluidState = measureLiquidState();
-    const Eigen::Vector3d initialParticleMomentumLB =
-        dem.particleMassSI * dem.particleVelocitySI() / linearImpulseScaleSI;
-    const Eigen::Vector3d initialSystemMomentumLB = initialFluidState.linear + initialParticleMomentumLB;
-    const Eigen::Vector3d initialSystemAngularLB = initialFluidState.angular +
-        solidCenterEigen.cross(initialSystemMomentumLB) +
-        dem.particleInertiaSI * dem.particleAngularVelocitySI() / angularImpulseScaleSI;
+    auto measureSystemMomentum = [&]()
+    -> capillary_coupling::MomentumState
+    {
+        const auto fluid = measureLiquidState();
+
+        capillary_coupling::MomentumState systemState;
+
+        systemState.linear = fluid.linear;
+
+        // measureLiquidState() measures angular momentum about
+        // solidCenterEigen. Convert it to the fixed LB origin.
+        systemState.angular =
+            fluid.angular
+            + solidCenterEigen.cross(fluid.linear);
+
+        for (std::size_t i = 0; i < particles.size(); ++i) {
+            const Eigen::Vector3d particleMomentumLB =
+                dem.particleMassSI
+                * dem.particleVelocitySI(i)
+                / linearImpulseScaleSI;
+
+            const Eigen::Vector3d particleSpinLB =
+                dem.particleInertiaSI
+                * dem.particleAngularVelocitySI(i)
+                / angularImpulseScaleSI;
+
+            systemState.linear += particleMomentumLB;
+
+            const Eigen::Vector3d actualCenterLB =
+    demPositionToLb(dem.particlePositionSI(i));
+
+            systemState.angular +=
+                actualCenterLB.cross(particleMomentumLB)
+                + particleSpinLB;
+        }
+
+        return systemState;
+    };
+
+    const auto initialSystemState = measureSystemMomentum();
+
+    const Eigen::Vector3d initialSystemMomentumLB =
+        initialSystemState.linear;
+
+    const Eigen::Vector3d initialSystemAngularLB =
+        initialSystemState.angular;
+
+    auto auditSystemMomentum =
+    [&](uint_t step, const std::string& stage)
+    {
+        const auto state = measureSystemMomentum();
+
+        const Eigen::Vector3d linearError =
+            state.linear - initialSystemMomentumLB;
+
+        const Eigen::Vector3d angularError =
+            state.angular - initialSystemAngularLB;
+
+        const double angularTolerance =
+            1e-8 * std::max(1.0, initialSystemAngularLB.norm());
+
+        if (step % uint_c(100) == uint_c(0) ||
+            angularError.norm() > angularTolerance)
+        {
+            WALBERLA_LOG_INFO_ON_ROOT(
+                "Coupling audit: step=" << step
+                << " stage=" << stage
+                << " linearErrorLB=" << linearError.norm()
+                << " angularErrorLB=" << angularError.transpose()
+                << " angularToleranceLB=" << angularTolerance
+            );
+        }
+    };
 
     for (uint_t t = uint_c(0); t != timesteps; ++t) {
         stepBefore = measureLiquidState();
@@ -2080,8 +2499,14 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
 
         const Eigen::Vector3d totalFluidForceSI = units.forceScaleSI * stepLoad.force;
         const Eigen::Vector3d totalFluidTorqueSI = units.torqueScaleSI * stepLoad.torque;
-        forceSumSI += totalFluidForceSI;
-        torqueSumSI += totalFluidTorqueSI;
+
+        for (std::size_t i = 0; i < particles.size(); ++i) {
+            forceSumSI[i] +=
+                units.forceScaleSI * particleStepLoads[i].force;
+
+            torqueSumSI[i] +=
+                units.torqueScaleSI * particleStepLoads[i].torque;
+        }
 
         if (diagnosticFrequency != uint_c(0) && t % diagnosticFrequency == uint_c(0)) {
             const double relativeMassChange =
@@ -2104,91 +2529,145 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         if ((t + uint_c(1)) % units.lbStepsPerDemStep == uint_c(0)) {
             const double count = double(units.lbStepsPerDemStep);
 
-            // Apply the mean fluid load over this DEM interval.
-            dem.submitFluidLoadSI(forceSumSI / count, torqueSumSI / count);
+            DemLbParameters::Field meanForcesSI(particles.size());
+            DemLbParameters::Field meanTorquesSI(particles.size());
 
-            forceSumSI.setZero();
-            torqueSumSI.setZero();
+            for (std::size_t i = 0; i < particles.size(); ++i) {
+                meanForcesSI[i] = forceSumSI[i] / count;
+                meanTorquesSI[i] = torqueSumSI[i] / count;
+            }
+
+            dem.submitFluidLoadSI(meanForcesSI, meanTorquesSI);
+
+            for (std::size_t i = 0; i < particles.size(); ++i) {
+                forceSumSI[i].setZero();
+                torqueSumSI[i].setZero();
+            }
 
             if (advanceDEM)
                 dem.advanceDemStep();
 
-            const Eigen::Vector3d newCenterLB = demPositionToLb(dem.particlePositionSI());
-
-            const Eigen::Vector3d displacementLB = newCenterLB - solidCenterEigen;
-
-            if (!newCenterLB.allFinite() || displacementLB.norm() > 0.1) {
-                throw std::runtime_error("DEM displacement exceeds 0.1 lattice cells "
-                                         "per coupling interval; reduce the DEM timestep");
+            if (advanceDEM) {
+                auditSystemMomentum(t, "after DEM, before remapping");
             }
 
-            for (int axis = 0; axis < 3; ++axis) {
-                if (newCenterLB[axis] <= double(solidRadius) + 2.0 ||
-                    newCenterLB[axis] >= double(domainSize[uint_c(axis)]) - double(solidRadius) - 2.0)
-                    throw std::runtime_error(
-                        "Isolated-particle coupling requires the particle clear of domain boundaries");
+            // Validate every proposed position before modifying the fluid.
+std::vector<Eigen::Vector3d> newCentersLB(particles.size());
+
+for (std::size_t i = 0; i < particles.size(); ++i) {
+    newCentersLB[i] =
+        demPositionToLb(dem.particlePositionSI(i));
+
+    const Eigen::Vector3d displacementLB =
+        newCentersLB[i] - particles[i].center;
+
+    if (!newCentersLB[i].allFinite() ||
+        displacementLB.norm() > 0.1)
+    {
+        throw std::runtime_error(
+            "Particle " + std::to_string(i)
+            + " moved more than 0.1 lattice cells; "
+              "reduce the DEM timestep"
+        );
+    }
+
+    for (int axis = 0; axis < 3; ++axis) {
+        const double margin = double(solidRadius) + 2.0;
+
+        if (newCentersLB[i][axis] <= margin ||
+            newCentersLB[i][axis] >=
+                double(domainSize[uint_c(axis)]) - margin)
+        {
+            throw std::runtime_error(
+                "Particle " + std::to_string(i)
+                + " is too close to a domain boundary"
+            );
+        }
+    }
+}
+
+// Remap sequentially. Each move preserves the other sphere
+// at its currently committed position.
+for (std::size_t i = 0; i < particles.size(); ++i) {
+    const Eigen::Vector3d newCenterLB = newCentersLB[i];
+
+    RemapResult result{
+        Eigen::Vector3d::Zero(),
+        Eigen::Vector3d::Zero(),
+        particles[i].center
+    };
+
+    const auto changes =
+        detectParticleCellChanges(i, newCenterLB);
+
+    if (changes.covered != 0 || changes.uncovered != 0) {
+        result = remapParticle(i, newCenterLB);
+
+        communication();
+        pdfCommunication();
+    } else {
+        // Subcell motion without a change in solid occupancy.
+        particles[i].center = newCenterLB;
+
+        particles[i].surface = makeSphereSurface(
+            newCenterLB, double(solidRadius), 4
+        );
+    }
+
+    // Convert angular impulse from the old center
+    // to the particle's new center.
+    const Eigen::Vector3d angularImpulseAtNewCenterLB =
+        result.angularImpulseAboutOldCenterLB
+        - (newCenterLB - result.oldCenterLB).cross(
+            result.linearImpulseLB
+        );
+
+    const Eigen::Vector3d linearImpulseSI =
+        linearImpulseScaleSI * result.linearImpulseLB;
+
+    const Eigen::Vector3d angularImpulseSI =
+        angularImpulseScaleSI * angularImpulseAtNewCenterLB;
+
+    if (advanceDEM) {
+        dem.applyRemapImpulseSI(
+            i,
+            linearImpulseSI,
+            angularImpulseSI
+        );
+    }
+}
+
+// Synchronize the remaining particle-0 aliases.
+solidCenterEigen = particles[0].center;
+
+solidCenter = Vector3<real_t>(
+    real_c(solidCenterEigen.x()),
+    real_c(solidCenterEigen.y()),
+    real_c(solidCenterEigen.z())
+);
+
+solidSurface = particles[0].surface;
+
+            if (advanceDEM) {
+                auditSystemMomentum(t, "after all remapping");
             }
 
-            RemapResult result{Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), solidCenterEigen};
-
-            const auto changes = detectParticleCellChanges(newCenterLB);
-
-            if (changes.covered != 0 || changes.uncovered != 0) {
-                // Particle motion changes the occupied lattice cells.
-                result = remapParticle(newCenterLB);
-
-                communication();
-                pdfCommunication();
-            } else {
-                // Subcell motion: update the analytic geometry without
-                // modifying fluid cells or rebuilding their PDFs.
-                solidCenterEigen = newCenterLB;
-
-                solidCenter = Vector3<real_t>(real_c(newCenterLB.x()), real_c(newCenterLB.y()),
-                                              real_c(newCenterLB.z()));
-
-                solidSurface = makeSphereSurface(solidCenterEigen, double(solidRadius), 4);
-            }
-
-            // The remapper reports angular impulse about the OLD center.
-            // Convert it to angular impulse about the CURRENT center.
-            const Eigen::Vector3d angularImpulseAtNewCenterLB =
-                result.angularImpulseAboutOldCenterLB -
-                (newCenterLB - result.oldCenterLB).cross(result.linearImpulseLB);
-
-            const Eigen::Vector3d linearImpulseSI =
-                (units.forceScaleSI * units.dtSI) * result.linearImpulseLB;
-
-            const Eigen::Vector3d angularImpulseSI =
-                (units.torqueScaleSI * units.dtSI) * angularImpulseAtNewCenterLB;
-
-            if (advanceDEM)
-                dem.applyRemapImpulseSI(linearImpulseSI, angularImpulseSI);
-
-            // Refresh wall velocities after DEM stepping and impulses.
-            const Eigen::Vector3d velocityLB =
-                (advanceDEM ? dem.particleVelocitySI() : Eigen::Vector3d::Zero()) * (units.dtSI / units.dxSI);
-
-            const Eigen::Vector3d angularVelocityLB =
-                (advanceDEM ? dem.particleAngularVelocitySI() : Eigen::Vector3d::Zero()) * units.dtSI;
-
-            if (!velocityLB.allFinite() || !angularVelocityLB.allFinite()) {
-                throw std::runtime_error("Non-finite DEM velocity after coupling");
-            }
-
-            updateSphereWallVelocity(velocityLB, angularVelocityLB);
+// Ownership can change even when the union of occupied cells
+// stays unchanged, so refresh every solid cell's velocity.
+updateSphereWallVelocity();
 
             // Include any remapping in the current mass measurement.
             totalMassComputer();
 
             if (advanceDEM) {
-                const auto fluidState = measureLiquidState();
-                const Eigen::Vector3d particleMomentumLB =
-                    dem.particleMassSI * dem.particleVelocitySI() / linearImpulseScaleSI;
-                const Eigen::Vector3d systemMomentumLB = fluidState.linear + particleMomentumLB;
-                const Eigen::Vector3d systemAngularLB = fluidState.angular +
-                    solidCenterEigen.cross(systemMomentumLB) +
-                    dem.particleInertiaSI * dem.particleAngularVelocitySI() / angularImpulseScaleSI;
+                const auto systemState = measureSystemMomentum();
+
+                const Eigen::Vector3d systemMomentumLB =
+                    systemState.linear;
+
+                const Eigen::Vector3d systemAngularLB =
+                    systemState.angular;
+
                 const double linearErrorLB = (systemMomentumLB - initialSystemMomentumLB).norm();
                 const double angularErrorLB = (systemAngularLB - initialSystemAngularLB).norm();
                 if (diagnosticFrequency != uint_c(0) &&

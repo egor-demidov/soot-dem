@@ -7,8 +7,14 @@
 
 #include <Eigen/Dense>
 #include <functional>
+#include <cstddef>
+#include <vector>
 
 struct DemLbParameters {
+    using Vec = Eigen::Vector3d;
+    using Field = std::vector<Vec>;
+
+    // Identical spherical particles for now.
     double particleRadiusSI;
     double particleMassSI;
     double particleInertiaSI;
@@ -20,20 +26,26 @@ struct DemLbParameters {
     double liquidContactAngleDeg;
 
     unsigned cellsPerParticleDiameter;
+    std::size_t particleCount = 1;
 
+    // One force and torque per particle, in particle-index order.
     std::function<void(
-        const Eigen::Vector3d& forceSI,
-        const Eigen::Vector3d& torqueSI
+        const Field& forcesSI,
+        const Field& torquesSI
     )> submitFluidLoadSI;
-    std::function<Eigen::Vector3d()> particlePositionSI;
-    std::function<Eigen::Vector3d()> particleVelocitySI;
-    std::function<Eigen::Vector3d()> particleAngularVelocitySI;
 
+    std::function<Vec(std::size_t)> particlePositionSI;
+    std::function<Vec(std::size_t)> particleVelocitySI;
+    std::function<Vec(std::size_t)> particleAngularVelocitySI;
+
+    // Advances the entire DEM system once.
     std::function<void()> advanceDemStep;
 
+    // Applies a remapping impulse to one particle.
     std::function<void(
-        const Eigen::Vector3d&,
-        const Eigen::Vector3d&
+        std::size_t particleIndex,
+        const Vec& impulseSI,
+        const Vec& angularImpulseSI
     )> applyRemapImpulseSI;
 };
 

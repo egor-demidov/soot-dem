@@ -49,7 +49,7 @@
 
     <!-- COATING MODEL PARAMETERS -->
 
-    <let id="n_particles" type="integer">1</let>
+    <let id="n_particles" type="integer">2</let>
     <let id="initial_gap" type="real">1e-8</let>
     <let id="approach_speed" type="real">1.0</let>
 

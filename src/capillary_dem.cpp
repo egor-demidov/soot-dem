@@ -275,14 +275,16 @@ int main(int argc, char ** argv) {
     omega0.assign(x0.size(), Eigen::Vector3d::Zero());
 
     if (n_particles == 2) {
-        const double half_separation =
-            r_part + 0.5 * initial_gap;
+        x0[0] = Eigen::Vector3d::Zero();
+        v0[0] = Eigen::Vector3d::Zero();
 
-        x0[0].x() -= half_separation;
-        x0[1].x() += half_separation;
+        x0[1] = Eigen::Vector3d{
+            -35e-9, 0.0, 24.5e-9
+        };
 
-        v0[0].x() = approach_speed;
-        v0[1].x() = -approach_speed;
+        v0[1] = Eigen::Vector3d{
+            5.0, 0.0, 0.0
+        };
     }
 
     // Fill the remaining buffers with zeros
@@ -379,36 +381,27 @@ int main(int argc, char ** argv) {
             static_cast<unsigned>(diameterCells)
     };
 
-    if (system.get_x().size() != 1)
-    {
-        throw std::runtime_error(
-            "This coupling stage currently requires one particle"
-        );
-    }
-
-    bool printedFirstFluidLoad = false;
+        lbParameters.particleCount = system.get_x().size();
 
     lbParameters.submitFluidLoadSI =
-        [&](const Eigen::Vector3d& forceSI,
-            const Eigen::Vector3d& torqueSI)
+        [&](const DemLbParameters::Field& forcesSI,
+            const DemLbParameters::Field& torquesSI)
         {
+            const auto count = system.get_x().size();
+
+            if (forcesSI.size() != count ||
+                torquesSI.size() != count)
+            {
+                throw std::runtime_error(
+                    "Expected one fluid force and torque per particle"
+                );
+            }
+
             system.set_fluid_loads(
                 fluid_loads,
-                {forceSI},
-                {torqueSI}
+                forcesSI,
+                torquesSI
             );
-
-            if (!printedFirstFluidLoad)
-            {
-                std::cout
-                    << "DEM received fluid force [N]: "
-                    << forceSI.transpose()
-                    << "\nDEM received fluid torque [N m]: "
-                    << torqueSI.transpose()
-                    << '\n';
-
-                printedFirstFluidLoad = true;
-            }
         };
 
     // Pass only the LB configuration to waLBerla.
@@ -418,58 +411,71 @@ int main(int argc, char ** argv) {
         nullptr
     };
 
-    lbParameters.particlePositionSI = [&]() -> Eigen::Vector3d
-    {
-        return system.get_x().at(0);
-    };
+    lbParameters.particlePositionSI =
+        [&](std::size_t i) -> Eigen::Vector3d
+        {
+            return system.get_x().at(i);
+        };
 
     lbParameters.particleVelocitySI =
-        [&]() -> Eigen::Vector3d
+        [&](std::size_t i) -> Eigen::Vector3d
         {
-            return system.synchronized_velocity(0, dt);
+            return system.synchronized_velocity(i, dt);
         };
 
     lbParameters.particleAngularVelocitySI =
-        [&]() -> Eigen::Vector3d
+        [&](std::size_t i) -> Eigen::Vector3d
         {
-            return system.synchronized_angular_velocity(0, dt);
+            return system.synchronized_angular_velocity(i, dt);
         };
 
     std::size_t completedDemSteps = 0;
 
     lbParameters.advanceDemStep = [&]()
     {
-        // Cheap for the current one-particle case.
         system.update_neighbor_list();
-
         system.do_step(dt);
-
         ++completedDemSteps;
 
         if (completedDemSteps == 1 ||
             completedDemSteps % 100 == 0)
         {
-            std::cout
-                << "DEM step=" << completedDemSteps
-                << " timeSI=" << double(completedDemSteps) * dt
-                << " positionSI="
-                << system.get_x().at(0).transpose()
-                << " velocitySI="
-                << system.synchronized_velocity(0, dt).transpose()
-                << '\n';
+            for (std::size_t i = 0;
+                 i < system.get_x().size(); ++i)
+            {
+                std::cout
+                    << "DEM step=" << completedDemSteps
+                    << " particle=" << i
+                    << " timeSI="
+                    << double(completedDemSteps) * dt
+                    << " positionSI="
+                    << system.get_x().at(i).transpose()
+                    << " velocitySI="
+                    << system.synchronized_velocity(i, dt).transpose()
+                    << '\n';
+            }
         }
     };
 
     lbParameters.applyRemapImpulseSI =
-        [&](const Eigen::Vector3d& linearImpulseSI,
+        [&](std::size_t i,
+            const Eigen::Vector3d& linearImpulseSI,
             const Eigen::Vector3d& angularImpulseSI)
         {
+            if (i >= system.get_x().size())
+            {
+                throw std::out_of_range(
+                    "Invalid particle index for remapping impulse"
+                );
+            }
+
             system.apply_fluid_impulse(
-                0,
+                i,
                 linearImpulseSI,
                 angularImpulseSI,
                 mass,
-                inertia);
+                inertia
+            );
         };
 
     const int status = runCapillaryLb(
