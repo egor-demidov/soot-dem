@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    SUMMARY: This is an example parameter file for an aggregate restructuring simulation
+-->
+<!--
+    DESCRIPTION: An aggregate is loaded and a fraction of contacts are made necked.
+    A binary force is applied to the particles to induce restructuring
+ -->
+<!--
+    BINARY MODELS: Bonded contact force, Hamaker attraction, Coating force
+ -->
+<!--
+    UNARY MODELS: N/A
+ -->
+
+<simulation type="capillary_dem">
+    <!-- GENERAL SIMULATION PARAMETERS -->
+
+    <!-- Integration time step -->
+    <let id="dt" type="real">5e-13</let>
+    <!-- Simulation duration -->
+    <let id="t_tot" type="real">5e-8</let>
+    <!-- Number of data dumps -->
+    <let id="n_dumps" type="integer">100</let>
+    <!-- Verlet (cutoff) radius for neighbor lists -->
+    <let id="r_verlet" type="real">70e-9</let>
+    <!-- Neighbor list update period -->
+    <let id="neighbor_update_period" type="integer">20</let>
+    <!-- Material density -->
+    <let id="rho" type="real">1700.0</let>
+    <!-- Particle radius -->
+    <let id="r_part" type="real">14e-9</let>
+    <!-- Aggregate necking fraction -->
+    <let id="frac_necks" type="real">0.80</let>
+    <!-- Seed for the RNG (to determine which necks to break) -->
+    <let id="rng_seed" type="integer">0</let>
+
+    <!-- Glycerol, approximately 25 degrees C -->
+    <let id="liquid_density" type="real">1258.0</let>
+    <let id="liquid_dynamic_viscosity" type="real">1.0e-3</let><!-- THIS IS A VERY LOW VISCOSITY, FOR DEVELOPMENT ONLY -->
+    <let id="liquid_surface_tension" type="real">0.063</let>
+    <!-- Numerical resolution -->
+    <let id="lb_cells_per_particle_diameter" type="integer">16</let>
+    <!-- Equilibrium contact angle, measured through liquid, in degrees -->
+    <let id="liquid_contact_angle_deg" type="real">90.0</let>
+
+    <!-- IMPORT THE COMMON PARAMETERS -->
+    <include>common_include.xml</include>
+
+    <!-- COATING MODEL PARAMETERS -->
+
+    <let id="n_particles" type="integer">1</let>
+    <let id="initial_gap" type="real">1e-8</let>
+    <let id="approach_speed" type="real">1.0</let>
+
+</simulation>

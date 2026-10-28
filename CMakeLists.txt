@@ -10,6 +10,28 @@ include_directories(SYSTEM deps)
 
 add_compile_definitions(_USE_MATH_DEFINES)
 
+# Initial CPU build.
+set(WALBERLA_DOUBLE_ACCURACY ON CACHE BOOL "")
+set(WALBERLA_BUILD_LEGACY_LBM ON CACHE BOOL "")
+set(WALBERLA_BUILD_WITH_MPI OFF CACHE BOOL "")
+set(WALBERLA_BUILD_WITH_OPENMP OFF CACHE BOOL "")
+set(WALBERLA_BUILD_WITH_CUDA OFF CACHE BOOL "")
+set(WALBERLA_BUILD_WITH_HIP OFF CACHE BOOL "")
+set(WALBERLA_BUILD_WITH_CODEGEN OFF CACHE BOOL "")
+set(WALBERLA_BUILD_WITH_PYTHON OFF CACHE BOOL "")
+
+set(WALBERLA_BUILD_TESTS OFF CACHE BOOL "")
+set(WALBERLA_BUILD_BENCHMARKS OFF CACHE BOOL "")
+set(WALBERLA_BUILD_TUTORIALS OFF CACHE BOOL "")
+set(WALBERLA_BUILD_EXAMPLES OFF CACHE BOOL "")
+set(WALBERLA_BUILD_TOOLS OFF CACHE BOOL "")
+set(WALBERLA_BUILD_DOC OFF CACHE BOOL "")
+
+# Includes DropWetting and other free-surface examples.
+set(WALBERLA_BUILD_SHOWCASES ON CACHE BOOL "")
+
+add_subdirectory(deps/walberla _deps/walberla)
+
 if (${MSVC})
     set(CMAKE_CXX_FLAGS "/O2 /EHsc /GL /fp:except /Wall")
 endif ()
@@ -64,6 +86,20 @@ add_executable(anchored_restructuring_breaking_necks_sphere_force src/anchored_r
 add_executable(restructuring_breaking_necks_fa_force src/restructuring_breaking_necks_fa_force.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(mechanics_testing src/mechanics_testing.cpp ${CMAKE_UTIL_SOURCES})
 add_executable(mechanics_testing_breaking_necks src/mechanics_testing_breaking_necks.cpp ${CMAKE_UTIL_SOURCES})
+add_executable(capillary_dem
+        src/capillary_dem.cpp
+        ${CMAKE_UTIL_SOURCES}
+)
+add_library(capillary_lb STATIC
+        src/capillary_lb.cpp
+)
+target_include_directories(capillary_lb PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+add_executable(capillary_smoke src/capillary_smoke.cpp)
+add_executable(capillary_demo src/capillary_demo.cpp)
+add_executable(drop_impact_demo src/drop_impact_demo.cpp)
 
 # VALIDATION EXECUTABLES
 add_executable(01_particles_colliding validation/01_particles_colliding.cpp ${CMAKE_UTIL_SOURCES})
@@ -96,6 +132,7 @@ target_link_libraries(anchored_restructuring_breaking_necks_sphere_force ${LIBRA
 target_link_libraries(restructuring_breaking_necks_fa_force ${LIBRARY_LIST})
 target_link_libraries(mechanics_testing ${LIBRARY_LIST})
 target_link_libraries(mechanics_testing_breaking_necks ${LIBRARY_LIST})
+target_link_libraries(capillary_dem PRIVATE capillary_lb ${LIBRARY_LIST})
 
 target_link_libraries(01_particles_colliding ${LIBRARY_LIST})
 target_link_libraries(02_particles_colliding ${LIBRARY_LIST})
@@ -110,3 +147,36 @@ target_link_libraries(09_sintering ${LIBRARY_LIST})
 target_link_libraries(tensile_deformation ${LIBRARY_LIST})
 target_link_libraries(shear_deformation ${LIBRARY_LIST})
 target_link_libraries(torsion_deformation ${LIBRARY_LIST})
+
+
+target_link_libraries(capillary_smoke PRIVATE
+        walberla::core
+        walberla::lbm
+        walberla::mesa_pd
+        walberla::lbm_mesapd_coupling
+        ${LIBRARY_LIST}
+)
+
+target_link_libraries(capillary_demo PRIVATE
+        walberla::lbm
+        walberla::mesa_pd
+        walberla::lbm_mesapd_coupling
+        walberla::postprocessing
+        ${LIBRARY_LIST}
+)
+
+target_link_libraries(drop_impact_demo PRIVATE
+        walberla::lbm
+        walberla::mesa_pd
+        walberla::lbm_mesapd_coupling
+        walberla::postprocessing
+        ${LIBRARY_LIST}
+)
+
+target_link_libraries(capillary_lb PUBLIC
+        walberla::lbm
+        walberla::mesa_pd
+        walberla::lbm_mesapd_coupling
+        walberla::postprocessing
+        ${LIBRARY_LIST}
+)

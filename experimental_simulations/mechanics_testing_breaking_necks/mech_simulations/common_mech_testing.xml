@@ -83,7 +83,7 @@
     <!-- Normal yield strength, Pa -->
     <let id="normal_strength" type="real">10.0e9</let>
     <!-- Shear yield strength, Pa -->
-    <let id="shear_strength" type="real">10.0e9</let>
+    <let id="shear_strength" type="real">20.0e9</let>
 
 </include_file>
 
