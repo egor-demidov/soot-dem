@@ -265,9 +265,9 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         throw std::runtime_error("DEM particle-position callback is missing");
     }
 
-    if (dem.particleCount == 0 || dem.particleCount > 2) {
-        throw std::runtime_error("Expected one or two DEM particles");
-    }
+    // if (dem.particleCount == 0 || dem.particleCount > 2) {
+        // throw std::runtime_error("Expected one or two DEM particles");
+    // }
 
     // Use particle 0's initial position as the common reference.
     const Eigen::Vector3d demReferencePositionSI = dem.particlePositionSI(0);
@@ -1870,7 +1870,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
 
                     // Include cell centers whose reconstructed interface points
                     // can fall within the four-cell support radius.
-                    if (surfaceDistance <= 4.0 + 0.5 * std::sqrt(3.0)) {
+                    if (surfaceDistance <= 4.5 + 0.5 * std::sqrt(3.0)) {
                         nearParticle = true;
                         break;
                     }
@@ -2050,7 +2050,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                 auto &line = particleStepLines[i];
 
                 line = reconstructSurfaceLine(particle.surface, interfacePlanes, particle.center,
-                                              double(surfaceTension), 4.0, double(contactAngle));
+                                              double(surfaceTension), 4.5, double(contactAngle));
 
                 // A small/rapidly moving contact patch may be under-resolved
                 // on the geometric sphere even with valid fluid data. Refine

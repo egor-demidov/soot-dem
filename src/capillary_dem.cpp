@@ -203,8 +203,8 @@ int main(int argc, char **argv) {
 
     const long n_particles = get_integer_parameter(parameter_store, "n_particles");
 
-    if (n_particles != 1 && n_particles != 2) {
-        std::cerr << "n_particles must be 1 or 2\n";
+    if (n_particles != 1 && n_particles != 2 && n_particles != 3) {
+        std::cerr << "n_particles must be 1 or 2 or 3\n";
         return EXIT_FAILURE;
     }
 
@@ -240,7 +240,7 @@ int main(int argc, char **argv) {
         v0[1] = Eigen::Vector3d{5.0, 0.0, 0.0};
 
         x0[2] = Eigen::Vector3d{35e-9, 0.0, 24.5e-9 + 22.0e-9};
-        v0[2] = Eigen::Vector3d{5.0, 0.0, -5.0};
+        v0[2] = Eigen::Vector3d{-5.0, 0.0, -5.0};
     }
 
     // Fill the remaining buffers with zeros
