@@ -59,7 +59,7 @@ BoundaryParameters
 
 MeshOutputParameters
 {
-   writeFrequency 500;
+   writeFrequency 2000;
    baseFolder mesh-out;
 }
 
@@ -67,7 +67,7 @@ VTK
 {
    fluid_field
    {
-      writeFrequency 500;
+      writeFrequency 2000;
       ghostLayers 0;
       baseFolder vtk-out;
       samplingResolution 1;
@@ -101,7 +101,7 @@ VTK
 
    domain_decomposition
    {
-      writeFrequency 500;
+      writeFrequency 2000;
       baseFolder vtk-out;
       outputDomainDecomposition true;
    }

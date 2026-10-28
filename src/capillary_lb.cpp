@@ -2387,6 +2387,18 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
 
     for (uint_t t = uint_c(0); t != timesteps; ++t) {
         stepBefore = measureLiquidState();
+
+        if (t >= uint_c(18300))
+        {
+            for (std::size_t i = 0; i < particles.size(); ++i)
+            {
+                WALBERLA_LOG_INFO_ON_ROOT(
+                    "Geometry diagnostic: step=" << t
+                    << " particle=" << i
+                    << " centerLB=" << particles[i].center.transpose());
+            }
+        }
+
         timeloop.singleStep(timingPool, true);
 
         const Eigen::Vector3d totalFluidForceSI = units.forceScaleSI * stepLoad.force;
