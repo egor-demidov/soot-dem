@@ -12,6 +12,7 @@
 #include "contact_line_force.h"
 #include "interface_plane_field.h"
 #include "sphere_surface.h"
+#include "surface_endpoint_validation.h"
 
 struct SurfaceLineResult {
     ContactLineLoad load;
@@ -19,6 +20,9 @@ struct SurfaceLineResult {
 
     std::vector<std::array<Eigen::Vector3d, 2>> segments;
 
+    std::vector<Eigen::Vector3d> solidNormals;
+    std::vector<Eigen::Vector3d> interfaceNormals;
+    std::size_t occlusionCuts = 0;
     std::size_t unsupportedTriangles = 0;
     std::size_t degenerateTriangles = 0;
     std::size_t invalidSegments = 0;
@@ -143,34 +147,13 @@ SurfaceLineResult reconstructSurfaceLine(const std::vector<SphereTriangle> &mesh
 
         result.length += length;
         result.segments.push_back({a, b});
+        result.solidNormals.push_back(ns);
+        result.interfaceNormals.push_back(ni);
     }
 
     // A closed, non-branching contour has exactly one other
     // segment endpoint matching each endpoint.
-    const double endpointToleranceSquared = std::pow(1e-8 * supportRadius, 2);
-
-    for (std::size_t i = 0; i < result.segments.size(); ++i) {
-        for (int end = 0; end < 2; ++end) {
-            std::size_t matches = 0;
-
-            for (std::size_t j = 0; j < result.segments.size(); ++j) {
-                if (i == j)
-                    continue;
-
-                for (int other = 0; other < 2; ++other) {
-                    const double distanceSquared =
-                        (result.segments[i][end] - result.segments[j][other]).squaredNorm();
-
-                    if (distanceSquared < endpointToleranceSquared) {
-                        ++matches;
-                    }
-                }
-            }
-
-            if (matches != 1)
-                ++result.badEndpoints;
-        }
-    }
+    result.badEndpoints = countBadSurfaceEndpoints(result.segments, 1e-8 * supportRadius);
 
     return result;
 }

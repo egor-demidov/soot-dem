@@ -16,6 +16,6 @@
     <liquid mode="levelset" alpha="0.5" threshold="0.5" />
   </initialization>
   <lattice initialization_samples_per_axis="4" />
-  <domain_margin x="30" y="30" z="30" length_unit="nm" />
+  <domain_margin x="10" y="10" z="10" length_unit="nm" />
   <output surface_every_lb_steps="100" fluid_every_lb_steps="100" dem_every_dem_steps="100" log_every_lb_steps="100" particle_every_lb_steps="100" />
 </simulation>

@@ -66,9 +66,15 @@
 #include "sphere_surface.h"
 #include "sphere_union_wall.h"
 #include <atomic>
+#include "phase_surface_field.h"
+#include "exposed_surface_line.h"
 #include "surface_contact_line.h"
 
 #include "momentum_projection.h"
+#include "runtime_profile.h"
+#include "sphere_union_mask.h"
+#include "capillary_parallel.h"
+#include "uncovered_refill_support.h"
 
 namespace walberla::free_surface {
 template <typename ScalarField_T, typename FlagField_T> class CapillarySurfaceMeshWriter {
@@ -495,7 +501,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         Eigen::Vector3d normal; // Points from liquid toward gas.
     };
 
-    std::vector<InterfacePlaneSample> interfacePlanes;
+
 
     using BoundaryHandling_T = FreeSurfaceBoundaryHandling_T::BoundaryHandling_T;
     using UBB_T = FreeSurfaceBoundaryHandling_T::UBB_T;
@@ -608,13 +614,20 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         Eigen::Vector3d coveredLiquidMomentumLB = Eigen::Vector3d::Zero();
     };
 
+    CapillaryRuntimeProfile runtimeProfile;
+
     auto detectParticleCellChanges = [&](std::size_t movingParticle,
                                          const Eigen::Vector3d &proposedCenterLB) {
         if (movingParticle >= particles.size()) {
             throw std::out_of_range("Invalid moving particle index");
         }
 
+        CapillaryRuntimeProfile::Scope profileScope(runtimeProfile, CapillaryRuntimeProfile::DetectCells);
         ParticleCellChanges changes;
+        std::vector<Eigen::Vector3d> proposedCenters;
+        proposedCenters.reserve(particles.size());
+        for (std::size_t i=0;i<particles.size();++i)
+            proposedCenters.push_back(i==movingParticle ? proposedCenterLB : particles[i].center);
 
         for (auto &block : *blockForest) {
             const auto *flags = block.getData<FlagField_T>(flagFieldID);
@@ -631,16 +644,15 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
 
             const auto particleMask = flags->getFlag(FreeSurfaceBoundaryHandling_T::ubbFlagID);
 
+            const SphereUnionMask proposedMask(
+                {int(flags->xSize()), int(flags->ySize()), int(flags->zSize())},
+                cellCenterEigen(block, Cell(0,0,0)), proposedCenters, double(solidRadius));
+
             // Count owned cells only; ghost cells would duplicate counts.
             for (const auto &cell : flags->xyzSize()) {
                 const bool wasParticle = (flags->get(cell.x(), cell.y(), cell.z()) & particleMask) != 0;
 
-                const auto position = blockForest->getBlockLocalCellCenter(block, cell);
-
-                const Eigen::Vector3d positionLB{double(position[0]), double(position[1]),
-                                                 double(position[2])};
-
-                const bool becomesParticle = isSolidAfterMove(positionLB, movingParticle, proposedCenterLB);
+                const bool becomesParticle = proposedMask(int(cell.x()), int(cell.y()), int(cell.z()));
 
                 if (!wasParticle && becomesParticle) {
                     ++changes.covered;
@@ -705,6 +717,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
             throw std::runtime_error("Non-finite proposed particle center");
         }
 
+        CapillaryRuntimeProfile::Scope profileScope(runtimeProfile, CapillaryRuntimeProfile::Remap);
         const auto shifted = detectParticleCellChanges(movingParticle, shiftedCenter);
 
         struct InterfaceRecipient {
@@ -994,8 +1007,55 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
             }
 
             if (neighborCount == 0) {
-                ++unsupportedUncoveredCells;
-                continue;
+                using capillary_coupling::RefillCell;
+                using capillary_coupling::RefillCellKind;
+                std::vector<RefillCell> directions;
+                for (auto d = LatticeModelStencil_T::beginNoCenter(); d != LatticeModelStencil_T::end(); ++d)
+                    directions.push_back({int(d.cx()), int(d.cy()), int(d.cz())});
+                const auto support = capillary_coupling::findUncoveredRefillSupport(
+                    RefillCell{int(entry.cell.x()), int(entry.cell.y()), int(entry.cell.z())}, directions,
+                    [&](const RefillCell& index) {
+                        const Cell cell(index[0], index[1], index[2]);
+                        if (!flags->xyzSize().contains(cell) ||
+                            isSolidAfterMove(cellCenterEigen(*entry.block, cell), movingParticle, shiftedCenter))
+                            return RefillCellKind::Blocked;
+                        const auto flag = flags->get(cell.x(), cell.y(), cell.z());
+                        if (flagInfo.isLiquid(flag) || flagInfo.isInterface(flag) || flagInfo.isGas(flag))
+                            return RefillCellKind::SurvivingPhase;
+                        const bool uncovered = std::any_of(shifted.uncoveredCells.begin(), shifted.uncoveredCells.end(),
+                            [&](const auto& candidate) { return candidate.block == entry.block && candidate.cell == cell; });
+                        return uncovered ? RefillCellKind::NewlyUncovered : RefillCellKind::Blocked;
+                    });
+                if (support.enclosed()) {
+                    // All cells in this component were solid before the move.
+                    // No resolved liquid or momentum exists here to refill it.
+                    // A genuinely isolated new pore therefore starts as gas.
+                    uncoveredStates.push_back({entry.block, entry.cell, 0.0, 1.0, Eigen::Vector3d::Zero()});
+                    WALBERLA_LOG_DEVEL_ON_ROOT("New enclosed pore cell: particle=" << movingParticle
+                        << " cell=" << entry.cell << " componentCells=" << support.visitedUncovered);
+                    continue;
+                }
+                // A component can connect to existing phase through another
+                // newly uncovered cell. Sample its nearest surviving boundary,
+                // rather than treating an interior cell as an isolated gas pore.
+                for (const auto& index: support.boundary) {
+                    const Cell neighbor(index[0], index[1], index[2]);
+                    ++neighborCount;
+                    const auto flag=flags->get(neighbor.x(), neighbor.y(), neighbor.z());
+                    if (flagInfo.isGas(flag)) continue;
+                    const double fraction=double(fill->get(neighbor.x(), neighbor.y(), neighbor.z()));
+                    const double density=double(pdfs->getDensity(neighbor.x(), neighbor.y(), neighbor.z()));
+                    const auto momentum=pdfs->getMomentumDensity(neighbor.x(), neighbor.y(), neighbor.z());
+                    fractionSum+=fraction;
+                    liquidMassSum+=fraction*density;
+                    liquidMomentumSum+=fraction*Eigen::Vector3d{double(momentum[0]),double(momentum[1]),double(momentum[2])};
+                }
+                if (neighborCount == 0) {
+                    ++unsupportedUncoveredCells;
+                    continue;
+                }
+                WALBERLA_LOG_DEVEL_ON_ROOT("Component refill support: particle=" << movingParticle
+                    << " cell=" << entry.cell << " survivingNeighbors=" << neighborCount);
             }
 
             const double proposedFill = std::clamp(fractionSum / double(neighborCount), 0.0, 1.0);
@@ -1609,6 +1669,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     uint_t sphereLinkCount = uint_c(0);
 
     auto updateSphereWallVelocity = [&]() {
+        CapillaryRuntimeProfile::Scope profileScope(runtimeProfile, CapillaryRuntimeProfile::WallVelocity);
         std::vector<Eigen::Vector3d> velocitiesLB(particles.size(), Eigen::Vector3d::Zero());
 
         std::vector<Eigen::Vector3d> angularVelocitiesLB(particles.size(), Eigen::Vector3d::Zero());
@@ -1669,6 +1730,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     std::vector<uint_t> particleWallLinkCounts(particles.size(), uint_c(0));
 
     auto measureSphereForce = [&]() {
+        CapillaryRuntimeProfile::Scope profileScope(runtimeProfile, CapillaryRuntimeProfile::WallLoad);
         sphereForceLB = Vector3<real_t>(real_c(0), real_c(0), real_c(0));
         sphereTorqueLB.setZero();
         sphereLinkCount = uint_c(0);
@@ -1838,6 +1900,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     double minimumResolvedFillLB = 1.0;
     double maximumResolvedFillLB = 0.0;
     auto measureLiquidState = [&]() {
+        CapillaryRuntimeProfile::Scope profileScope(runtimeProfile, CapillaryRuntimeProfile::Momentum);
         capillary_coupling::MomentumState state;
         minimumResolvedFillLB = 1.0;
         maximumResolvedFillLB = 0.0;
@@ -1880,79 +1943,12 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
 
     const ConstBlockDataID curvatureFieldID = geometryHandler.getConstCurvatureFieldID();
     const ConstBlockDataID normalFieldID = geometryHandler.getConstNormalFieldID();
+    const auto phaseFieldID=geometryHandler.getConstSurfacePhaseFieldID();
+    if(phaseFieldID==ConstBlockDataID())throw std::runtime_error("Phase contours require FiniteDifferenceMethod");
+    const auto* surfacePhaseValues = blockForest->begin()->getData<ScalarField_T>(phaseFieldID);
+    PhaseSurfaceField surfacePhase{{int(domainSize[0]),int(domainSize[1]),int(domainSize[2])},
+        [surfacePhaseValues](int x,int y,int z){return double(surfacePhaseValues->get(x,y,z));}};
 
-    timeloop.addFuncBeforeTimeStep([&]() { interfacePlanes.clear(); }, "Reset interface-plane samples");
-
-    timeloop.add() << Sweep(
-        [&](IBlock *block) {
-            using Vec = Eigen::Vector3d;
-
-            const auto *flags = block->getData<FlagField_T>(flagFieldID);
-
-            const auto *fill = block->getData<ScalarField_T>(fillFieldID);
-
-            const auto *normals = block->getData<VectorField_T>(normalFieldID);
-
-            for (const auto &cell : flags->xyzSize()) {
-                const auto flag = flags->get(cell.x(), cell.y(), cell.z());
-
-                if (!flagInfo.isInterface(flag))
-                    continue;
-
-                const auto cellCenter = blockForest->getBlockLocalCellCenter(*block, cell);
-
-                const Vec center(cellCenter[0], cellCenter[1], cellCenter[2]);
-
-                // Collect planes within three lattice spacings
-                // of the analytic sphere surface.
-                bool nearParticle = false;
-
-                for (const auto &particle : particles) {
-                    const double surfaceDistance =
-                        std::abs((center - particle.center).norm() - double(solidRadius));
-
-                    // Include cell centers whose reconstructed interface points
-                    // can fall within the four-cell support radius.
-                    if (surfaceDistance <= 4.5 + 0.5 * std::sqrt(3.0)) {
-                        nearParticle = true;
-                        break;
-                    }
-                }
-
-                if (!nearParticle)
-                    continue;
-
-                const real_t fraction = fill->get(cell.x(), cell.y(), cell.z());
-
-                if (!std::isfinite(fraction) || fraction <= real_c(1e-6) ||
-                    fraction >= real_c(1) - real_c(1e-6)) {
-                    continue;
-                }
-
-                auto normal = normals->get(cell.x(), cell.y(), cell.z());
-
-                const Vec normalEigen(normal[0], normal[1], normal[2]);
-
-                if (!normalEigen.allFinite() || normalEigen.squaredNorm() < 1e-14) {
-                    continue;
-                }
-
-                normal = normal.getNormalizedOrZero();
-
-                const auto localPoint = walberla::free_surface::getInterfacePoint(normal, fraction);
-
-                // getInterfacePoint uses [0,1]^3 coordinates.
-                // This demo has unit lattice spacing.
-                const Vec globalPoint = center + Vec(localPoint[0] - real_c(0.5), localPoint[1] - real_c(0.5),
-                                                     localPoint[2] - real_c(0.5));
-
-                if (!globalPoint.allFinite())
-                    continue;
-
-                interfacePlanes.push_back({globalPoint, normalEigen.normalized()});
-            }
-        },
-        "Collect interface planes near sphere");
 
     // add boundary handling for standard boundaries and free surface boundaries
     const SurfaceDynamicsHandler<LatticeModel_T, FlagField_T, ScalarField_T, VectorField_T> dynamicsHandler(
@@ -1983,6 +1979,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     // solidCenterEigen. Shared by the LB residual and moving-lever correction.
     auto applyFluidMomentumCorrection = [&](const Eigen::Vector3d &linearImpulseLB,
                                             const Eigen::Vector3d &angularImpulseLB) {
+        CapillaryRuntimeProfile::Scope profileScope(runtimeProfile, CapillaryRuntimeProfile::Projection);
         double maxCorrection = 0.0;
         struct Recipient {
             PdfField_T *pdfs;
@@ -2087,36 +2084,55 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
             // as its reference point.
             const Eigen::Vector3d angularOrigin = solidCenterEigen;
 
-            for (std::size_t i = 0; i < particles.size(); ++i) {
+            {
+            CapillaryRuntimeProfile::Scope profileScope(runtimeProfile, CapillaryRuntimeProfile::ContactLine);
+            std::vector<int> oldLevels;
+            for (const auto& body:particles) oldLevels.push_back(body.surfaceLevel);
+            capillaryParallelFor(particles.size(), [&](std::size_t i) {
                 auto &particle = particles[i];
 
                 auto &line = particleStepLines[i];
 
-                line = reconstructSurfaceLine(particle.surface, interfacePlanes, particle.center,
+                line = reconstructSurfaceLine(particle.surface, surfacePhase, particle.center,
                                               double(surfaceTension), 4.5, double(contactAngle));
 
                 // A small/rapidly moving contact patch may be under-resolved
                 // on the geometric sphere even with valid fluid data. Refine
                 // its actual triangles, then require a closed contour again.
                 // Never close gaps with fabricated segments or reuse an old load.
-                while ((line.invalidSegments != 0 || line.badEndpoints != 0) && particle.surfaceLevel < 6) {
+                while ((line.invalidSegments != 0 || line.badEndpoints != 0 || line.degenerateTriangles != 0) && particle.surfaceLevel < 6) {
                     ++particle.surfaceLevel;
                     particle.surface =
                         makeSphereSurface(particle.center, double(solidRadius), particle.surfaceLevel);
-                    line = reconstructSurfaceLine(particle.surface, interfacePlanes, particle.center,
+                    line = reconstructSurfaceLine(particle.surface, surfacePhase, particle.center,
                                                   double(surfaceTension), 4.5, double(contactAngle));
-                    WALBERLA_LOG_INFO_ON_ROOT("Refined particle surface: step="
-                                              << timeloop.getCurrentTimeStep() << " particle=" << i
-                                              << " level=" << particle.surfaceLevel << " segments="
-                                              << line.segments.size() << " badEndpoints=" << line.badEndpoints
-                                              << " invalid=" << line.invalidSegments);
+
                 }
-                if (line.invalidSegments != 0 || line.badEndpoints != 0) {
-                    std::ofstream dump("contact_line_failure.txt");
-                    dump << std::setprecision(17) << particle.center.transpose() << ' ' << solidRadius << ' '
-                         << surfaceTension << ' ' << contactAngle << '\n';
-                    for (const auto &plane : interfacePlanes)
-                        dump << plane.point.transpose() << ' ' << plane.normal.transpose() << '\n';
+            });
+            std::vector<Eigen::Vector3d> centers;
+            for(const auto& body:particles) centers.push_back(body.center);
+            for (std::size_t i = 0; i < particles.size(); ++i) {
+                auto& particle=particles[i];
+                auto& line=particleStepLines[i];
+                if (particle.surfaceLevel != oldLevels[i])
+                    WALBERLA_LOG_INFO_ON_ROOT("Refined particle surface: step=" << timeloop.getCurrentTimeStep()
+                        << " particle=" << i << " level=" << particle.surfaceLevel
+                        << " segments=" << line.segments.size() << " badEndpoints=" << line.badEndpoints
+                        << " invalid=" << line.invalidSegments);
+                if (line.invalidSegments != 0 || line.badEndpoints != 0 || line.degenerateTriangles != 0) {
+                    std::ofstream dump("phase_surface_failure.txt");
+                    dump << "# phase-surface-v1 step=" << timeloop.getCurrentTimeStep()
+                         << " particle=" << i << " radius=" << solidRadius << '\n';
+                    dump << "# x y z value gx gy gz valid\n" << std::setprecision(17);
+                    std::map<std::array<double,3>,Eigen::Vector3d> vertices;
+                    for(const auto& triangle:particle.surface)for(const auto& v:triangle)
+                        vertices.emplace(std::array<double,3>{v.x(),v.y(),v.z()},v);
+                    for(const auto& entry:vertices){
+                        const auto sample=sampleInterfaceField(entry.second,surfacePhase,4.5);
+                        dump << entry.second.transpose() << ' ';
+                        if(sample)dump << sample->value << ' ' << sample->gradient.transpose() << " 1\n";
+                        else dump << "nan 0 0 0 0\n";
+                    }
                     dump.close();
                     std::ostringstream reason;
                     reason << "Invalid contact line: step=" << timeloop.getCurrentTimeStep()
@@ -2126,6 +2142,8 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                            << " degenerate=" << line.degenerateTriangles;
                     throw std::runtime_error(reason.str());
                 }
+
+                line=exposeSurfaceLine(line,centers,i,double(solidRadius),double(surfaceTension));
 
                 auto &load = particleStepLoads[i];
 
@@ -2148,6 +2166,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                 stepLine.segments.insert(stepLine.segments.end(), line.segments.begin(), line.segments.end());
 
                 stepLine.length += line.length;
+                stepLine.occlusionCuts += line.occlusionCuts;
                 stepLine.unsupportedTriangles += line.unsupportedTriangles;
                 stepLine.degenerateTriangles += line.degenerateTriangles;
                 stepLine.invalidSegments += line.invalidSegments;
@@ -2159,6 +2178,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                     line.load.torque + (particle.center - angularOrigin).cross(line.load.force);
             }
 
+            }
             const auto after = measureLiquidState();
             rawResidual.linear = after.linear - stepBefore.linear + stepLoad.force;
             rawResidual.angular = after.angular - stepBefore.angular + stepLoad.torque;
@@ -2400,6 +2420,8 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
 
     const Eigen::Vector3d initialSystemAngularLB = initialSystemState.angular;
 
+    runtimeProfile.reset();
+    const auto steppingStarted = CapillaryRuntimeProfile::Clock::now();
     for (uint_t t = uint_c(0); t != timesteps; ++t) {
         stepBefore = measureLiquidState();
 
@@ -2428,6 +2450,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                                       << " relativeMassChange=" << relativeMassChange << " minFill="
                                       << minimumResolvedFillLB << " maxFill=" << maximumResolvedFillLB
                                       << " lineSegments=" << stepLine.segments.size()
+                                      << " occlusionCuts=" << stepLine.occlusionCuts
                                       << " wallLinks=" << sphereLinkCount
                                       << " wallMassCorrectionLB=" << movingWallMassCorrectionLB);
         }
@@ -2581,6 +2604,14 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         const double relativeMassChange = (double(*totalMass) - initialLiquidMassLB) / initialLiquidMassLB;
         if (!std::isfinite(relativeMassChange) || std::abs(relativeMassChange) > 1e-8)
             throw std::runtime_error("Liquid mass conservation failed during coupling");
+    }
+    const double steppingSeconds = std::chrono::duration<double>(CapillaryRuntimeProfile::Clock::now()-steppingStarted).count();
+    runtimeProfile.print(std::cout, steppingSeconds, timesteps);
+    if (runtimeProfile.enabled) {
+        const auto flags=std::cout.flags();
+        const auto precision=std::cout.precision();
+        std::cout << timingPool;
+        std::cout.flags(flags);std::cout.precision(precision);
     }
     WALBERLA_LOG_INFO_ON_ROOT("Geometry: resolvedCancelledWallQueries=" << resolvedWallQueries.load());
     WALBERLA_LOG_INFO_ON_ROOT("Completed " << timesteps << " LB steps; advanceDEM=" << advanceDEM);
