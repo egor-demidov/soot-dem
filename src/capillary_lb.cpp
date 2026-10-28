@@ -1868,7 +1868,9 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                     const double surfaceDistance =
                         std::abs((center - particle.center).norm() - double(solidRadius));
 
-                    if (surfaceDistance <= 3.0) {
+                    // Include cell centers whose reconstructed interface points
+                    // can fall within the four-cell support radius.
+                    if (surfaceDistance <= 4.0 + 0.5 * std::sqrt(3.0)) {
                         nearParticle = true;
                         break;
                     }
@@ -2048,7 +2050,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                 auto &line = particleStepLines[i];
 
                 line = reconstructSurfaceLine(particle.surface, interfacePlanes, particle.center,
-                                              double(surfaceTension), 3.0, double(contactAngle));
+                                              double(surfaceTension), 4.0, double(contactAngle));
 
                 // A small/rapidly moving contact patch may be under-resolved
                 // on the geometric sphere even with valid fluid data. Refine
