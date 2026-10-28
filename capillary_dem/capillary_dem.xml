@@ -8,7 +8,7 @@
   <let id="liquid_density" type="real">1258.0</let>
   <let id="liquid_dynamic_viscosity" type="real">1.0e-3</let>
   <let id="liquid_surface_tension" type="real">0.063</let>
-  <let id="lb_cells_per_particle_diameter" type="integer">16</let>
+  <let id="lb_cells_per_particle_diameter" type="integer">14</let>
   <let id="liquid_contact_angle_deg" type="real">5.0</let>
   <include>capillary_contacts.xml</include>
   <initialization>
@@ -19,6 +19,6 @@
     </liquid>
   </initialization>
   <lattice initialization_samples_per_axis="4" />
-  <domain_margin x="30" y="30" z="30" length_unit="nm" />
+  <domain_margin x="10" y="10" z="10" length_unit="nm" />
   <output surface_every_lb_steps="100" fluid_every_lb_steps="100" dem_every_dem_steps="100" log_every_lb_steps="100" particle_every_lb_steps="100" />
 </simulation>

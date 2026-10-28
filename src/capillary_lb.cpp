@@ -64,6 +64,8 @@
 #include "lb_units.h"
 #include "capillary_setup.h"
 #include "sphere_surface.h"
+#include "sphere_union_wall.h"
+#include <atomic>
 #include "surface_contact_line.h"
 
 #include "momentum_projection.h"
@@ -1817,9 +1819,21 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     }
 
     // add surface geometry handler
+    // Resolve only cancelled voxel normals; retain established stencils elsewhere.
+    std::atomic<unsigned long long> resolvedWallQueries{0};
+    auto resolvedWallNormal = [&](IBlock* block, const Cell& fluid, const Cell& solid) {
+        const auto f=blockForest->getBlockLocalCellCenter(*block,fluid);
+        const auto w=blockForest->getBlockLocalCellCenter(*block,solid);
+        std::vector<Eigen::Vector3d> centers;centers.reserve(particles.size());
+        for(const auto& p:particles)centers.push_back(p.center);
+        const auto n=sphereUnionWallNormal(Eigen::Vector3d(f[0],f[1],f[2]),
+            Eigen::Vector3d(w[0],w[1],w[2]),centers,double(solidRadius));
+        resolvedWallQueries.fetch_add(1,std::memory_order_relaxed);
+        return Vector3<real_t>(real_c(n.x()),real_c(n.y()),real_c(n.z()));
+    };
     const SurfaceGeometryHandler<LatticeModel_T, FlagField_T, ScalarField_T, VectorField_T> geometryHandler(
         blockForest, freeSurfaceBoundaryHandling, fillFieldID, curvatureModel, computeCurvature,
-        enableWetting, contactAngle);
+        enableWetting, contactAngle, resolvedWallNormal);
 
     double minimumResolvedFillLB = 1.0;
     double maximumResolvedFillLB = 0.0;
@@ -2568,6 +2582,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         if (!std::isfinite(relativeMassChange) || std::abs(relativeMassChange) > 1e-8)
             throw std::runtime_error("Liquid mass conservation failed during coupling");
     }
+    WALBERLA_LOG_INFO_ON_ROOT("Geometry: resolvedCancelledWallQueries=" << resolvedWallQueries.load());
     WALBERLA_LOG_INFO_ON_ROOT("Completed " << timesteps << " LB steps; advanceDEM=" << advanceDEM);
 
     return EXIT_SUCCESS;
