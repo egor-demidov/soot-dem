@@ -232,6 +232,15 @@ int main(int argc, char **argv) {
         x0[1] = Eigen::Vector3d{-35e-9, 0.0, 24.5e-9 + 22.0e-9};
 
         v0[1] = Eigen::Vector3d{5.0, 0.0, 0.0};
+    } else if (n_particles == 3) {
+        x0[0] = Eigen::Vector3d::Zero();
+        v0[0] = Eigen::Vector3d::Zero();
+
+        x0[1] = Eigen::Vector3d{-35e-9, 0.0, 24.5e-9 + 22.0e-9};
+        v0[1] = Eigen::Vector3d{5.0, 0.0, 0.0};
+
+        x0[2] = Eigen::Vector3d{35e-9, 0.0, 24.5e-9 + 22.0e-9};
+        v0[2] = Eigen::Vector3d{5.0, 0.0, -5.0};
     }
 
     // Fill the remaining buffers with zeros

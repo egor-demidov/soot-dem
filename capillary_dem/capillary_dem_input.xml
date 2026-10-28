@@ -42,7 +42,7 @@
     <!-- Numerical resolution -->
     <let id="lb_cells_per_particle_diameter" type="integer">16</let>
     <!-- Equilibrium contact angle, measured through liquid, in degrees -->
-    <let id="liquid_contact_angle_deg" type="real">75.0</let>
+    <let id="liquid_contact_angle_deg" type="real">5.0</let>
 
     <!-- IMPORT THE COMMON PARAMETERS -->
     <include>common_include.xml</include>
