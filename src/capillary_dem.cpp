@@ -108,11 +108,16 @@ public:
 
         if (started_) {
             for (size_t i = 0; i < count; ++i) {
-                this->a[i] +=
+                const Eigen::Vector3d deltaAcceleration =
                     (new_forces[i] - loads.forces[i]) / loads.mass;
-
-                this->alpha[i] +=
+                const Eigen::Vector3d deltaAngularAcceleration =
                     (new_torques[i] - loads.torques[i]) / loads.inertia;
+                // The integrator stores half-step velocities. Replacing a cached
+                // force must not change the physical synchronized velocity.
+                this->v[i] -= 0.5 * lastStepDt_ * deltaAcceleration;
+                this->omega[i] -= 0.5 * lastStepDt_ * deltaAngularAcceleration;
+                this->a[i] += deltaAcceleration;
+                this->alpha[i] += deltaAngularAcceleration;
             }
         }
 
@@ -121,7 +126,10 @@ public:
     }
 
     void do_step(double dt) {
+        if (!std::isfinite(dt) || dt <= 0.0 || (started_ && dt != lastStepDt_))
+            throw std::invalid_argument("Fluid-loaded half-step integrator requires a fixed positive timestep");
         granular_system_t::do_step(dt);
+        lastStepDt_ = dt;
         started_ = true;
     }
 
@@ -175,6 +183,7 @@ public:
 
 private:
     bool started_ = false;
+    double lastStepDt_ = 0.0;
 };
 
 int main(int argc, char ** argv) {

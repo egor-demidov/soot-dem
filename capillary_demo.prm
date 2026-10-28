@@ -2,7 +2,7 @@ BlockForestParameters
 {
    cellsPerBlock                 < 60, 60, 60 >;
    periodicity                   < 1, 1, 0 >;
-   loadBalancingFrequency        100;
+   loadBalancingFrequency        0;
    printLoadBalancingStatistics  true;
 }
 
@@ -18,8 +18,8 @@ PhysicsParameters
    surfaceTension 8.37e-3;
    force <0, 0, 0>;
    enableWetting true;
-   contactAngle 90; // only used if enableWetting=true
-   timesteps       2001;
+   timesteps       10001;
+   diagnosticFrequency 500;
 }
 
 ModelParameters
