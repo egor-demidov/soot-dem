@@ -12,4 +12,4 @@
 	url = https://github.com/leethomason/tinyxml2.git
 [submodule "deps/walberla"]
 	path = deps/walberla
-	url = https://github.com/lssfau/walberla.git
+	url = https://github.com/egor-demidov/walberla.git
