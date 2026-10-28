@@ -18,7 +18,7 @@ PhysicsParameters
    surfaceTension 8.37e-3;
    force <0, 0, 0>;
    enableWetting true;
-   timesteps       10001;
+   timesteps       30001;
    diagnosticFrequency 500;
 }
 

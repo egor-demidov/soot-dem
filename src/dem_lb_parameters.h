@@ -6,8 +6,8 @@
 #define SOOT_AFM_DEM_LB_PARAMETERS_H
 
 #include <Eigen/Dense>
-#include <functional>
 #include <cstddef>
+#include <functional>
 #include <vector>
 
 struct DemLbParameters {
@@ -29,10 +29,7 @@ struct DemLbParameters {
     std::size_t particleCount = 1;
 
     // One force and torque per particle, in particle-index order.
-    std::function<void(
-        const Field& forcesSI,
-        const Field& torquesSI
-    )> submitFluidLoadSI;
+    std::function<void(const Field &forcesSI, const Field &torquesSI)> submitFluidLoadSI;
 
     std::function<Vec(std::size_t)> particlePositionSI;
     std::function<Vec(std::size_t)> particleVelocitySI;
@@ -42,17 +39,10 @@ struct DemLbParameters {
     std::function<void()> advanceDemStep;
 
     // Applies a remapping impulse to one particle.
-    std::function<void(
-        std::size_t particleIndex,
-        const Vec& impulseSI,
-        const Vec& angularImpulseSI
-    )> applyRemapImpulseSI;
+    std::function<void(std::size_t particleIndex, const Vec &impulseSI, const Vec &angularImpulseSI)>
+        applyRemapImpulseSI;
 };
 
-int runCapillaryLb(
-    int argc,
-    char** argv,
-    const DemLbParameters& dem
-);
+int runCapillaryLb(int argc, char **argv, const DemLbParameters &dem);
 
-#endif //SOOT_AFM_DEM_LB_PARAMETERS_H
+#endif // SOOT_AFM_DEM_LB_PARAMETERS_H

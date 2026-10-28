@@ -21,25 +21,26 @@
 //! \author Christoph Schwarzmeier <christoph.schwarzmeier@fau.de>
 //
 // Single-particle DEM/free-surface-LB prototype. The continuum contact-line
-// estimate is retained; an explicit PDF momentum projection repairs its mismatch
-// with the native free-surface update. Conservation is enforced numerically and
-// must not be interpreted as validation of capillary-force accuracy.
+// estimate is retained; an explicit PDF momentum projection repairs its
+// mismatch with the native free-surface update. Conservation is enforced
+// numerically and must not be interpreted as validation of capillary-force
+// accuracy.
 //======================================================================================================================
 
-#include <utility>
-#include <cmath>
-#include <memory>
-#include <stdexcept>
-#include <string>
-#include <vector>
-#include <array>
-#include <queue>
-#include <set>
 #include <algorithm>
+#include <array>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <memory>
+#include <queue>
+#include <set>
 #include <sstream>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "blockforest/Initialization.h"
 
@@ -57,12 +58,12 @@
 #include "lbm/lattice_model/D3Q19.h"
 
 #include "contact_line_force.h"
-#include "sphere_surface.h"
-#include "interface_plane_field.h"
-#include "surface_contact_line.h"
 #include "contact_line_output.h"
 #include "dem_lb_parameters.h"
+#include "interface_plane_field.h"
 #include "lb_units.h"
+#include "sphere_surface.h"
+#include "surface_contact_line.h"
 
 #include "momentum_projection.h"
 
@@ -134,8 +135,8 @@ template <typename ScalarField_T, typename FlagField_T> class CapillarySurfaceMe
         auto blockForest = blockForest_.lock();
         WALBERLA_CHECK_NOT_NULLPTR(blockForest);
 
-        // update clone of fill level field and set fill level of all non-liquid, -interface, or -gas cells to
-        // zero
+        // update clone of fill level field and set fill level of all non-liquid,
+        // -interface, or -gas cells to zero
         updateFillFieldClone(blockForest);
 
         const auto surfaceMesh = postprocessing::realFieldToSurfaceMesh<ScalarField_T>(
@@ -161,9 +162,10 @@ template <typename ScalarField_T, typename FlagField_T> class CapillarySurfaceMe
         }
     }
 
-    // update clone of fill level field and set fill level of all non-liquid, -interface, or -gas cells to
-    // zero; explicitly use shared_ptr instead of weak_ptr to avoid checking the latter's validity (is done in
-    // writeMesh() already)
+    // update clone of fill level field and set fill level of all non-liquid,
+    // -interface, or -gas cells to zero; explicitly use shared_ptr instead of
+    // weak_ptr to avoid checking the latter's validity (is done in writeMesh()
+    // already)
     void updateFillFieldClone(const std::shared_ptr<StructuredBlockForest> &blockForest) {
         for (auto block = blockForest->begin(); block != blockForest->end(); ++block) {
             auto *output = block->template getData<ScalarField_T>(fillFieldCloneID_);
@@ -239,8 +241,9 @@ using LatticeModelStencil_T = LatticeModel_T::Stencil;
 using PdfField_T = lbm::PdfField<LatticeModel_T>;
 using PdfCommunication_T = blockforest::SimpleCommunication<LatticeModelStencil_T>;
 
-// the geometry computations in SurfaceGeometryHandler require meaningful values in the ghost layers in corner
-// directions (flag field and fill level field); this holds, even if the lattice model uses a D3Q19 stencil
+// the geometry computations in SurfaceGeometryHandler require meaningful values
+// in the ghost layers in corner directions (flag field and fill level field);
+// this holds, even if the lattice model uses a D3Q19 stencil
 using CommunicationStencil_T =
     std::conditional_t<LatticeModel_T::Stencil::D == uint_t{2}, stencil::D2Q9, stencil::D3Q27>;
 using Communication_T = blockforest::SimpleCommunication<CommunicationStencil_T>;
@@ -267,8 +270,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     }
 
     // Use particle 0's initial position as the common reference.
-    const Eigen::Vector3d demReferencePositionSI =
-        dem.particlePositionSI(0);
+    const Eigen::Vector3d demReferencePositionSI = dem.particlePositionSI(0);
 
     if (!dem.particleVelocitySI || !dem.particleAngularVelocitySI) {
         throw std::runtime_error("DEM velocity callbacks are missing");
@@ -319,11 +321,12 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
 
     // get number of (MPI) processes
     uint_t numProcesses = uint_c(MPIManager::instance()->numProcesses());
-    WALBERLA_CHECK_LESS_EQUAL(
-        numProcesses, numBlocks[0] * numBlocks[1] * numBlocks[2],
-        "The number of MPI processes is greater than the number of blocks as defined by "
-        "\"domainSize/cellsPerBlock\". This would result in unused MPI processes. Either decrease "
-        "the number of MPI processes or increase \"cellsPerBlock\".")
+    WALBERLA_CHECK_LESS_EQUAL(numProcesses, numBlocks[0] * numBlocks[1] * numBlocks[2],
+                              "The number of MPI processes is greater than the number of blocks as "
+                              "defined by "
+                              "\"domainSize/cellsPerBlock\". This would result in unused MPI "
+                              "processes. Either decrease "
+                              "the number of MPI processes or increase \"cellsPerBlock\".")
 
     Vector3<uint_t> realDomainSize;
     realDomainSize[0] = cellsPerBlock[0] * numBlocks[0];
@@ -331,19 +334,21 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     realDomainSize[2] = cellsPerBlock[2] * numBlocks[2];
 
     if (domainSize[0] != realDomainSize[0] && periodicity[0]) {
-        WALBERLA_ABORT("The specified domain size in x-direction can not be obtained with the number of "
+        WALBERLA_ABORT("The specified domain size in x-direction can not be "
+                       "obtained with the number of "
                        "blocks you specified.")
     }
     if (domainSize[1] != realDomainSize[1] && periodicity[1]) {
-        WALBERLA_ABORT("The specified domain size in y-direction can not be obtained with the number of "
+        WALBERLA_ABORT("The specified domain size in y-direction can not be "
+                       "obtained with the number of "
                        "blocks you specified.")
     }
-    // the z-direction must be no slip in this setup and is simply extended (see below) to obtain the
-    // specified size
+    // the z-direction must be no slip in this setup and is simply extended (see
+    // below) to obtain the specified size
     int boundaryThicknessZ = int_c(realDomainSize[2]) - int_c(domainSize[2]);
     if (boundaryThicknessZ < 0) {
-        WALBERLA_ABORT(
-            "Something went wrong: the resulting domain size in z-direction is less than specified.")
+        WALBERLA_ABORT("Something went wrong: the resulting domain size in "
+                       "z-direction is less than specified.")
     }
 
     // read physics parameters from parameter file
@@ -366,10 +371,11 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         throw std::runtime_error("maxCorrectionSpeedLB must be finite and positive");
     if (numProcesses != uint_c(1) || numBlocks[0] != uint_c(1) || numBlocks[1] != uint_c(1) ||
         numBlocks[2] != uint_c(1) || loadBalancingFrequency != uint_c(0))
-        throw std::runtime_error(
-            "Conservation projection requires one process, one block, and no load balancing");
+        throw std::runtime_error("Conservation projection requires one process, "
+                                 "one block, and no load balancing");
     if (force.sqrLength() != real_c(0))
-        throw std::runtime_error("Conservation projection currently requires zero external acceleration");
+        throw std::runtime_error("Conservation projection currently requires zero "
+                                 "external acceleration");
 
     const CollisionModel_T collisionModel = CollisionModel_T(relaxationRate);
 
@@ -396,7 +402,8 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     const real_t cellConversionForceThreshold =
         modelParameters.getParameter<real_t>("cellConversionForceThreshold");
 
-    // create non-uniform block forest (non-uniformity required for load balancing)
+    // create non-uniform block forest (non-uniformity required for load
+    // balancing)
     const std::shared_ptr<StructuredBlockForest> blockForest =
         createNonUniformBlockForest(domainSize, cellsPerBlock, numBlocks, periodicity);
 
@@ -429,36 +436,26 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     struct ParticleLbState {
         Eigen::Vector3d center;
         std::vector<SphereTriangle> surface;
+        int surfaceLevel = 4;
     };
 
     std::vector<ParticleLbState> particles;
     particles.reserve(dem.particleCount);
 
     for (std::size_t i = 0; i < dem.particleCount; ++i) {
-        const Eigen::Vector3d centerLB =
-            demPositionToLb(dem.particlePositionSI(i));
+        const Eigen::Vector3d centerLB = demPositionToLb(dem.particlePositionSI(i));
 
         for (int axis = 0; axis < 3; ++axis) {
             const double margin = double(solidRadius) + 2.0;
 
-            if (centerLB[axis] <= margin ||
-                centerLB[axis] >= double(domainSize[axis]) - margin)
-            {
-                throw std::runtime_error(
-                    "Initial particle is too close to a domain boundary"
-                );
+            if (centerLB[axis] <= margin || centerLB[axis] >= double(domainSize[axis]) - margin) {
+                throw std::runtime_error("Initial particle is too close to a domain boundary");
             }
         }
 
-        particles.push_back({
-            centerLB,
-            makeSphereSurface(centerLB, double(solidRadius), 4)
-        });
+        particles.push_back({centerLB, makeSphereSurface(centerLB, double(solidRadius), 4)});
 
-        WALBERLA_LOG_INFO_ON_ROOT(
-            "Initial particle " << i
-            << " center LB = " << centerLB.transpose()
-        );
+        WALBERLA_LOG_INFO_ON_ROOT("Initial particle " << i << " center LB = " << centerLB.transpose());
     }
 
     // Existing single-particle code still uses these during the refactor.
@@ -499,16 +496,12 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     using BoundaryHandling_T = FreeSurfaceBoundaryHandling_T::BoundaryHandling_T;
     using UBB_T = FreeSurfaceBoundaryHandling_T::UBB_T;
 
-    auto particleOwnerAt =
-    [&](const Eigen::Vector3d& position) -> std::size_t
-    {
+    auto particleOwnerAt = [&](const Eigen::Vector3d &position) -> std::size_t {
         std::size_t owner = particles.size();
-        double nearestDistanceSquared =
-            double(solidRadius) * double(solidRadius);
+        double nearestDistanceSquared = double(solidRadius) * double(solidRadius);
 
         for (std::size_t i = 0; i < particles.size(); ++i) {
-            const double distanceSquared =
-                (position - particles[i].center).squaredNorm();
+            const double distanceSquared = (position - particles[i].center).squaredNorm();
 
             if (distanceSquared <= nearestDistanceSquared) {
                 owner = i;
@@ -519,19 +512,12 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         return owner;
     };
 
-    auto isSolidAfterMove =
-    [&](const Eigen::Vector3d& position,
-        std::size_t movingParticle,
-        const Eigen::Vector3d& proposedCenter) -> bool
-    {
-        const double radiusSquared =
-            double(solidRadius) * double(solidRadius);
+    auto isSolidAfterMove = [&](const Eigen::Vector3d &position, std::size_t movingParticle,
+                                const Eigen::Vector3d &proposedCenter) -> bool {
+        const double radiusSquared = double(solidRadius) * double(solidRadius);
 
         for (std::size_t i = 0; i < particles.size(); ++i) {
-            const Eigen::Vector3d& center =
-                i == movingParticle
-                    ? proposedCenter
-                    : particles[i].center;
+            const Eigen::Vector3d &center = i == movingParticle ? proposedCenter : particles[i].center;
 
             if ((position - center).squaredNorm() <= radiusSquared) {
                 return true;
@@ -541,20 +527,15 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         return false;
     };
 
-    for (auto& block : *blockForest) {
-        auto* handling = block.getData<BoundaryHandling_T>(
-            freeSurfaceBoundaryHandling->getHandlingID()
-        );
+    for (auto &block : *blockForest) {
+        auto *handling = block.getData<BoundaryHandling_T>(freeSurfaceBoundaryHandling->getHandlingID());
 
-        auto* flags = handling->getFlagField();
+        auto *flags = handling->getFlagField();
 
-        for (const auto& cell : flags->xyzSizeWithGhostLayer()) {
-            const auto p =
-                blockForest->getBlockLocalCellCenter(block, cell);
+        for (const auto &cell : flags->xyzSizeWithGhostLayer()) {
+            const auto p = blockForest->getBlockLocalCellCenter(block, cell);
 
-            const Eigen::Vector3d position{
-                double(p[0]), double(p[1]), double(p[2])
-            };
+            const Eigen::Vector3d position{double(p[0]), double(p[1]), double(p[2])};
 
             const std::size_t owner = particleOwnerAt(position);
 
@@ -566,35 +547,23 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
             Eigen::Vector3d angularVelocityLB = Eigen::Vector3d::Zero();
 
             if (advanceDEM) {
-                velocityLB =
-                    dem.particleVelocitySI(owner)
-                    * (units.dtSI / units.dxSI);
+                velocityLB = dem.particleVelocitySI(owner) * (units.dtSI / units.dxSI);
 
-                angularVelocityLB =
-                    dem.particleAngularVelocitySI(owner)
-                    * units.dtSI;
+                angularVelocityLB = dem.particleAngularVelocitySI(owner) * units.dtSI;
             }
 
             const Eigen::Vector3d wallVelocityLB =
-                velocityLB
-                + angularVelocityLB.cross(
-                    position - particles[owner].center
-                );
+                velocityLB + angularVelocityLB.cross(position - particles[owner].center);
 
-            handling->forceBoundary(
-                FreeSurfaceBoundaryHandling_T::ubbFlagID,
-                cell.x(), cell.y(), cell.z(),
-                UBB_T::Velocity(
-                    real_c(wallVelocityLB.x()),
-                    real_c(wallVelocityLB.y()),
-                    real_c(wallVelocityLB.z())
-                )
-            );
+            handling->forceBoundary(FreeSurfaceBoundaryHandling_T::ubbFlagID, cell.x(), cell.y(), cell.z(),
+                                    UBB_T::Velocity(real_c(wallVelocityLB.x()), real_c(wallVelocityLB.y()),
+                                                    real_c(wallVelocityLB.z())));
         }
     }
 
-    // IMPORTANT REMARK: this must be only called after every solid flag has been set; otherwise, the boundary
-    // handling might not detect solid flags correctly
+    // IMPORTANT REMARK: this must be only called after every solid flag has been
+    // set; otherwise, the boundary handling might not detect solid flags
+    // correctly
     freeSurfaceBoundaryHandling->initFlagsFromFillLevel();
 
     ConstBlockDataID remapExcessMassFieldID = ConstBlockDataID();
@@ -635,10 +604,8 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         Eigen::Vector3d coveredLiquidMomentumLB = Eigen::Vector3d::Zero();
     };
 
-    auto detectParticleCellChanges =
-    [&](std::size_t movingParticle,
-        const Eigen::Vector3d& proposedCenterLB)
-    {
+    auto detectParticleCellChanges = [&](std::size_t movingParticle,
+                                         const Eigen::Vector3d &proposedCenterLB) {
         if (movingParticle >= particles.size()) {
             throw std::out_of_range("Invalid moving particle index");
         }
@@ -666,17 +633,10 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
 
                 const auto position = blockForest->getBlockLocalCellCenter(block, cell);
 
-                const Eigen::Vector3d positionLB{
-                    double(position[0]),
-                    double(position[1]),
-                    double(position[2])
-                };
+                const Eigen::Vector3d positionLB{double(position[0]), double(position[1]),
+                                                 double(position[2])};
 
-                const bool becomesParticle = isSolidAfterMove(
-                    positionLB,
-                    movingParticle,
-                    proposedCenterLB
-                );
+                const bool becomesParticle = isSolidAfterMove(positionLB, movingParticle, proposedCenterLB);
 
                 if (!wasParticle && becomesParticle) {
                     ++changes.covered;
@@ -731,10 +691,8 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         Eigen::Vector3d oldCenterLB;
     };
 
-    auto remapParticle =
-    [&](std::size_t movingParticle,
-        const Eigen::Vector3d& shiftedCenter) -> RemapResult
-    {
+    auto remapParticle = [&](std::size_t movingParticle,
+                             const Eigen::Vector3d &shiftedCenter) -> RemapResult {
         if (movingParticle >= particles.size()) {
             throw std::out_of_range("Invalid moving particle index");
         }
@@ -743,8 +701,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
             throw std::runtime_error("Non-finite proposed particle center");
         }
 
-        const auto shifted =
-            detectParticleCellChanges(movingParticle, shiftedCenter);
+        const auto shifted = detectParticleCellChanges(movingParticle, shiftedCenter);
 
         struct InterfaceRecipient {
             IBlock *block;
@@ -1107,8 +1064,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         Eigen::Vector3d fluidAngularMomentumChangeLB = Eigen::Vector3d::Zero();
 
         // Use one fixed reference point for every angular-momentum term.
-        const Eigen::Vector3d angularReferenceLB =
-            particles.at(movingParticle).center;
+        const Eigen::Vector3d angularReferenceLB = particles.at(movingParticle).center;
 
         auto accumulateMomentumChange = [&](const Eigen::Vector3d &positionLB,
                                             const Eigen::Vector3d &momentumChangeLB) {
@@ -1470,10 +1426,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         // and liquid-to-interface promotions.
         // Decide topology from the COMPLETE proposed state, not commit order.
         auto proposedCellIsGas = [&](IBlock *block, const Cell &cell) {
-            if (isSolidAfterMove(
-                cellCenterEigen(*block, cell),
-                movingParticle,
-                shiftedCenter))
+            if (isSolidAfterMove(cellCenterEigen(*block, cell), movingParticle, shiftedCenter))
                 return false;
             const auto planned = std::find_if(plannedFluidCells.begin(), plannedFluidCells.end(),
                                               [&](const PlannedFluidCell &candidate) {
@@ -1562,8 +1515,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         const Eigen::Vector3d momentumPredictionErrorLB =
             afterRemap.second - beforeRemap.second - fluidMomentumChangeLB;
 
-        const auto geometryAfterRemap =
-            detectParticleCellChanges(movingParticle, shiftedCenter);
+        const auto geometryAfterRemap = detectParticleCellChanges(movingParticle, shiftedCenter);
 
         const double remapMassTolerance = 1e-10 * std::max(1.0, std::abs(beforeRemap.first));
         if (std::abs(afterRemap.first - beforeRemap.first) > remapMassTolerance ||
@@ -1572,22 +1524,17 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
             throw std::runtime_error("Particle remap failed its mass, momentum, or geometry check");
 
         // Synchronize all geometric representations with the remapped sphere.
-        auto& particle = particles.at(movingParticle);
+        auto &particle = particles.at(movingParticle);
 
         particle.center = shiftedCenter;
-        particle.surface = makeSphereSurface(
-            particle.center, double(solidRadius), 4
-        );
+        particle.surface = makeSphereSurface(particle.center, double(solidRadius), particle.surfaceLevel);
 
         // Preserve the existing particle-0 aliases during the refactor.
         if (movingParticle == 0) {
             solidCenterEigen = particle.center;
 
-            solidCenter = Vector3<real_t>(
-                real_c(particle.center.x()),
-                real_c(particle.center.y()),
-                real_c(particle.center.z())
-            );
+            solidCenter = Vector3<real_t>(real_c(particle.center.x()), real_c(particle.center.y()),
+                                          real_c(particle.center.z()));
 
             solidSurface = particle.surface;
         }
@@ -1617,7 +1564,8 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         bubbleModel = std::make_shared<bubble_model::BubbleModelConstantPressure>(real_c(1));
     }
 
-    // set density in non-liquid or non-interface cells to 1 (after initializing with hydrostatic pressure)
+    // set density in non-liquid or non-interface cells to 1 (after initializing
+    // with hydrostatic pressure)
     setDensityInNonFluidCellsToOne<FlagField_T, PdfField_T>(blockForest, flagInfo, flagFieldID, pdfFieldID);
 
     // create timeloop
@@ -1630,102 +1578,64 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     uint_t sphereLinkCount = uint_c(0);
 
     auto updateSphereWallVelocity = [&]() {
-    std::vector<Eigen::Vector3d> velocitiesLB(
-        particles.size(), Eigen::Vector3d::Zero()
-    );
+        std::vector<Eigen::Vector3d> velocitiesLB(particles.size(), Eigen::Vector3d::Zero());
 
-    std::vector<Eigen::Vector3d> angularVelocitiesLB(
-        particles.size(), Eigen::Vector3d::Zero()
-    );
+        std::vector<Eigen::Vector3d> angularVelocitiesLB(particles.size(), Eigen::Vector3d::Zero());
 
-    for (std::size_t i = 0; i < particles.size(); ++i) {
-        if (advanceDEM) {
-            velocitiesLB[i] =
-                dem.particleVelocitySI(i)
-                * (units.dtSI / units.dxSI);
+        for (std::size_t i = 0; i < particles.size(); ++i) {
+            if (advanceDEM) {
+                velocitiesLB[i] = dem.particleVelocitySI(i) * (units.dtSI / units.dxSI);
 
-            angularVelocitiesLB[i] =
-                dem.particleAngularVelocitySI(i)
-                * units.dtSI;
-        }
-
-        if (!velocitiesLB[i].allFinite() ||
-            !angularVelocitiesLB[i].allFinite())
-        {
-            throw std::runtime_error(
-                "DEM supplied non-finite particle velocity"
-            );
-        }
-    }
-
-    for (auto& block : *blockForest) {
-        auto* handling = block.getData<BoundaryHandling_T>(
-            freeSurfaceBoundaryHandling->getHandlingID()
-        );
-
-        auto* flags = handling->getFlagField();
-
-        const auto particleMask = flags->getFlag(
-            FreeSurfaceBoundaryHandling_T::ubbFlagID
-        );
-
-        auto& ubb =
-            handling->template getBoundaryCondition<UBB_T>(
-                FreeSurfaceBoundaryHandling_T::ubbBoundaryID
-            );
-
-        for (const auto& cell : flags->xyzSizeWithGhostLayer()) {
-            if ((flags->get(cell.x(), cell.y(), cell.z())
-                 & particleMask) == 0)
-            {
-                continue;
+                angularVelocitiesLB[i] = dem.particleAngularVelocitySI(i) * units.dtSI;
             }
 
-            const Eigen::Vector3d position =
-                cellCenterEigen(block, cell);
-
-            const std::size_t owner = particleOwnerAt(position);
-
-            if (owner == particles.size()) {
-                throw std::runtime_error(
-                    "Solid boundary cell has no particle owner"
-                );
+            if (!velocitiesLB[i].allFinite() || !angularVelocitiesLB[i].allFinite()) {
+                throw std::runtime_error("DEM supplied non-finite particle velocity");
             }
-
-            const Eigen::Vector3d wallVelocity =
-                velocitiesLB[owner]
-                + angularVelocitiesLB[owner].cross(
-                    position - particles[owner].center
-                );
-
-            const UBB_T::Velocity configuration(
-                real_c(wallVelocity.x()),
-                real_c(wallVelocity.y()),
-                real_c(wallVelocity.z())
-            );
-
-            ubb.registerCell(
-                particleMask,
-                cell.x(), cell.y(), cell.z(),
-                configuration
-            );
         }
-    }
-};
+
+        for (auto &block : *blockForest) {
+            auto *handling = block.getData<BoundaryHandling_T>(freeSurfaceBoundaryHandling->getHandlingID());
+
+            auto *flags = handling->getFlagField();
+
+            const auto particleMask = flags->getFlag(FreeSurfaceBoundaryHandling_T::ubbFlagID);
+
+            auto &ubb =
+                handling->template getBoundaryCondition<UBB_T>(FreeSurfaceBoundaryHandling_T::ubbBoundaryID);
+
+            for (const auto &cell : flags->xyzSizeWithGhostLayer()) {
+                if ((flags->get(cell.x(), cell.y(), cell.z()) & particleMask) == 0) {
+                    continue;
+                }
+
+                const Eigen::Vector3d position = cellCenterEigen(block, cell);
+
+                const std::size_t owner = particleOwnerAt(position);
+
+                if (owner == particles.size()) {
+                    throw std::runtime_error("Solid boundary cell has no particle owner");
+                }
+
+                const Eigen::Vector3d wallVelocity =
+                    velocitiesLB[owner] +
+                    angularVelocitiesLB[owner].cross(position - particles[owner].center);
+
+                const UBB_T::Velocity configuration(real_c(wallVelocity.x()), real_c(wallVelocity.y()),
+                                                    real_c(wallVelocity.z()));
+
+                ubb.registerCell(particleMask, cell.x(), cell.y(), cell.z(), configuration);
+            }
+        }
+    };
 
     double movingWallMassCorrectionLB = 0.0;
 
-    std::vector<Eigen::Vector3d> particleWallForcesLB(
-    particles.size(), Eigen::Vector3d::Zero()
-);
+    std::vector<Eigen::Vector3d> particleWallForcesLB(particles.size(), Eigen::Vector3d::Zero());
 
-    std::vector<Eigen::Vector3d> particleWallTorquesLB(
-        particles.size(), Eigen::Vector3d::Zero()
-    );
+    std::vector<Eigen::Vector3d> particleWallTorquesLB(particles.size(), Eigen::Vector3d::Zero());
 
-    std::vector<uint_t> particleWallLinkCounts(
-        particles.size(), uint_c(0)
-    );
+    std::vector<uint_t> particleWallLinkCounts(particles.size(), uint_c(0));
 
     auto measureSphereForce = [&]() {
         sphereForceLB = Vector3<real_t>(real_c(0), real_c(0), real_c(0));
@@ -1784,18 +1694,14 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                     // belonging to our sphere.
                     const auto neighborPosition = blockForest->getBlockLocalCellCenter(block, neighbor);
 
-                    const Eigen::Vector3d solidCellPosition{
-                        double(neighborPosition[0]),
-                        double(neighborPosition[1]),
-                        double(neighborPosition[2])
-                    };
+                    const Eigen::Vector3d solidCellPosition{double(neighborPosition[0]),
+                                                            double(neighborPosition[1]),
+                                                            double(neighborPosition[2])};
 
                     const std::size_t owner = particleOwnerAt(solidCellPosition);
 
                     if (owner == particles.size()) {
-                        throw std::runtime_error(
-                            "Particle boundary link has no particle owner"
-                        );
+                        throw std::runtime_error("Particle boundary link has no particle owner");
                     }
 
                     const real_t outgoingPDF = pdfs->get(cell.x(), cell.y(), cell.z(), d.toIdx());
@@ -1855,11 +1761,9 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         }
 
         // Temporary particle-0 aliases for code updated in the next step.
-        sphereForceLB = Vector3<real_t>(
-            real_c(particleWallForcesLB[0].x()),
-            real_c(particleWallForcesLB[0].y()),
-            real_c(particleWallForcesLB[0].z())
-        );
+        sphereForceLB =
+            Vector3<real_t>(real_c(particleWallForcesLB[0].x()), real_c(particleWallForcesLB[0].y()),
+                            real_c(particleWallForcesLB[0].z()));
 
         sphereTorqueLB = particleWallTorquesLB[0];
 
@@ -1867,19 +1771,17 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         for (const auto count : particleWallLinkCounts) {
             sphereLinkCount += count;
         }
-
     };
 
     timeloop.addFuncBeforeTimeStep(
-    [&]() {
-        updateSphereWallVelocity();
-        measureSphereForce();
-    },
-    "Apply DEM wall velocities and measure fluid loads"
-);
+        [&]() {
+            updateSphereWallVelocity();
+            measureSphereForce();
+        },
+        "Apply DEM wall velocities and measure fluid loads");
 
-    // Laplace pressure = 2 * surface tension * curvature; curvature computation is not necessary with 0
-    // surface tension
+    // Laplace pressure = 2 * surface tension * curvature; curvature computation
+    // is not necessary with 0 surface tension
     bool computeCurvature = false;
     if (!realIsEqual(surfaceTension, real_c(0), real_c(1e-14))) {
         computeCurvature = true;
@@ -1920,8 +1822,8 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                                          position.x() > double(domainSize[0]) - 2.0 ||
                                          position.y() > double(domainSize[1]) - 2.0 ||
                                          position.z() > double(domainSize[2]) - 2.0))
-                    throw std::runtime_error(
-                        "Isolated-particle projection requires liquid clear of all domain boundaries");
+                    throw std::runtime_error("Isolated-particle projection requires "
+                                             "liquid clear of all domain boundaries");
                 if (!momentum.allFinite())
                     throw std::runtime_error("Non-finite resolved liquid momentum");
                 state.linear += momentum;
@@ -1962,19 +1864,18 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                 // of the analytic sphere surface.
                 bool nearParticle = false;
 
-for (const auto& particle : particles) {
-    const double surfaceDistance =
-        std::abs((center - particle.center).norm()
-                 - double(solidRadius));
+                for (const auto &particle : particles) {
+                    const double surfaceDistance =
+                        std::abs((center - particle.center).norm() - double(solidRadius));
 
-    if (surfaceDistance <= 3.0) {
-        nearParticle = true;
-        break;
-    }
-}
+                    if (surfaceDistance <= 3.0) {
+                        nearParticle = true;
+                        break;
+                    }
+                }
 
-if (!nearParticle)
-    continue;
+                if (!nearParticle)
+                    continue;
 
                 const real_t fraction = fill->get(cell.x(), cell.y(), cell.z());
 
@@ -2023,97 +1924,195 @@ if (!nearParticle)
 
     dynamicsHandler.addSweeps(timeloop);
 
-    // All angular momenta below use the particle center held fixed during this LB step.
+    // All angular momenta below use the particle center held fixed during this LB
+    // step.
     capillary_coupling::MomentumState stepBefore, rawResidual, correctedResidual;
     ContactLineLoad stepLoad;
     SurfaceLineResult stepLine;
-    std::vector<ContactLineLoad> particleStepLoads(
-    particles.size()
-);
+    std::vector<ContactLineLoad> particleStepLoads(particles.size());
 
-    std::vector<SurfaceLineResult> particleStepLines(
-        particles.size()
-    );
+    std::vector<SurfaceLineResult> particleStepLines(particles.size());
     double maxAppliedCorrectionLB = 0.0;
 
-    // A numerical conservation projection, not an alternative physical capillary law.
-    // Keep waLBerla's Laplace-pressure treatment. Correct only the NET residual
-    // left after that treatment, so the full line load is not applied twice.
+    // Apply a specified fluid impulse, with angular impulse measured about
+    // solidCenterEigen. Shared by the LB residual and moving-lever correction.
+    auto applyFluidMomentumCorrection = [&](const Eigen::Vector3d &linearImpulseLB,
+                                            const Eigen::Vector3d &angularImpulseLB) {
+        double maxCorrection = 0.0;
+        struct Recipient {
+            PdfField_T *pdfs;
+            Cell cell;
+            Eigen::Vector3d position;
+            double density;
+        };
+        std::vector<Recipient> recipients;
+        std::vector<capillary_coupling::ProjectionCell> support;
+        for (auto &block : *blockForest) {
+            const auto *flags = block.getData<FlagField_T>(flagFieldID);
+            const auto *fill = block.getData<ScalarField_T>(fillFieldID);
+            auto *pdfs = block.getData<PdfField_T>(pdfFieldID);
+            for (const auto &cell : flags->xyzSize()) {
+                const auto flag = flags->get(cell.x(), cell.y(), cell.z());
+                if (!flagInfo.isLiquid(flag) && !flagInfo.isInterface(flag))
+                    continue;
+                const double fraction = double(fill->get(cell.x(), cell.y(), cell.z()));
+                if (!std::isfinite(fraction))
+                    throw std::runtime_error("Non-finite liquid fraction before projection");
+                // Correction support requires positive masses. Nonpositive
+                // cells are unchanged, but their signed momentum remains
+                // included in the measured residual.
+                if (fraction <= 1e-12)
+                    continue;
+                const Eigen::Vector3d position = cellCenterEigen(block, cell);
+
+                const double supportRadius = double(solidRadius) + 3.0;
+                const double supportRadiusSquared = supportRadius * supportRadius;
+
+                bool nearParticle = false;
+
+                for (const auto &particle : particles) {
+                    if ((position - particle.center).squaredNorm() <= supportRadiusSquared) {
+                        nearParticle = true;
+                        break;
+                    }
+                }
+
+                if (!nearParticle) {
+                    continue;
+                }
+                const double density = double(pdfs->getDensity(cell.x(), cell.y(), cell.z()));
+                if (!std::isfinite(density) || density <= 0.0)
+                    throw std::runtime_error("Invalid liquid density before projection");
+                recipients.push_back({pdfs, cell, position, density});
+                support.push_back({position, fraction * density});
+            }
+        }
+
+        const auto projection = capillary_coupling::makeMomentumProjection(
+            support, linearImpulseLB, angularImpulseLB, solidCenterEigen);
+
+        // Preflight the entire correction before writing any PDFs.
+        for (const auto &recipient : recipients) {
+            const auto du = projection.velocityIncrement(recipient.position);
+            maxCorrection = std::max(maxCorrection, du.norm());
+            if (!du.allFinite() || du.norm() > maxCorrectionSpeedLB)
+                throw std::runtime_error("Momentum correction exceeds maxCorrectionSpeedLB; reduce "
+                                         "timestep or refine the grid");
+            const auto oldVelocity =
+                recipient.pdfs->getVelocity(recipient.cell.x(), recipient.cell.y(), recipient.cell.z());
+            const Eigen::Vector3d newVelocity =
+                du + Eigen::Vector3d{double(oldVelocity[0]), double(oldVelocity[1]), double(oldVelocity[2])};
+            if (!newVelocity.allFinite() || newVelocity.norm() > 0.1)
+                throw std::runtime_error("Corrected liquid speed exceeds 0.1 LB; reduce timestep");
+            for (auto d = LatticeModelStencil_T::begin(); d != LatticeModelStencil_T::end(); ++d) {
+                const Eigen::Vector3d direction{double(d.cx()), double(d.cy()), double(d.cz())};
+                const double delta = capillary_coupling::momentumPdfIncrement(
+                    double(LatticeModel_T::w[d.toIdx()]), recipient.density, direction, du);
+                const double proposed = double(recipient.pdfs->get(recipient.cell.x(), recipient.cell.y(),
+                                                                   recipient.cell.z(), d.toIdx())) +
+                                        delta;
+                if (!std::isfinite(proposed) || proposed < 0.0)
+                    throw std::runtime_error("Momentum projection would create an invalid PDF");
+            }
+        }
+
+        for (const auto &recipient : recipients) {
+            const auto du = projection.velocityIncrement(recipient.position);
+            for (auto d = LatticeModelStencil_T::begin(); d != LatticeModelStencil_T::end(); ++d) {
+                const Eigen::Vector3d direction{double(d.cx()), double(d.cy()), double(d.cz())};
+                recipient.pdfs->get(recipient.cell.x(), recipient.cell.y(), recipient.cell.z(), d.toIdx()) +=
+                    real_c(capillary_coupling::momentumPdfIncrement(double(LatticeModel_T::w[d.toIdx()]),
+                                                                    recipient.density, direction, du));
+            }
+        }
+        pdfCommunication();
+        return maxCorrection;
+    };
+
+    // A numerical conservation projection, not an alternative physical capillary
+    // law. Keep waLBerla's Laplace-pressure treatment. Correct only the NET
+    // residual left after that treatment, so the full line load is not applied
+    // twice.
     timeloop.add() << Sweep(
         [&](IBlock *) {
             stepLoad = ContactLineLoad{};
-stepLine = SurfaceLineResult{};
+            stepLine = SurfaceLineResult{};
 
-// Fluid angular momentum currently uses particle 0's center
-// as its reference point.
-const Eigen::Vector3d angularOrigin = solidCenterEigen;
+            // Fluid angular momentum currently uses particle 0's center
+            // as its reference point.
+            const Eigen::Vector3d angularOrigin = solidCenterEigen;
 
-for (std::size_t i = 0; i < particles.size(); ++i) {
-    const auto& particle = particles[i];
+            for (std::size_t i = 0; i < particles.size(); ++i) {
+                auto &particle = particles[i];
 
-    auto& line = particleStepLines[i];
+                auto &line = particleStepLines[i];
 
-    line = reconstructSurfaceLine(
-        particle.surface,
-        interfacePlanes,
-        particle.center,
-        double(surfaceTension),
-        3.0,
-        double(contactAngle)
-    );
+                line = reconstructSurfaceLine(particle.surface, interfacePlanes, particle.center,
+                                              double(surfaceTension), 3.0, double(contactAngle));
 
-    if (line.invalidSegments != 0 || line.badEndpoints != 0) {
-        throw std::runtime_error(
-            "Invalid or open contact line for particle "
-            + std::to_string(i)
-        );
-    }
+                // A small/rapidly moving contact patch may be under-resolved
+                // on the geometric sphere even with valid fluid data. Refine
+                // its actual triangles, then require a closed contour again.
+                // Never close gaps with fabricated segments or reuse an old load.
+                while ((line.invalidSegments != 0 || line.badEndpoints != 0) && particle.surfaceLevel < 6) {
+                    ++particle.surfaceLevel;
+                    particle.surface =
+                        makeSphereSurface(particle.center, double(solidRadius), particle.surfaceLevel);
+                    line = reconstructSurfaceLine(particle.surface, interfacePlanes, particle.center,
+                                                  double(surfaceTension), 3.0, double(contactAngle));
+                    WALBERLA_LOG_INFO_ON_ROOT("Refined particle surface: step="
+                                              << timeloop.getCurrentTimeStep() << " particle=" << i
+                                              << " level=" << particle.surfaceLevel << " segments="
+                                              << line.segments.size() << " badEndpoints=" << line.badEndpoints
+                                              << " invalid=" << line.invalidSegments);
+                }
+                if (line.invalidSegments != 0 || line.badEndpoints != 0) {
+                    std::ofstream dump("contact_line_failure.txt");
+                    dump << std::setprecision(17) << particle.center.transpose() << ' ' << solidRadius << ' '
+                         << surfaceTension << ' ' << contactAngle << '\n';
+                    for (const auto &plane : interfacePlanes)
+                        dump << plane.point.transpose() << ' ' << plane.normal.transpose() << '\n';
+                    dump.close();
+                    std::ostringstream reason;
+                    reason << "Invalid contact line: step=" << timeloop.getCurrentTimeStep()
+                           << " particle=" << i << " segments=" << line.segments.size()
+                           << " badEndpoints=" << line.badEndpoints << " invalid=" << line.invalidSegments
+                           << " unsupported=" << line.unsupportedTriangles
+                           << " degenerate=" << line.degenerateTriangles;
+                    throw std::runtime_error(reason.str());
+                }
 
-    auto& load = particleStepLoads[i];
+                auto &load = particleStepLoads[i];
 
-    load.force =
-        particleWallForcesLB[i] + line.load.force;
+                load.force = particleWallForcesLB[i] + line.load.force;
 
-    // This torque is about this particle's own center.
-    load.torque =
-        particleWallTorquesLB[i] + line.load.torque;
+                // This torque is about this particle's own center.
+                load.torque = particleWallTorquesLB[i] + line.load.torque;
 
-    if (!load.force.allFinite() || !load.torque.allFinite()) {
-        throw std::runtime_error(
-            "Non-finite load for particle "
-            + std::to_string(i)
-        );
-    }
+                if (!load.force.allFinite() || !load.torque.allFinite()) {
+                    throw std::runtime_error("Non-finite load for particle " + std::to_string(i));
+                }
 
-    // Aggregate loads about the SAME reference point used
-    // by the fluid angular-momentum measurement.
-    stepLoad.force += load.force;
+                // Aggregate loads about the SAME reference point used
+                // by the fluid angular-momentum measurement.
+                stepLoad.force += load.force;
 
-    stepLoad.torque +=
-        load.torque
-        + (particle.center - angularOrigin).cross(load.force);
+                stepLoad.torque += load.torque + (particle.center - angularOrigin).cross(load.force);
 
-    // Combined contact-line geometry for existing output.
-    stepLine.segments.insert(
-        stepLine.segments.end(),
-        line.segments.begin(),
-        line.segments.end()
-    );
+                // Combined contact-line geometry for existing output.
+                stepLine.segments.insert(stepLine.segments.end(), line.segments.begin(), line.segments.end());
 
-    stepLine.length += line.length;
-    stepLine.unsupportedTriangles += line.unsupportedTriangles;
-    stepLine.degenerateTriangles += line.degenerateTriangles;
-    stepLine.invalidSegments += line.invalidSegments;
-    stepLine.badEndpoints += line.badEndpoints;
+                stepLine.length += line.length;
+                stepLine.unsupportedTriangles += line.unsupportedTriangles;
+                stepLine.degenerateTriangles += line.degenerateTriangles;
+                stepLine.invalidSegments += line.invalidSegments;
+                stepLine.badEndpoints += line.badEndpoints;
 
-    stepLine.load.force += line.load.force;
+                stepLine.load.force += line.load.force;
 
-    stepLine.load.torque +=
-        line.load.torque
-        + (particle.center - angularOrigin).cross(
-            line.load.force
-        );
-}
+                stepLine.load.torque +=
+                    line.load.torque + (particle.center - angularOrigin).cross(line.load.force);
+            }
 
             const auto after = measureLiquidState();
             rawResidual.linear = after.linear - stepBefore.linear + stepLoad.force;
@@ -2126,100 +2125,8 @@ for (std::size_t i = 0; i < particles.size(); ++i) {
 
             if (rawResidual.linear.norm() > linearTolerance ||
                 rawResidual.angular.norm() > angularTolerance) {
-                struct Recipient {
-                    PdfField_T *pdfs;
-                    Cell cell;
-                    Eigen::Vector3d position;
-                    double density;
-                };
-                std::vector<Recipient> recipients;
-                std::vector<capillary_coupling::ProjectionCell> support;
-                for (auto &block : *blockForest) {
-                    const auto *flags = block.getData<FlagField_T>(flagFieldID);
-                    const auto *fill = block.getData<ScalarField_T>(fillFieldID);
-                    auto *pdfs = block.getData<PdfField_T>(pdfFieldID);
-                    for (const auto &cell : flags->xyzSize()) {
-                        const auto flag = flags->get(cell.x(), cell.y(), cell.z());
-                        if (!flagInfo.isLiquid(flag) && !flagInfo.isInterface(flag))
-                            continue;
-                        const double fraction = double(fill->get(cell.x(), cell.y(), cell.z()));
-                        if (!std::isfinite(fraction))
-                            throw std::runtime_error("Non-finite liquid fraction before projection");
-                        // Correction support requires positive masses. Nonpositive
-                        // cells are unchanged, but their signed momentum remains
-                        // included in the measured residual.
-                        if (fraction <= 1e-12)
-                            continue;
-                        const Eigen::Vector3d position =
-    cellCenterEigen(block, cell);
-
-const double supportRadius = double(solidRadius) + 3.0;
-const double supportRadiusSquared =
-    supportRadius * supportRadius;
-
-bool nearParticle = false;
-
-for (const auto& particle : particles) {
-    if ((position - particle.center).squaredNorm()
-        <= supportRadiusSquared)
-    {
-        nearParticle = true;
-        break;
-    }
-}
-
-if (!nearParticle) {
-    continue;
-}
-                        const double density = double(pdfs->getDensity(cell.x(), cell.y(), cell.z()));
-                        if (!std::isfinite(density) || density <= 0.0)
-                            throw std::runtime_error("Invalid liquid density before projection");
-                        recipients.push_back({pdfs, cell, position, density});
-                        support.push_back({position, fraction * density});
-                    }
-                }
-
-                const auto projection = capillary_coupling::makeMomentumProjection(
-                    support, -rawResidual.linear, -rawResidual.angular, solidCenterEigen);
-
-                // Preflight the entire correction before writing any PDFs.
-                for (const auto &recipient : recipients) {
-                    const auto du = projection.velocityIncrement(recipient.position);
-                    maxAppliedCorrectionLB = std::max(maxAppliedCorrectionLB, du.norm());
-                    if (!du.allFinite() || du.norm() > maxCorrectionSpeedLB)
-                        throw std::runtime_error("Momentum correction exceeds maxCorrectionSpeedLB; reduce "
-                                                 "timestep or refine the grid");
-                    const auto oldVelocity = recipient.pdfs->getVelocity(
-                        recipient.cell.x(), recipient.cell.y(), recipient.cell.z());
-                    const Eigen::Vector3d newVelocity =
-                        du + Eigen::Vector3d{double(oldVelocity[0]), double(oldVelocity[1]),
-                                             double(oldVelocity[2])};
-                    if (!newVelocity.allFinite() || newVelocity.norm() > 0.1)
-                        throw std::runtime_error("Corrected liquid speed exceeds 0.1 LB; reduce timestep");
-                    for (auto d = LatticeModelStencil_T::begin(); d != LatticeModelStencil_T::end(); ++d) {
-                        const Eigen::Vector3d direction{double(d.cx()), double(d.cy()), double(d.cz())};
-                        const double delta = capillary_coupling::momentumPdfIncrement(
-                            double(LatticeModel_T::w[d.toIdx()]), recipient.density, direction, du);
-                        const double proposed =
-                            double(recipient.pdfs->get(recipient.cell.x(), recipient.cell.y(),
-                                                       recipient.cell.z(), d.toIdx())) +
-                            delta;
-                        if (!std::isfinite(proposed) || proposed < 0.0)
-                            throw std::runtime_error("Momentum projection would create an invalid PDF");
-                    }
-                }
-
-                for (const auto &recipient : recipients) {
-                    const auto du = projection.velocityIncrement(recipient.position);
-                    for (auto d = LatticeModelStencil_T::begin(); d != LatticeModelStencil_T::end(); ++d) {
-                        const Eigen::Vector3d direction{double(d.cx()), double(d.cy()), double(d.cz())};
-                        recipient.pdfs->get(recipient.cell.x(), recipient.cell.y(), recipient.cell.z(),
-                                            d.toIdx()) +=
-                            real_c(capillary_coupling::momentumPdfIncrement(
-                                double(LatticeModel_T::w[d.toIdx()]), recipient.density, direction, du));
-                    }
-                }
-                pdfCommunication();
+                maxAppliedCorrectionLB =
+                    applyFluidMomentumCorrection(-rawResidual.linear, -rawResidual.angular);
             }
 
             const auto corrected = measureLiquidState();
@@ -2227,11 +2134,13 @@ if (!nearParticle) {
             correctedResidual.angular = corrected.angular - stepBefore.angular + stepLoad.torque;
             if (correctedResidual.linear.norm() > linearTolerance ||
                 correctedResidual.angular.norm() > angularTolerance)
-                throw std::runtime_error("Fluid-particle momentum projection failed its conservation check");
+                throw std::runtime_error("Fluid-particle momentum projection failed "
+                                         "its conservation check");
         },
         "Coupling: conserve resolved linear and angular momentum");
 
-    // add evaluator for total and excessive mass (mass that is currently undistributed)
+    // add evaluator for total and excessive mass (mass that is currently
+    // undistributed)
     const auto totalMass = std::make_shared<real_t>(real_c(0));
 
     const auto excessMass = std::make_shared<real_t>(real_c(0));
@@ -2281,8 +2190,9 @@ if (!nearParticle) {
     if (particleWriteFrequency != uint_c(0)) {
         clearGeneratedFrames("particle-out", "particle_");
         clearGeneratedFrames("contact-line-out", "contact_line_");
-        // Preserve the same time-series origin as the initial liquid/particle frames.
-        // Geometry normals are not available yet, so this frame has no line segments.
+        // Preserve the same time-series origin as the initial liquid/particle
+        // frames. Geometry normals are not available yet, so this frame has no line
+        // segments.
         writeContactLineVtp(stepLine,
                             std::filesystem::path("contact-line-out") / "contact_line_000000000000.vtp");
     }
@@ -2314,7 +2224,7 @@ if (!nearParticle) {
 
         std::size_t triangleCount = 0;
 
-        for (const auto& particle : particles) {
+        for (const auto &particle : particles) {
             triangleCount += particle.surface.size();
         }
 
@@ -2330,16 +2240,14 @@ if (!nearParticle) {
             << triangleCount << "\">\n";
 
         out << "<CellData Scalars=\"particle_id\">\n"
-        << "<DataArray type=\"Int32\" Name=\"particle_id\" "
-           "NumberOfComponents=\"1\" format=\"ascii\">\n";
+            << "<DataArray type=\"Int32\" Name=\"particle_id\" "
+               "NumberOfComponents=\"1\" format=\"ascii\">\n";
 
-            for (std::size_t i = 0; i < particles.size(); ++i) {
-                for (std::size_t triangle = 0;
-                     triangle < particles[i].surface.size(); ++triangle)
-                {
-                    out << i << '\n';
-                }
+        for (std::size_t i = 0; i < particles.size(); ++i) {
+            for (std::size_t triangle = 0; triangle < particles[i].surface.size(); ++triangle) {
+                out << i << '\n';
             }
+        }
 
         out << "</DataArray>\n</CellData>\n";
 
@@ -2347,12 +2255,10 @@ if (!nearParticle) {
             << "<DataArray type=\"Float64\" "
                "NumberOfComponents=\"3\" format=\"ascii\">\n";
 
-        for (const auto& particle : particles) {
-            for (const auto& triangle : particle.surface) {
-                for (const auto& point : triangle) {
-                    out << point.x() << ' '
-                        << point.y() << ' '
-                        << point.z() << '\n';
+        for (const auto &particle : particles) {
+            for (const auto &triangle : particle.surface) {
+                for (const auto &point : triangle) {
+                    out << point.x() << ' ' << point.y() << ' ' << point.z() << '\n';
                 }
             }
         }
@@ -2404,24 +2310,19 @@ if (!nearParticle) {
 
     WcTimingPool timingPool;
 
-    DemLbParameters::Field forceSumSI(
-    particles.size(), Eigen::Vector3d::Zero()
-);
+    DemLbParameters::Field forceSumSI(particles.size(), Eigen::Vector3d::Zero());
 
-    DemLbParameters::Field torqueSumSI(
-        particles.size(), Eigen::Vector3d::Zero()
-    );
+    DemLbParameters::Field torqueSumSI(particles.size(), Eigen::Vector3d::Zero());
 
     if (!dem.advanceDemStep || !dem.applyRemapImpulseSI || !dem.submitFluidLoadSI) {
         throw std::runtime_error("Missing DEM coupling callbacks");
     }
 
-    // Verify the complete exchange, including the actual DEM integrator and remapper.
+    // Verify the complete exchange, including the actual DEM integrator and
+    // remapper.
     const double linearImpulseScaleSI = units.forceScaleSI * units.dtSI;
     const double angularImpulseScaleSI = units.torqueScaleSI * units.dtSI;
-    auto measureSystemMomentum = [&]()
-    -> capillary_coupling::MomentumState
-    {
+    auto measureSystemMomentum = [&]() -> capillary_coupling::MomentumState {
         const auto fluid = measureLiquidState();
 
         capillary_coupling::MomentumState systemState;
@@ -2430,29 +2331,20 @@ if (!nearParticle) {
 
         // measureLiquidState() measures angular momentum about
         // solidCenterEigen. Convert it to the fixed LB origin.
-        systemState.angular =
-            fluid.angular
-            + solidCenterEigen.cross(fluid.linear);
+        systemState.angular = fluid.angular + solidCenterEigen.cross(fluid.linear);
 
         for (std::size_t i = 0; i < particles.size(); ++i) {
             const Eigen::Vector3d particleMomentumLB =
-                dem.particleMassSI
-                * dem.particleVelocitySI(i)
-                / linearImpulseScaleSI;
+                dem.particleMassSI * dem.particleVelocitySI(i) / linearImpulseScaleSI;
 
             const Eigen::Vector3d particleSpinLB =
-                dem.particleInertiaSI
-                * dem.particleAngularVelocitySI(i)
-                / angularImpulseScaleSI;
+                dem.particleInertiaSI * dem.particleAngularVelocitySI(i) / angularImpulseScaleSI;
 
             systemState.linear += particleMomentumLB;
 
-            const Eigen::Vector3d actualCenterLB =
-    demPositionToLb(dem.particlePositionSI(i));
+            const Eigen::Vector3d actualCenterLB = demPositionToLb(dem.particlePositionSI(i));
 
-            systemState.angular +=
-                actualCenterLB.cross(particleMomentumLB)
-                + particleSpinLB;
+            systemState.angular += actualCenterLB.cross(particleMomentumLB) + particleSpinLB;
         }
 
         return systemState;
@@ -2460,38 +2352,9 @@ if (!nearParticle) {
 
     const auto initialSystemState = measureSystemMomentum();
 
-    const Eigen::Vector3d initialSystemMomentumLB =
-        initialSystemState.linear;
+    const Eigen::Vector3d initialSystemMomentumLB = initialSystemState.linear;
 
-    const Eigen::Vector3d initialSystemAngularLB =
-        initialSystemState.angular;
-
-    auto auditSystemMomentum =
-    [&](uint_t step, const std::string& stage)
-    {
-        const auto state = measureSystemMomentum();
-
-        const Eigen::Vector3d linearError =
-            state.linear - initialSystemMomentumLB;
-
-        const Eigen::Vector3d angularError =
-            state.angular - initialSystemAngularLB;
-
-        const double angularTolerance =
-            1e-8 * std::max(1.0, initialSystemAngularLB.norm());
-
-        if (step % uint_c(100) == uint_c(0) ||
-            angularError.norm() > angularTolerance)
-        {
-            WALBERLA_LOG_INFO_ON_ROOT(
-                "Coupling audit: step=" << step
-                << " stage=" << stage
-                << " linearErrorLB=" << linearError.norm()
-                << " angularErrorLB=" << angularError.transpose()
-                << " angularToleranceLB=" << angularTolerance
-            );
-        }
-    };
+    const Eigen::Vector3d initialSystemAngularLB = initialSystemState.angular;
 
     for (uint_t t = uint_c(0); t != timesteps; ++t) {
         stepBefore = measureLiquidState();
@@ -2501,14 +2364,21 @@ if (!nearParticle) {
         const Eigen::Vector3d totalFluidTorqueSI = units.torqueScaleSI * stepLoad.torque;
 
         for (std::size_t i = 0; i < particles.size(); ++i) {
-            forceSumSI[i] +=
-                units.forceScaleSI * particleStepLoads[i].force;
+            forceSumSI[i] += units.forceScaleSI * particleStepLoads[i].force;
 
-            torqueSumSI[i] +=
-                units.torqueScaleSI * particleStepLoads[i].torque;
+            torqueSumSI[i] += units.torqueScaleSI * particleStepLoads[i].torque;
         }
 
         if (diagnosticFrequency != uint_c(0) && t % diagnosticFrequency == uint_c(0)) {
+            for (std::size_t i = 0; i < particles.size(); ++i) {
+                WALBERLA_LOG_INFO_ON_ROOT(
+                    "Particle load: step="
+                    << t << " particle=" << i << " wallLinks=" << particleWallLinkCounts[i]
+                    << " lineSegments=" << particleStepLines[i].segments.size()
+                    << " forceSI_N=" << (units.forceScaleSI * particleStepLoads[i].force).transpose()
+                    << " torqueSI_Nm=" << (units.torqueScaleSI * particleStepLoads[i].torque).transpose());
+            }
+
             const double relativeMassChange =
                 (double(*totalMass) - initialLiquidMassLB) / initialLiquidMassLB;
             WALBERLA_LOG_INFO_ON_ROOT("Coupling: step="
@@ -2548,113 +2418,108 @@ if (!nearParticle) {
                 dem.advanceDemStep();
 
             if (advanceDEM) {
-                auditSystemMomentum(t, "after DEM, before remapping");
+                // The force is held constant through one Verlet step. Its
+                // orbital angular impulse is r_mid x J, while the LB sweep
+                // used the fixed old center r_old. Transfer their difference
+                // to the FLUID; do not invent a particle spin correction.
+                Eigen::Vector3d leverTransportLB = Eigen::Vector3d::Zero();
+                for (std::size_t i = 0; i < particles.size(); ++i) {
+                    const Eigen::Vector3d displacementLB =
+                        demPositionToLb(dem.particlePositionSI(i)) - particles[i].center;
+                    const Eigen::Vector3d impulseLB =
+                        meanForcesSI[i] * dem.demTimeStepSI / linearImpulseScaleSI;
+                    leverTransportLB += 0.5 * displacementLB.cross(impulseLB);
+                }
+                if (!leverTransportLB.allFinite())
+                    throw std::runtime_error("Non-finite moving force-lever impulse");
+                if (leverTransportLB.squaredNorm() > 0.0) {
+                    const auto before = measureLiquidState();
+                    const double correctionSpeed =
+                        applyFluidMomentumCorrection(Eigen::Vector3d::Zero(), -leverTransportLB);
+                    const auto after = measureLiquidState();
+                    if ((after.linear - before.linear).norm() > 5e-11 ||
+                        (after.angular - before.angular + leverTransportLB).norm() > 5e-10)
+                        throw std::runtime_error("Moving force-lever transfer failed");
+                    if (diagnosticFrequency != uint_c(0) && t % diagnosticFrequency == uint_c(0))
+                        WALBERLA_LOG_INFO_ON_ROOT("Force-lever transfer: step="
+                                                  << t << " angularImpulseLB=" << leverTransportLB.transpose()
+                                                  << " maxVelocityCorrectionLB=" << correctionSpeed);
+                }
             }
 
             // Validate every proposed position before modifying the fluid.
-std::vector<Eigen::Vector3d> newCentersLB(particles.size());
+            std::vector<Eigen::Vector3d> newCentersLB(particles.size());
 
-for (std::size_t i = 0; i < particles.size(); ++i) {
-    newCentersLB[i] =
-        demPositionToLb(dem.particlePositionSI(i));
+            for (std::size_t i = 0; i < particles.size(); ++i) {
+                newCentersLB[i] = demPositionToLb(dem.particlePositionSI(i));
 
-    const Eigen::Vector3d displacementLB =
-        newCentersLB[i] - particles[i].center;
+                const Eigen::Vector3d displacementLB = newCentersLB[i] - particles[i].center;
 
-    if (!newCentersLB[i].allFinite() ||
-        displacementLB.norm() > 0.1)
-    {
-        throw std::runtime_error(
-            "Particle " + std::to_string(i)
-            + " moved more than 0.1 lattice cells; "
-              "reduce the DEM timestep"
-        );
-    }
+                if (!newCentersLB[i].allFinite() || displacementLB.norm() > 0.1) {
+                    throw std::runtime_error("Particle " + std::to_string(i) +
+                                             " moved more than 0.1 lattice cells; "
+                                             "reduce the DEM timestep");
+                }
 
-    for (int axis = 0; axis < 3; ++axis) {
-        const double margin = double(solidRadius) + 2.0;
+                for (int axis = 0; axis < 3; ++axis) {
+                    const double margin = double(solidRadius) + 2.0;
 
-        if (newCentersLB[i][axis] <= margin ||
-            newCentersLB[i][axis] >=
-                double(domainSize[uint_c(axis)]) - margin)
-        {
-            throw std::runtime_error(
-                "Particle " + std::to_string(i)
-                + " is too close to a domain boundary"
-            );
-        }
-    }
-}
-
-// Remap sequentially. Each move preserves the other sphere
-// at its currently committed position.
-for (std::size_t i = 0; i < particles.size(); ++i) {
-    const Eigen::Vector3d newCenterLB = newCentersLB[i];
-
-    RemapResult result{
-        Eigen::Vector3d::Zero(),
-        Eigen::Vector3d::Zero(),
-        particles[i].center
-    };
-
-    const auto changes =
-        detectParticleCellChanges(i, newCenterLB);
-
-    if (changes.covered != 0 || changes.uncovered != 0) {
-        result = remapParticle(i, newCenterLB);
-
-        communication();
-        pdfCommunication();
-    } else {
-        // Subcell motion without a change in solid occupancy.
-        particles[i].center = newCenterLB;
-
-        particles[i].surface = makeSphereSurface(
-            newCenterLB, double(solidRadius), 4
-        );
-    }
-
-    // Convert angular impulse from the old center
-    // to the particle's new center.
-    const Eigen::Vector3d angularImpulseAtNewCenterLB =
-        result.angularImpulseAboutOldCenterLB
-        - (newCenterLB - result.oldCenterLB).cross(
-            result.linearImpulseLB
-        );
-
-    const Eigen::Vector3d linearImpulseSI =
-        linearImpulseScaleSI * result.linearImpulseLB;
-
-    const Eigen::Vector3d angularImpulseSI =
-        angularImpulseScaleSI * angularImpulseAtNewCenterLB;
-
-    if (advanceDEM) {
-        dem.applyRemapImpulseSI(
-            i,
-            linearImpulseSI,
-            angularImpulseSI
-        );
-    }
-}
-
-// Synchronize the remaining particle-0 aliases.
-solidCenterEigen = particles[0].center;
-
-solidCenter = Vector3<real_t>(
-    real_c(solidCenterEigen.x()),
-    real_c(solidCenterEigen.y()),
-    real_c(solidCenterEigen.z())
-);
-
-solidSurface = particles[0].surface;
-
-            if (advanceDEM) {
-                auditSystemMomentum(t, "after all remapping");
+                    if (newCentersLB[i][axis] <= margin ||
+                        newCentersLB[i][axis] >= double(domainSize[uint_c(axis)]) - margin) {
+                        throw std::runtime_error("Particle " + std::to_string(i) +
+                                                 " is too close to a domain boundary");
+                    }
+                }
             }
 
-// Ownership can change even when the union of occupied cells
-// stays unchanged, so refresh every solid cell's velocity.
-updateSphereWallVelocity();
+            // Remap sequentially. Each move preserves the other sphere
+            // at its currently committed position.
+            for (std::size_t i = 0; i < particles.size(); ++i) {
+                const Eigen::Vector3d newCenterLB = newCentersLB[i];
+
+                RemapResult result{Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), particles[i].center};
+
+                const auto changes = detectParticleCellChanges(i, newCenterLB);
+
+                if (changes.covered != 0 || changes.uncovered != 0) {
+                    result = remapParticle(i, newCenterLB);
+
+                    communication();
+                    pdfCommunication();
+                } else {
+                    // Subcell motion without a change in solid occupancy.
+                    particles[i].center = newCenterLB;
+
+                    particles[i].surface =
+                        makeSphereSurface(newCenterLB, double(solidRadius), particles[i].surfaceLevel);
+                }
+
+                // Convert angular impulse from the old center
+                // to the particle's new center.
+                const Eigen::Vector3d angularImpulseAtNewCenterLB =
+                    result.angularImpulseAboutOldCenterLB -
+                    (newCenterLB - result.oldCenterLB).cross(result.linearImpulseLB);
+
+                const Eigen::Vector3d linearImpulseSI = linearImpulseScaleSI * result.linearImpulseLB;
+
+                const Eigen::Vector3d angularImpulseSI = angularImpulseScaleSI * angularImpulseAtNewCenterLB;
+
+                if (advanceDEM) {
+                    dem.applyRemapImpulseSI(i, linearImpulseSI, angularImpulseSI);
+                }
+            }
+
+            // Synchronize the remaining particle-0 aliases.
+            solidCenterEigen = particles[0].center;
+
+            solidCenter = Vector3<real_t>(real_c(solidCenterEigen.x()), real_c(solidCenterEigen.y()),
+                                          real_c(solidCenterEigen.z()));
+
+            solidSurface = particles[0].surface;
+
+            // Ownership can change even when the union of occupied cells
+            // stays unchanged, so refresh every solid cell's velocity.
+            updateSphereWallVelocity();
 
             // Include any remapping in the current mass measurement.
             totalMassComputer();
@@ -2662,21 +2527,18 @@ updateSphereWallVelocity();
             if (advanceDEM) {
                 const auto systemState = measureSystemMomentum();
 
-                const Eigen::Vector3d systemMomentumLB =
-                    systemState.linear;
+                const Eigen::Vector3d systemMomentumLB = systemState.linear;
 
-                const Eigen::Vector3d systemAngularLB =
-                    systemState.angular;
+                const Eigen::Vector3d systemAngularLB = systemState.angular;
 
                 const double linearErrorLB = (systemMomentumLB - initialSystemMomentumLB).norm();
                 const double angularErrorLB = (systemAngularLB - initialSystemAngularLB).norm();
                 if (diagnosticFrequency != uint_c(0) &&
                     (t % diagnosticFrequency == uint_c(0) || t + uint_c(1) == timesteps)) {
-                    WALBERLA_LOG_INFO_ON_ROOT(
-                        "System momentum: step=" << t
-                        << " linearErrorLB=" << linearErrorLB
-                        << " angularErrorLB=" << angularErrorLB
-                        << " combinedP_SI=" << (linearImpulseScaleSI * systemMomentumLB).transpose());
+                    WALBERLA_LOG_INFO_ON_ROOT("System momentum: step="
+                                              << t << " linearErrorLB=" << linearErrorLB
+                                              << " angularErrorLB=" << angularErrorLB << " combinedP_SI="
+                                              << (linearImpulseScaleSI * systemMomentumLB).transpose());
                 }
                 if (!std::isfinite(linearErrorLB) || !std::isfinite(angularErrorLB) ||
                     linearErrorLB > 1e-9 * std::max(1.0, initialSystemMomentumLB.norm()) ||

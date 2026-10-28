@@ -5,12 +5,13 @@
 #ifndef SOOT_AFM_SURFACE_CONTACT_LINE_H
 #define SOOT_AFM_SURFACE_CONTACT_LINE_H
 
+#include <map>
 #include <optional>
 #include <stdexcept>
 
 #include "contact_line_force.h"
-#include "sphere_surface.h"
 #include "interface_plane_field.h"
+#include "sphere_surface.h"
 
 struct SurfaceLineResult {
     ContactLineLoad load;
@@ -24,31 +25,37 @@ struct SurfaceLineResult {
     std::size_t badEndpoints = 0;
 };
 
-template<class PlaneContainer>
-SurfaceLineResult reconstructSurfaceLine(
-    const std::vector<SphereTriangle>& mesh,
-    const PlaneContainer& planes,
-    const Eigen::Vector3d& particleCenter,
-    double sigma,
-    double supportRadius,
-    std::optional<double> wallContactAngleDegrees = std::nullopt
-) {
+template <class PlaneContainer>
+SurfaceLineResult reconstructSurfaceLine(const std::vector<SphereTriangle> &mesh,
+                                         const PlaneContainer &planes, const Eigen::Vector3d &particleCenter,
+                                         double sigma, double supportRadius,
+                                         std::optional<double> wallContactAngleDegrees = std::nullopt) {
     using Vec = Eigen::Vector3d;
 
     SurfaceLineResult result;
 
     const double tolerance = 1e-10 * supportRadius;
 
-    for (const auto& triangle : mesh)
-    {
+    // Adjacent triangles share vertices. Evaluate identical MLS queries once
+    // per reconstruction, including unsupported queries. The cache is local
+    // because interface planes and particle positions change every step.
+    std::map<std::array<double, 3>, std::optional<InterfaceFieldSample>> vertexSamples;
+    auto sampleVertex = [&](const Vec &point) {
+        const std::array<double, 3> key{point.x(), point.y(), point.z()};
+        const auto found = vertexSamples.find(key);
+        if (found != vertexSamples.end())
+            return found->second;
+        const auto sample = sampleInterfaceField(point, planes, supportRadius);
+        vertexSamples.emplace(key, sample);
+        return sample;
+    };
+
+    for (const auto &triangle : mesh) {
         std::array<double, 3> values;
         bool supported = true;
 
-        for (int i = 0; i < 3; ++i)
-        {
-            const auto sample = sampleInterfaceField(
-                triangle[i], planes, supportRadius
-            );
+        for (int i = 0; i < 3; ++i) {
+            const auto sample = sampleVertex(triangle[i]);
 
             if (!sample) {
                 supported = false;
@@ -65,9 +72,7 @@ SurfaceLineResult reconstructSurfaceLine(
 
         Vec a, b;
 
-        const int hit = cutSurfaceTriangle(
-            triangle, values, tolerance, a, b
-        );
+        const int hit = cutSurfaceTriangle(triangle, values, tolerance, a, b);
 
         if (hit < 0) {
             ++result.degenerateTriangles;
@@ -79,29 +84,20 @@ SurfaceLineResult reconstructSurfaceLine(
 
         const Vec midpoint = 0.5 * (a + b);
 
-        const auto sample = sampleInterfaceField(
-            midpoint, planes, supportRadius
-        );
+        const auto sample = sampleInterfaceField(midpoint, planes, supportRadius);
 
-        const Vec faceNormal =
-            (triangle[1] - triangle[0])
-            .cross(triangle[2] - triangle[0]);
+        const Vec faceNormal = (triangle[1] - triangle[0]).cross(triangle[2] - triangle[0]);
 
         const double length = (b - a).norm();
 
-        if (!sample ||
-            length == 0.0 ||
-            faceNormal.squaredNorm() == 0.0)
-        {
+        if (!sample || length == 0.0 || faceNormal.squaredNorm() == 0.0) {
             ++result.invalidSegments;
             continue;
         }
 
         const Vec tangent = (b - a) / length;
 
-        Vec ni =
-            sample->gradient
-            - sample->gradient.dot(tangent) * tangent;
+        Vec ni = sample->gradient - sample->gradient.dot(tangent) * tangent;
 
         if (ni.norm() < 1e-10) {
             ++result.invalidSegments;
@@ -112,35 +108,27 @@ SurfaceLineResult reconstructSurfaceLine(
 
         const Vec ns = faceNormal.normalized();
 
-        if (wallContactAngleDegrees)
-        {
+        if (wallContactAngleDegrees) {
             const double angle = *wallContactAngleDegrees;
 
-            if (!std::isfinite(angle) ||
-                angle <= 0.0 || angle >= 180.0)
-            {
-                throw std::invalid_argument(
-                    "Wall contact angle must be between 0 and 180 degrees"
-                );
+            if (!std::isfinite(angle) || angle <= 0.0 || angle >= 180.0) {
+                throw std::invalid_argument("Wall contact angle must be between 0 and 180 degrees");
             }
 
             // Tangent to the solid, pointing toward the dry side.
             Vec dryDirection = ni - ni.dot(ns) * ns;
 
-            if (dryDirection.norm() < 1e-10)
-            {
+            if (dryDirection.norm() < 1e-10) {
                 ++result.invalidSegments;
                 continue;
             }
 
             dryDirection.normalize();
 
-            const double theta =
-                angle * std::acos(-1.0) / 180.0;
+            const double theta = angle * std::acos(-1.0) / 180.0;
 
             // Liquid-to-gas interface normal at the wall.
-            ni = std::cos(theta) * ns
-               + std::sin(theta) * dryDirection;
+            ni = std::cos(theta) * ns + std::sin(theta) * dryDirection;
         }
 
         if ((ns - ns.dot(ni) * ni).norm() < 1e-10) {
@@ -148,9 +136,7 @@ SurfaceLineResult reconstructSurfaceLine(
             continue;
         }
 
-        const auto load = contactLineSegmentLoad(
-            a, b, ns, ni, particleCenter, sigma
-        );
+        const auto load = contactLineSegmentLoad(a, b, ns, ni, particleCenter, sigma);
 
         result.load.force += load.force;
         result.load.torque += load.torque;
@@ -161,31 +147,21 @@ SurfaceLineResult reconstructSurfaceLine(
 
     // A closed, non-branching contour has exactly one other
     // segment endpoint matching each endpoint.
-    const double endpointToleranceSquared =
-        std::pow(1e-8 * supportRadius, 2);
+    const double endpointToleranceSquared = std::pow(1e-8 * supportRadius, 2);
 
-    for (std::size_t i = 0; i < result.segments.size(); ++i)
-    {
-        for (int end = 0; end < 2; ++end)
-        {
+    for (std::size_t i = 0; i < result.segments.size(); ++i) {
+        for (int end = 0; end < 2; ++end) {
             std::size_t matches = 0;
 
-            for (std::size_t j = 0;
-                 j < result.segments.size(); ++j)
-            {
+            for (std::size_t j = 0; j < result.segments.size(); ++j) {
                 if (i == j)
                     continue;
 
-                for (int other = 0; other < 2; ++other)
-                {
+                for (int other = 0; other < 2; ++other) {
                     const double distanceSquared =
-                        (result.segments[i][end]
-                         - result.segments[j][other])
-                        .squaredNorm();
+                        (result.segments[i][end] - result.segments[j][other]).squaredNorm();
 
-                    if (distanceSquared <
-                        endpointToleranceSquared)
-                    {
+                    if (distanceSquared < endpointToleranceSquared) {
                         ++matches;
                     }
                 }
@@ -199,4 +175,4 @@ SurfaceLineResult reconstructSurfaceLine(
     return result;
 }
 
-#endif //SOOT_AFM_SURFACE_CONTACT_LINE_H
+#endif // SOOT_AFM_SURFACE_CONTACT_LINE_H
