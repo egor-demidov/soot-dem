@@ -62,6 +62,7 @@
 #include "dem_lb_parameters.h"
 #include "interface_plane_field.h"
 #include "lb_units.h"
+#include "capillary_setup.h"
 #include "sphere_surface.h"
 #include "surface_contact_line.h"
 
@@ -265,10 +266,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         throw std::runtime_error("DEM particle-position callback is missing");
     }
 
-    // if (dem.particleCount == 0 || dem.particleCount > 2) {
-        // throw std::runtime_error("Expected one or two DEM particles");
-    // }
-
+    if (dem.particleCount == 0 || !dem.setup) throw std::runtime_error("Missing input geometry");
     // Use particle 0's initial position as the common reference.
     const Eigen::Vector3d demReferencePositionSI = dem.particlePositionSI(0);
 
@@ -426,11 +424,8 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     const real_t solidRadius = real_c(0.5) * real_c(dem.cellsPerParticleDiameter);
 
     // Map the initial DEM position onto the existing LB placement.
-    Eigen::Vector3d lbAnchor(0.5 * double(domainSize[0]), 0.5 * double(domainSize[1]),
-                             0.5 * double(domainSize[2]));
-
     auto demPositionToLb = [&](const Eigen::Vector3d &positionSI) -> Eigen::Vector3d {
-        return lbAnchor + (positionSI - demReferencePositionSI) / units.dxSI;
+        return (positionSI - dem.setup->lower) / units.dxSI;
     };
 
     struct ParticleLbState {
@@ -471,14 +466,21 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     const typename FreeSurfaceBoundaryHandling_T::FlagInfo_T &flagInfo =
         freeSurfaceBoundaryHandling->getFlagInfo();
 
-    // add spherical drop to fill level field
-    // Preserve the original droplet-to-particle displacement.
-    const real_t dropOffsetZ = real_c(1.1) * real_c(dropDiameter) - solidRadius;
-
-    const geometry::Sphere sphereDrop(
-        Vector3<real_t>(solidCenter[0], solidCenter[1], solidCenter[2] + dropOffsetZ),
-        real_c(0.5) * real_c(dropDiameter));
-    bubble_model::addBodyToFillLevelField<geometry::Sphere>(*blockForest, fillFieldID, sphereDrop, false);
+    // Subcell sampling of the requested liquid region minus particle interiors.
+    for (auto &block : *blockForest) {
+        auto *fill = block.getData<ScalarField_T>(fillFieldID);
+        double liquidVolume = 0;
+        for (const auto &cell : fill->xyzSize()) {
+            const auto p = blockForest->getBlockLocalCellCenter(block,cell);
+            const Eigen::Vector3d position{double(p[0]),double(p[1]),double(p[2])};
+            const auto centerSI = dem.setup->lower + units.dxSI * position;
+            const double value = dem.setup->solid(centerSI) ? 0.0 : dem.setup->fill(centerSI);
+            fill->get(cell.x(),cell.y(),cell.z()) = real_c(value);
+            liquidVolume += value;
+        }
+        if (!(liquidVolume>0)) throw std::runtime_error("Initialized liquid is empty at this lattice resolution");
+        WALBERLA_LOG_INFO_ON_ROOT("Initialized liquid volume SI=" << liquidVolume*std::pow(units.dxSI,3));
+    }
 
     // initialize boundary conditions from config file
     const auto boundaryParameters = walberlaEnv.config()->getOneBlock("BoundaryParameters");
@@ -1066,7 +1068,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
             for (const auto& source : shifted.coveredLiquidCells) extendDonors(source);
             for (const auto& source : uncoveredStates)
                 if (source.fill > 0.0) extendDonors(source);
-            WALBERLA_LOG_INFO_ON_ROOT("Expanded remap donors: particle=" << movingParticle
+            WALBERLA_LOG_DEVEL_ON_ROOT("Expanded remap donors: particle=" << movingParticle
                 << " required=" << donorRequirementLB << " initial=" << originalDonorMassLB
                 << " expanded=" << selectedDonorMass()
                 << " coveredMass=" << shifted.coveredLiquidMassLB
@@ -2205,8 +2207,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     surfaceMeshWriter(); // write initial mesh
     timeloop.addFuncAfterTimeStep(surfaceMeshWriter, "Writer: surface mesh");
 
-    const uint_t particleWriteFrequency =
-        walberlaEnv.config()->getOneBlock("MeshOutputParameters").getParameter<uint_t>("writeFrequency");
+    const uint_t particleWriteFrequency = uint_c(dem.setup->particleFrequency);
 
     auto clearGeneratedFrames = [](const std::filesystem::path &folder, const std::string &prefix) {
         std::filesystem::create_directories(folder);
@@ -2388,17 +2389,6 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
     for (uint_t t = uint_c(0); t != timesteps; ++t) {
         stepBefore = measureLiquidState();
 
-        if (t >= uint_c(18300))
-        {
-            for (std::size_t i = 0; i < particles.size(); ++i)
-            {
-                WALBERLA_LOG_INFO_ON_ROOT(
-                    "Geometry diagnostic: step=" << t
-                    << " particle=" << i
-                    << " centerLB=" << particles[i].center.transpose());
-            }
-        }
-
         timeloop.singleStep(timingPool, true);
 
         const Eigen::Vector3d totalFluidForceSI = units.forceScaleSI * stepLoad.force;
@@ -2411,15 +2401,6 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
         }
 
         if (diagnosticFrequency != uint_c(0) && t % diagnosticFrequency == uint_c(0)) {
-            for (std::size_t i = 0; i < particles.size(); ++i) {
-                WALBERLA_LOG_INFO_ON_ROOT(
-                    "Particle load: step="
-                    << t << " particle=" << i << " wallLinks=" << particleWallLinkCounts[i]
-                    << " lineSegments=" << particleStepLines[i].segments.size()
-                    << " forceSI_N=" << (units.forceScaleSI * particleStepLoads[i].force).transpose()
-                    << " torqueSI_Nm=" << (units.torqueScaleSI * particleStepLoads[i].torque).transpose());
-            }
-
             const double relativeMassChange =
                 (double(*totalMass) - initialLiquidMassLB) / initialLiquidMassLB;
             WALBERLA_LOG_INFO_ON_ROOT("Coupling: step="
@@ -2475,16 +2456,12 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                     throw std::runtime_error("Non-finite moving force-lever impulse");
                 if (leverTransportLB.squaredNorm() > 0.0) {
                     const auto before = measureLiquidState();
-                    const double correctionSpeed =
-                        applyFluidMomentumCorrection(Eigen::Vector3d::Zero(), -leverTransportLB);
+                    applyFluidMomentumCorrection(Eigen::Vector3d::Zero(), -leverTransportLB);
                     const auto after = measureLiquidState();
                     if ((after.linear - before.linear).norm() > 5e-11 ||
                         (after.angular - before.angular + leverTransportLB).norm() > 5e-10)
                         throw std::runtime_error("Moving force-lever transfer failed");
-                    if (diagnosticFrequency != uint_c(0) && t % diagnosticFrequency == uint_c(0))
-                        WALBERLA_LOG_INFO_ON_ROOT("Force-lever transfer: step="
-                                                  << t << " angularImpulseLB=" << leverTransportLB.transpose()
-                                                  << " maxVelocityCorrectionLB=" << correctionSpeed);
+
                 }
             }
 

@@ -8,6 +8,8 @@
 #include <Eigen/Dense>
 #include <cstddef>
 #include <functional>
+#include <memory>
+struct CapillarySetup;
 #include <vector>
 
 struct DemLbParameters {
@@ -27,6 +29,7 @@ struct DemLbParameters {
 
     unsigned cellsPerParticleDiameter;
     std::size_t particleCount = 1;
+    std::shared_ptr<const CapillarySetup> setup;
 
     // One force and torque per particle, in particle-index order.
     std::function<void(const Field &forcesSI, const Field &torquesSI)> submitFluidLoadSI;
@@ -39,7 +42,8 @@ struct DemLbParameters {
     std::function<void()> advanceDemStep;
 
     // Applies a remapping impulse to one particle.
-    std::function<void(std::size_t particleIndex, const Vec &impulseSI, const Vec &angularImpulseSI)>
+    std::function<void(std::size_t particleIndex, const Vec &impulseSI,
+                       const Vec &angularImpulseSI)>
         applyRemapImpulseSI;
 };
 

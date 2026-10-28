@@ -18,7 +18,10 @@
 #include <libgran/hamaker_force/hamaker_force.h>
 
 #include "aggregate.h"
+#include "capillary_prm.h"
+#include "capillary_setup.h"
 #include "coating_force.h"
+#include "lb_units.h"
 
 #include "aggregate.h"
 #include "aggregate_stats.h"
@@ -44,9 +47,9 @@ struct fluid_load_functor {
     fluid_load_functor(size_t count, double mass_, double inertia_)
         : forces(count, Vec::Zero()), torques(count, Vec::Zero()), mass(mass_), inertia(inertia_) {}
 
-    std::pair<Vec, Vec> operator()(size_t i, const Field & /* positions */, const Field & /* velocities */,
-                                   const Field & /* orientations */, const Field & /* angular velocities */,
-                                   double /* time */
+    std::pair<Vec, Vec> operator()(size_t i, const Field & /* positions */,
+                                   const Field & /* velocities */, const Field & /* orientations */,
+                                   const Field & /* angular velocities */, double /* time */
     ) const {
         return {forces[i] / mass, torques[i] / inertia};
     }
@@ -58,11 +61,13 @@ using hamaker_model_t = hamaker_functor<Eigen::Vector3d, double>;
 
 using binary_force_container_t =
     binary_force_functor_container<Eigen::Vector3d, double, contact_model_t, hamaker_model_t>;
-using unary_force_container_t = unary_force_functor_container<Eigen::Vector3d, double, fluid_load_functor>;
+using unary_force_container_t =
+    unary_force_functor_container<Eigen::Vector3d, double, fluid_load_functor>;
 
 using granular_system_t =
     granular_system_neighbor_list<Eigen::Vector3d, double, rotational_velocity_verlet_half,
-                                  rotational_step_handler, binary_force_container_t, unary_force_container_t>;
+                                  rotational_step_handler, binary_force_container_t,
+                                  unary_force_container_t>;
 
 class fluid_loaded_system : public granular_system_t {
   public:
@@ -85,7 +90,8 @@ class fluid_loaded_system : public granular_system_t {
 
         if (started_) {
             for (size_t i = 0; i < count; ++i) {
-                const Eigen::Vector3d deltaAcceleration = (new_forces[i] - loads.forces[i]) / loads.mass;
+                const Eigen::Vector3d deltaAcceleration =
+                    (new_forces[i] - loads.forces[i]) / loads.mass;
                 const Eigen::Vector3d deltaAngularAcceleration =
                     (new_torques[i] - loads.torques[i]) / loads.inertia;
                 // The integrator stores half-step velocities. Replacing a cached
@@ -131,8 +137,9 @@ class fluid_loaded_system : public granular_system_t {
     void apply_fluid_impulse(std::size_t particle, const Eigen::Vector3d &linearImpulse,
                              const Eigen::Vector3d &angularImpulse, double particleMass,
                              double particleInertia) {
-        if (!linearImpulse.allFinite() || !angularImpulse.allFinite() || !std::isfinite(particleMass) ||
-            !std::isfinite(particleInertia) || particleMass <= 0.0 || particleInertia <= 0.0) {
+        if (!linearImpulse.allFinite() || !angularImpulse.allFinite() ||
+            !std::isfinite(particleMass) || !std::isfinite(particleInertia) ||
+            particleMass <= 0.0 || particleInertia <= 0.0) {
             throw std::invalid_argument("Invalid fluid impulse or particle properties");
         }
 
@@ -147,15 +154,15 @@ class fluid_loaded_system : public granular_system_t {
 };
 
 int main(int argc, char **argv) {
-    if (argc != 3) {
-        std::cerr << "Usage: " << argv[0] << " DEM.xml LB.prm\n";
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " DEM.xml\n";
 
         return EXIT_FAILURE;
     }
 
     auto parameter_store = load_parameters(argv[1]);
 
-    print_header(parameter_store, "capillary_dem");
+    std::cout << "capillary_dem: " << argv[1] << '\n';
 
     if (parameter_store.simulation_type != "capillary_dem") {
         std::cerr << "Parameter file simulation type must be `capillary_dem`" << std::endl;
@@ -165,11 +172,16 @@ int main(int argc, char **argv) {
     // General simulation parameters
     const double dt = get_real_parameter(parameter_store, "dt");
     const double t_tot = get_real_parameter(parameter_store, "t_tot");
-    const auto n_steps = long(t_tot / dt);
-    const long n_dumps = get_integer_parameter(parameter_store, "n_dumps");
-    const long dump_period = n_steps / n_dumps;
-    const long neighbor_update_period = get_integer_parameter(parameter_store, "neighbor_update_period");
-    const long rng_seed = get_integer_parameter(parameter_store, "rng_seed");
+    if (!(std::isfinite(dt) && dt > 0 && std::isfinite(t_tot) && t_tot > 0))
+        throw std::runtime_error("dt and t_tot must be finite and positive");
+    const double stepsExact = t_tot / dt;
+    if (stepsExact > 1e9 || std::abs(stepsExact - std::round(stepsExact)) > 1e-6)
+        throw std::runtime_error("t_tot must be a whole number of DEM steps (at most 1e9)");
+    const auto n_steps = static_cast<long>(std::llround(stepsExact));
+    const long neighbor_update_period =
+        get_integer_parameter(parameter_store, "neighbor_update_period");
+    if (neighbor_update_period <= 0)
+        throw std::runtime_error("neighbor_update_period must be positive");
 
     // General parameters
     const double rho = get_real_parameter(parameter_store, "rho");
@@ -201,47 +213,14 @@ int main(int argc, char **argv) {
     // Declare the initial condition buffers
     std::vector<Eigen::Vector3d> x0, v0, theta0, omega0;
 
-    const long n_particles = get_integer_parameter(parameter_store, "n_particles");
-
-    if (n_particles != 1 && n_particles != 2 && n_particles != 3) {
-        std::cerr << "n_particles must be 1 or 2 or 3\n";
-        return EXIT_FAILURE;
-    }
-
-    const double initial_gap = get_real_parameter(parameter_store, "initial_gap");
-
-    const double approach_speed = get_real_parameter(parameter_store, "approach_speed");
-
-    if (initial_gap < 0.0) {
-        std::cerr << "Use a nonnegative initial_gap for this test\n";
-        return EXIT_FAILURE;
-    }
-
-    const Eigen::Vector3d center = Eigen::Vector3d::Zero();
-
-    x0.assign(static_cast<size_t>(n_particles), center);
-
-    v0.assign(x0.size(), Eigen::Vector3d::Zero());
-    theta0.assign(x0.size(), Eigen::Vector3d::Zero());
-    omega0.assign(x0.size(), Eigen::Vector3d::Zero());
-
-    if (n_particles == 2) {
-        x0[0] = Eigen::Vector3d::Zero();
-        v0[0] = Eigen::Vector3d::Zero();
-
-        x0[1] = Eigen::Vector3d{-35e-9, 0.0, 24.5e-9 + 22.0e-9};
-
-        v0[1] = Eigen::Vector3d{5.0, 0.0, 0.0};
-    } else if (n_particles == 3) {
-        x0[0] = Eigen::Vector3d::Zero();
-        v0[0] = Eigen::Vector3d::Zero();
-
-        x0[1] = Eigen::Vector3d{-35e-9, 0.0, 24.5e-9 + 22.0e-9};
-        v0[1] = Eigen::Vector3d{5.0, 0.0, 0.0};
-
-        x0[2] = Eigen::Vector3d{35e-9, 0.0, 24.5e-9 + 22.0e-9};
-        v0[2] = Eigen::Vector3d{-5.0, 0.0, -5.0};
-    }
+    const long resolution =
+        get_integer_parameter(parameter_store, "lb_cells_per_particle_diameter");
+    if (resolution < 4 || resolution > 1024)
+        throw std::runtime_error("LB resolution must be 4..1024 cells per diameter");
+    auto setup = std::make_shared<CapillarySetup>(
+        CapillarySetup::load(argv[1], r_part, static_cast<unsigned>(resolution)));
+    x0 = setup->positions;
+    v0 = setup->velocities;
 
     // Fill the remaining buffers with zeros
     theta0.resize(x0.size());
@@ -249,10 +228,11 @@ int main(int argc, char **argv) {
     std::fill(theta0.begin(), theta0.end(), Eigen::Vector3d::Zero());
     std::fill(omega0.begin(), omega0.end(), Eigen::Vector3d::Zero());
 
-    contact_model_t contact_model{
-        x0.size(), k_n, gamma_n, k_t,  gamma_t, mu_t,   phi_t, k_r,     gamma_r, mu_r,
-        phi_r,     k_o, gamma_o, mu_o, phi_o,   r_part, mass,  inertia, dt,      Eigen::Vector3d::Zero(),
-        0.0};
+    contact_model_t contact_model{x0.size(), k_n,   gamma_n, k_t,     gamma_t,
+                                  mu_t,      phi_t, k_r,     gamma_r, mu_r,
+                                  phi_r,     k_o,   gamma_o, mu_o,    phi_o,
+                                  r_part,    mass,  inertia, dt,      Eigen::Vector3d::Zero(),
+                                  0.0};
 
     hamaker_model_t hamaker_model{A, h0, r_part, mass, Eigen::Vector3d::Zero(), 0.0};
 
@@ -264,10 +244,12 @@ int main(int argc, char **argv) {
 
     rotational_step_handler<std::vector<Eigen::Vector3d>, Eigen::Vector3d> step_handler_instance;
 
-    fluid_loaded_system system(x0.size(), r_verlet, x0, v0, theta0, omega0, 0.0, Eigen::Vector3d::Zero(), 0.0,
-                               step_handler_instance, binary_force_functors, unary_force_functors);
+    fluid_loaded_system system(x0.size(), r_verlet, x0, v0, theta0, omega0, 0.0,
+                               Eigen::Vector3d::Zero(), 0.0, step_handler_instance,
+                               binary_force_functors, unary_force_functors);
 
-    const long diameterCells = get_integer_parameter(parameter_store, "lb_cells_per_particle_diameter");
+    const long diameterCells =
+        get_integer_parameter(parameter_store, "lb_cells_per_particle_diameter");
 
     if (diameterCells <= 0) {
         std::cerr << "lb_cells_per_particle_diameter must be positive\n";
@@ -292,6 +274,7 @@ int main(int argc, char **argv) {
         .cellsPerParticleDiameter = static_cast<unsigned>(diameterCells)};
 
     lbParameters.particleCount = system.get_x().size();
+    lbParameters.setup = setup;
 
     lbParameters.submitFluidLoadSI = [&](const DemLbParameters::Field &forcesSI,
                                          const DemLbParameters::Field &torquesSI) {
@@ -305,9 +288,31 @@ int main(int argc, char **argv) {
     };
 
     // Pass only the LB configuration to waLBerla.
-    char *lbArguments[] = {argv[0], argv[2], nullptr};
+    const auto units = makeLbUnits(lbParameters);
+    if (static_cast<unsigned long long>(n_steps) * units.lbStepsPerDemStep > 1000000000ULL)
+        throw std::runtime_error("Too many LB steps");
+    const auto prm = writeCapillaryPrm(*setup, static_cast<unsigned long long>(n_steps) *
+                                                   units.lbStepsPerDemStep);
+    std::string prmPath = prm.string();
+    char *lbArguments[] = {argv[0], prmPath.data(), nullptr};
+    std::cout << "Input: particles=" << x0.size() << " liquid=" << setup->liquidMode
+              << " dxSI=" << setup->dx << " boxLowerSI=" << setup->lower.transpose()
+              << " boxUpperSI=" << setup->upper.transpose() << '\n';
+    std::filesystem::create_directories("dem-out");
+    if (setup->demFrequency)
+        for (const auto &entry : std::filesystem::directory_iterator("dem-out")) {
+            const auto name = entry.path().filename().string();
+            if (entry.is_regular_file() && name.starts_with("particles_") &&
+                entry.path().extension() == ".vtk")
+                std::filesystem::remove(entry.path());
+        }
+    if (setup->demFrequency)
+        dump_particles("dem-out", 0, system.get_x(), system.get_v(), system.get_a(),
+                       system.get_omega(), system.get_alpha(), r_part);
 
-    lbParameters.particlePositionSI = [&](std::size_t i) -> Eigen::Vector3d { return system.get_x().at(i); };
+    lbParameters.particlePositionSI = [&](std::size_t i) -> Eigen::Vector3d {
+        return system.get_x().at(i);
+    };
 
     lbParameters.particleVelocitySI = [&](std::size_t i) -> Eigen::Vector3d {
         return system.synchronized_velocity(i, dt);
@@ -320,17 +325,20 @@ int main(int argc, char **argv) {
     std::size_t completedDemSteps = 0;
 
     lbParameters.advanceDemStep = [&]() {
-        system.update_neighbor_list();
+        if (completedDemSteps % neighbor_update_period == 0)
+            system.update_neighbor_list();
         system.do_step(dt);
         ++completedDemSteps;
 
-        if (completedDemSteps == 1 || completedDemSteps % 100 == 0) {
-            for (std::size_t i = 0; i < system.get_x().size(); ++i) {
-                std::cout << "DEM step=" << completedDemSteps << " particle=" << i
-                          << " timeSI=" << double(completedDemSteps) * dt
-                          << " positionSI=" << system.get_x().at(i).transpose()
-                          << " velocitySI=" << system.synchronized_velocity(i, dt).transpose() << '\n';
+        if (setup->demFrequency && completedDemSteps % setup->demFrequency == 0) {
+            auto velocity = system.get_v();
+            auto angularVelocity = system.get_omega();
+            for (std::size_t i = 0; i < velocity.size(); ++i) {
+                velocity[i] = system.synchronized_velocity(i, dt);
+                angularVelocity[i] = system.synchronized_angular_velocity(i, dt);
             }
+            dump_particles("dem-out", completedDemSteps / setup->demFrequency, system.get_x(),
+                           velocity, system.get_a(), angularVelocity, system.get_alpha(), r_part);
         }
     };
 

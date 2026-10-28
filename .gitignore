@@ -40,4 +40,7 @@
 !experimental_simulations/mechanics_testing_breaking_necks/mech_simulations/aggregate_*/config_*/
 
 !capillary_dem/
+!capillary_dem/aggregate_bank/
+!capillary_dem/aggregate_bank/aggregate_*/
+!capillary_dem/aggregate_bank/aggregate_*/final_aggregate.vtk
 !capillary_demo.prm

@@ -1,0 +1,18 @@
+<include_file>
+  <let id="k_n" type="real">10000.0</let>
+  <let id="gamma_n" type="real">5e-9</let>
+  <let id="k_t" type="real">10000.0</let>
+  <let id="gamma_t" type="real">1e-9</let>
+  <let id="mu_t" type="real">1.0</let>
+  <let id="phi_t" type="real">1.0</let>
+  <let id="k_r" type="real">10000.0</let>
+  <let id="gamma_r" type="real">2.5e-10</let>
+  <let id="mu_r" type="real">0.1</let>
+  <let id="phi_r" type="real">1.0</let>
+  <let id="k_o" type="real">10000.0</let>
+  <let id="gamma_o" type="real">2.5e-10</let>
+  <let id="mu_o" type="real">0.1</let>
+  <let id="phi_o" type="real">1.0</let>
+  <let id="A" type="real">1.0e-19</let>
+  <let id="h0" type="real">1.0e-9</let>
+</include_file>

@@ -1,0 +1,24 @@
+<simulation type="capillary_dem">
+  <let id="dt" type="real">5e-13</let>
+  <let id="t_tot" type="real">5e-8</let>
+  <let id="r_verlet" type="real">70e-9</let>
+  <let id="neighbor_update_period" type="integer">20</let>
+  <let id="rho" type="real">1700.0</let>
+  <let id="r_part" type="real">14e-9</let>
+  <let id="liquid_density" type="real">1258.0</let>
+  <let id="liquid_dynamic_viscosity" type="real">1.0e-3</let>
+  <let id="liquid_surface_tension" type="real">0.063</let>
+  <let id="lb_cells_per_particle_diameter" type="integer">16</let>
+  <let id="liquid_contact_angle_deg" type="real">5.0</let>
+  <include>capillary_contacts.xml</include>
+  <initialization>
+    <aggregate file="aggregate_bank/aggregate_1/final_aggregate.vtk" format="vtk" />
+    <liquid mode="droplets" length_unit="nm">
+      <droplet x="-140.5052" y="90.9034" z="143.8088"
+               radius="60"/>
+    </liquid>
+  </initialization>
+  <lattice initialization_samples_per_axis="4" />
+  <domain_margin x="30" y="30" z="30" length_unit="nm" />
+  <output surface_every_lb_steps="100" fluid_every_lb_steps="100" dem_every_dem_steps="100" log_every_lb_steps="100" particle_every_lb_steps="100" />
+</simulation>
