@@ -1045,6 +1045,33 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
             signedInterfaceMassLB[j] = mass;
         }
         const double remainingMassLB = shifted.coveredLiquidMassLB - requestedRefillMassLB;
+        // A deficit can also come from covering a signed/negative interface
+        // cell, with no newly uncovered wet cell to seed the search above.
+        // Expand the SAME connected-fluid search from every changed wet cell
+        // until the union of eligible positive donors can cover the NET plan.
+        auto selectedDonorMass = [&]() {
+            double mass = 0.0;
+            for (std::size_t j = 0; j < signedInterfaceMassLB.size(); ++j)
+                if (eligibleRecipient[j]) mass += std::max(0.0, signedInterfaceMassLB[j]);
+            return mass;
+        };
+        const double donorRequirementLB = std::max(0.0, -remainingMassLB);
+        const double originalDonorMassLB = selectedDonorMass();
+        if (originalDonorMassLB < donorRequirementLB) {
+            auto extendDonors = [&](const auto& source) {
+                if (selectedDonorMass() >= donorRequirementLB) return;
+                const auto indices = findInterfaceThroughLiquid(source, donorRequirementLB);
+                for (const auto j : indices) eligibleRecipient.at(j) = true;
+            };
+            for (const auto& source : shifted.coveredLiquidCells) extendDonors(source);
+            for (const auto& source : uncoveredStates)
+                if (source.fill > 0.0) extendDonors(source);
+            WALBERLA_LOG_INFO_ON_ROOT("Expanded remap donors: particle=" << movingParticle
+                << " required=" << donorRequirementLB << " initial=" << originalDonorMassLB
+                << " expanded=" << selectedDonorMass()
+                << " coveredMass=" << shifted.coveredLiquidMassLB
+                << " refillMass=" << requestedRefillMassLB);
+        }
         const auto interfaceMassPlan = capillary_coupling::makeInterfaceMassPlan(
             signedInterfaceMassLB, eligibleRecipient, remainingMassLB);
         const auto &recipientMassDeltaLB = interfaceMassPlan.delta;
@@ -2061,7 +2088,7 @@ int runWithDem(int argc, char **argv, const DemLbParameters &dem) {
                     particle.surface =
                         makeSphereSurface(particle.center, double(solidRadius), particle.surfaceLevel);
                     line = reconstructSurfaceLine(particle.surface, interfacePlanes, particle.center,
-                                                  double(surfaceTension), 3.0, double(contactAngle));
+                                                  double(surfaceTension), 4.5, double(contactAngle));
                     WALBERLA_LOG_INFO_ON_ROOT("Refined particle surface: step="
                                               << timeloop.getCurrentTimeStep() << " particle=" << i
                                               << " level=" << particle.surfaceLevel << " segments="
