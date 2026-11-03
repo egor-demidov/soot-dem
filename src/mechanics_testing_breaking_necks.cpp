@@ -27,41 +27,34 @@
 #include "random_engine.h"
 
 
-// A custom step handler that prevents velocity updates of select primary particles
-template <typename field_container_t, typename field_value_t>
-struct mechanical_testing_step_handler : public rotational_step_handler<field_container_t, field_value_t> {
+struct AppliedForceRamp {
 public:
-    mechanical_testing_step_handler(size_t particle_i, size_t particle_j)
-        : particle_i_(particle_i)
-        , particle_j_(particle_j)
+    AppliedForceRamp(
+        double ramp_t,
+        double max_magnitude
+    )
+        : ramp_t_(ramp_t)
+        , ramp_slope_(max_magnitude / ramp_t)
+        , max_magnitude_(max_magnitude)
     {}
 
-    // This method increments the specified value in the x buffer
-    void increment_v(long n,
-                     field_value_t const & dx [[maybe_unused]],
-                     typename field_container_t::iterator x_begin_itr [[maybe_unused]],
-                     typename field_container_t::iterator v_begin_itr [[maybe_unused]],
-                     typename field_container_t::iterator a_begin_itr [[maybe_unused]],
-                     typename field_container_t::iterator theta_begin_itr [[maybe_unused]],
-                     typename field_container_t::iterator omega_begin_itr [[maybe_unused]],
-                     typename field_container_t::iterator alpha_begin_itr [[maybe_unused]]) const {
-        if (n == particle_i_ || n == particle_j_)
-            return;
-
-        rotational_step_handler<field_container_t, field_value_t>::increment_v(n, dx, x_begin_itr, v_begin_itr, a_begin_itr, theta_begin_itr, omega_begin_itr, alpha_begin_itr);
+    double operator () (double t) const noexcept {
+        return std::min(ramp_slope_ * t, max_magnitude_);
     }
 
 private:
-    const size_t particle_i_, particle_j_;
+    const double ramp_t_, ramp_slope_, max_magnitude_;
 };
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
+using applied_force_model_t = unary_applied_force_functor<Eigen::Vector3d, double, AppliedForceRamp>;
+// using applied_force_magnitude_t = ConstantAppliedForce<double>;
 
 using binary_force_container_t = binary_force_functor_container<Eigen::Vector3d, double, aggregate_model_t>;
-using unary_force_container_t = unary_force_functor_container<Eigen::Vector3d, double>;
+using unary_force_container_t = unary_force_functor_container<Eigen::Vector3d, double, applied_force_model_t>;
 
 using granular_system_t = granular_system_neighbor_list<Eigen::Vector3d, double, rotational_velocity_verlet_half,
-        mechanical_testing_step_handler, binary_force_container_t, unary_force_container_t>;
+        rotational_step_handler, binary_force_container_t, unary_force_container_t>;
 
 int main(int argc, const char ** argv) {
 
@@ -129,8 +122,8 @@ int main(int argc, const char ** argv) {
     // Parameters for the applied force model
     const long applied_particle_i = get_integer_parameter(parameter_store, "applied_particle_i");
     const long applied_particle_j = get_integer_parameter(parameter_store, "applied_particle_j");
-    const double deformation_velocity_magnitude = get_real_parameter(parameter_store, "deformation_velocity_magnitude");
-    const double deformation_velocity_ramp_time = get_real_parameter(parameter_store, "deformation_velocity_ramp_time");
+    const double applied_force_magnitude = get_real_parameter(parameter_store, "applied_force_magnitude");
+    const double applied_force_ramp_time = get_real_parameter(parameter_store, "applied_force_ramp_time");
 
     // Parameters for neck breakage
     const double neck_radius = get_real_parameter(parameter_store, "neck_radius");
@@ -156,10 +149,6 @@ int main(int argc, const char ** argv) {
     std::fill(theta0.begin(), theta0.end(), Eigen::Vector3d::Zero());
     std::fill(omega0.begin(), omega0.end(), Eigen::Vector3d::Zero());
 
-    // Deformation velocity parameters
-    auto velocity_dir = (x0[applied_particle_j] - x0[applied_particle_i]).normalized();
-    double velocity_ramp_slope = deformation_velocity_magnitude / deformation_velocity_ramp_time;
-
     aggregate_model_t aggregate_model {
             k_n, gamma_n,
             k_t, gamma_t, mu_t, phi_t,
@@ -172,12 +161,15 @@ int main(int argc, const char ** argv) {
             d_crit, A, h0, x0, x0.size(),
             r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0};
             
+    applied_force_model_t applied_force_model(applied_particle_i, applied_particle_j,
+        mass, Eigen::Vector3d::Zero(), AppliedForceRamp(applied_force_ramp_time, applied_force_magnitude));
+
     binary_force_container_t binary_force_functors {aggregate_model};
 
-    unary_force_container_t unary_force_functors {};
+    unary_force_container_t unary_force_functors {applied_force_model};
 
-    mechanical_testing_step_handler<std::vector<Eigen::Vector3d>, Eigen::Vector3d>
-            step_handler_instance(applied_particle_i, applied_particle_j);
+    rotational_step_handler<std::vector<Eigen::Vector3d>, Eigen::Vector3d>
+            step_handler_instance;
 
     granular_system_t system(x0.size(), r_verlet, x0,
                              v0, theta0, omega0, 0.0, Eigen::Vector3d::Zero(), 0.0,
@@ -214,8 +206,6 @@ int main(int argc, const char ** argv) {
     applied_force_log << "t, applied_i_x, applied_i_y, applied_i_z, applied_j_x, applied_j_y, applied_j_z, net_i_x, net_i_y, net_i_z, net_j_x, net_j_y, net_j_z\n";
 
     for (long n = 0; n < n_steps; n ++) {
-        double t = static_cast<double>(n) * dt;
-
         if (n % neighbor_update_period == 0) {
             system.update_neighbor_list();
         }
@@ -235,10 +225,11 @@ int main(int argc, const char ** argv) {
             dump_necks("run", n / dump_period, system.get_x(), aggregate_model.get_bonded_contacts(), r_part,
                        k_n_bond, k_t_bond, k_r_bond, k_o_bond, aggregate_model.get_sinter_model().get_contact_springs(), x0.size());
 
-            // auto [applied_a_i, applied_alpha_i] = applied_force_model(applied_particle_i, system.get_x(), system.get_v(), system.get_theta(), system.get_omega(), t);
-            // auto [applied_a_j, applied_alpha_j] = applied_force_model(applied_particle_j, system.get_x(), system.get_v(), system.get_theta(), system.get_omega(), t);
-            auto applied_force_i = Eigen::Vector3d::Zero() * mass;
-            auto applied_force_j = Eigen::Vector3d::Zero() * mass;
+            double t = static_cast<double>(n) * dt;
+            auto [applied_a_i, applied_alpha_i] = applied_force_model(applied_particle_i, system.get_x(), system.get_v(), system.get_theta(), system.get_omega(), t);
+            auto [applied_a_j, applied_alpha_j] = applied_force_model(applied_particle_j, system.get_x(), system.get_v(), system.get_theta(), system.get_omega(), t);
+            auto applied_force_i = applied_a_i * mass;
+            auto applied_force_j = applied_a_j * mass;
             auto net_force_i = system.get_a()[applied_particle_i] * mass;
             auto net_force_j = system.get_a()[applied_particle_j] * mass;
 
@@ -256,11 +247,6 @@ int main(int argc, const char ** argv) {
                                 << net_force_j[1] << ", "
                                 << net_force_j[2] << std::endl;
         }
-
-        // Update deformation velocity
-        double vel = std::min(t * velocity_ramp_slope, deformation_velocity_magnitude);
-        system.get_v()[applied_particle_i] = -velocity_dir * vel;
-        system.get_v()[applied_particle_j] = velocity_dir * vel;
 
         system.do_step(dt);
 
