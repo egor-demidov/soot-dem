@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<simulation type="mechanics_testing_breaking_necks">
+
+    <let id="applied_particle_i" type="integer">149</let>
+    <let id="applied_particle_j" type="integer">110</let>
+    <let id="applied_velocity_magnitude" type="real">1.5</let>
+    <let id="applied_velocity_ramp_time" type="real">2.5e-9</let>
+    <let id="t_tot" type="real">5e-8</let>
+    <!-- RNG seed (to determine which necks to break) -->
+    <let id="rng_seed" type="integer">48564</let>
+
+    <!-- NECK BREAKAGE PARAMETERS -->
+    <!-- Radius of the thinnest part of the neck, nm -->
+    <let id="neck_radius" type="real">8e-9</let>
+    <!-- Normal yield strength, Pa -->
+    <let id="normal_strength" type="real">16.0e9</let>
+    <!-- Shear yield strength, Pa -->
+    <let id="shear_strength" type="real">12.0e9</let>
+
+    <include>../common_aggregate.xml</include>
+
+</simulation>

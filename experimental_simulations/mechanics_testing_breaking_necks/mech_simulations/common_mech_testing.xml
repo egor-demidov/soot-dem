@@ -77,13 +77,5 @@
     <!-- Verlet (cutoff) radius for neighbor lists -->
     <let id="r_verlet" type="real">30e-9</let>
 
-    <!-- NECK BREAKAGE PARAMETERS -->
-    <!-- Radius of the thinnest part of the neck, nm -->
-    <let id="neck_radius" type="real">8e-9</let>
-    <!-- Normal yield strength, Pa -->
-    <let id="normal_strength" type="real">10.0e9</let>
-    <!-- Shear yield strength, Pa -->
-    <let id="shear_strength" type="real">10.0e9</let>
-
 </include_file>
 

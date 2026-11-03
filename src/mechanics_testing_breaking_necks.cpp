@@ -26,35 +26,84 @@
 #include "parameter_loader.h"
 #include "random_engine.h"
 
+template <typename field_container_t,
+        typename field_value_t,
+        template <
+        typename _field_container_t,
+        typename _field_value_t>
+        typename base_step_handler_t>
+struct fixed_step_handler {
+    fixed_step_handler(std::vector<bool> fixed_particles, base_step_handler_t<field_container_t, field_value_t> base_step_handler) :
+            fixed_particles(std::move(fixed_particles)), base_step_handler(std::move(base_step_handler)) {}
 
-struct AppliedForceRamp {
-public:
-    AppliedForceRamp(
-        double ramp_t,
-        double max_magnitude
-    )
-        : ramp_t_(ramp_t)
-        , ramp_slope_(max_magnitude / ramp_t)
-        , max_magnitude_(max_magnitude)
-    {}
+    void increment_x(size_t n,                                                                              // index of the value to increment
+                     field_value_t const & dx,                                                              // value of the position increment
+                     typename field_container_t::iterator x_begin_itr,                                      // iterator pointing to the start of the x buffer
+                     typename field_container_t::const_iterator v_begin_itr [[maybe_unused]],               // iterator pointing to the start of the v buffer
+                     typename field_container_t::const_iterator a_begin_itr [[maybe_unused]],               // iterator pointing to the start of the a buffer
+                     typename field_container_t::const_iterator theta_begin_itr [[maybe_unused]],           // iterator pointing to the start of the theta buffer
+                     typename field_container_t::const_iterator omega_begin_itr [[maybe_unused]],           // iterator pointing to the start of the omega buffer
+                     typename field_container_t::const_iterator alpha_begin_itr [[maybe_unused]]) const {   // iterator pointing to the start of the alpha buffer
 
-    double operator () (double t) const noexcept {
-        return std::min(ramp_slope_ * t, max_magnitude_);
+        base_step_handler.increment_x(n, dx, x_begin_itr, v_begin_itr, a_begin_itr, theta_begin_itr, omega_begin_itr, alpha_begin_itr);
+    }
+
+    // This method increments the specified value in the v buffer
+    void increment_v(size_t n,                                                                              // index of the value to increment
+                     field_value_t const & dv,                                                              // value of the velocity increment
+                     typename field_container_t::const_iterator x_begin_itr [[maybe_unused]],               // iterator pointing to the start of the x buffer
+                     typename field_container_t::iterator v_begin_itr,                                      // iterator pointing to the start of the v buffer
+                     typename field_container_t::const_iterator a_begin_itr [[maybe_unused]],               // iterator pointing to the start of the a buffer
+                     typename field_container_t::const_iterator theta_begin_itr [[maybe_unused]],           // iterator pointing to the start of the theta buffer
+                     typename field_container_t::const_iterator omega_begin_itr [[maybe_unused]],           // iterator pointing to the start of the omega buffer
+                     typename field_container_t::const_iterator alpha_begin_itr [[maybe_unused]]) const {   // iterator pointing to the start of the alpha buffer
+
+        if (!fixed_particles[n])
+            base_step_handler.increment_v(n, dv, x_begin_itr, v_begin_itr, a_begin_itr, theta_begin_itr, omega_begin_itr, alpha_begin_itr);
+    }
+
+    // This method increments the specified value in the theta buffer
+    void increment_theta(size_t n,                                                                              // index of the value to increment
+                         field_value_t const & dtheta,                                                          // value of the angle increment
+                         typename field_container_t::const_iterator x_begin_itr [[maybe_unused]],               // iterator pointing to the start of the x buffer
+                         typename field_container_t::const_iterator v_begin_itr [[maybe_unused]],               // iterator pointing to the start of the v buffer
+                         typename field_container_t::const_iterator a_begin_itr [[maybe_unused]],               // iterator pointing to the start of the a buffer
+                         typename field_container_t::iterator theta_begin_itr,                                  // iterator pointing to the start of the theta buffer
+                         typename field_container_t::const_iterator omega_begin_itr [[maybe_unused]],           // iterator pointing to the start of the omega buffer
+                         typename field_container_t::const_iterator alpha_begin_itr [[maybe_unused]]) const {   // iterator pointing to the start of the alpha buffer
+
+        base_step_handler.increment_theta(n, dtheta, x_begin_itr, v_begin_itr, a_begin_itr, theta_begin_itr, omega_begin_itr, alpha_begin_itr);
+    }
+
+    // This method increments the specified value in the omega buffer
+    void increment_omega(size_t n,                                                                              // index of the value to increment
+                         field_value_t const & domega,                                                          // value of the angular velocity increment
+                         typename field_container_t::const_iterator x_begin_itr [[maybe_unused]],               // iterator pointing to the start of the x buffer
+                         typename field_container_t::const_iterator v_begin_itr [[maybe_unused]],               // iterator pointing to the start of the v buffer
+                         typename field_container_t::const_iterator a_begin_itr [[maybe_unused]],               // iterator pointing to the start of the a buffer
+                         typename field_container_t::const_iterator theta_begin_itr [[maybe_unused]],           // iterator pointing to the start of the theta buffer
+                         typename field_container_t::iterator omega_begin_itr,                                  // iterator pointing to the start of the omega buffer
+                         typename field_container_t::const_iterator alpha_begin_itr [[maybe_unused]]) const {   // iterator pointing to the start of the alpha buffer
+
+        base_step_handler.increment_omega(n, domega, x_begin_itr, v_begin_itr, a_begin_itr, theta_begin_itr, omega_begin_itr, alpha_begin_itr);
     }
 
 private:
-    const double ramp_t_, ramp_slope_, max_magnitude_;
+    const std::vector<bool> fixed_particles;
+    base_step_handler_t<field_container_t, field_value_t> base_step_handler;
 };
 
 using aggregate_model_t = aggregate<Eigen::Vector3d, double>;
-using applied_force_model_t = unary_applied_force_functor<Eigen::Vector3d, double, AppliedForceRamp>;
 // using applied_force_magnitude_t = ConstantAppliedForce<double>;
 
 using binary_force_container_t = binary_force_functor_container<Eigen::Vector3d, double, aggregate_model_t>;
-using unary_force_container_t = unary_force_functor_container<Eigen::Vector3d, double, applied_force_model_t>;
+using unary_force_container_t = unary_force_functor_container<Eigen::Vector3d, double>;
+
+template <typename field_container_t, typename field_value_t>
+using fixed_rotational_step_handler = fixed_step_handler<field_container_t, field_value_t, rotational_step_handler>;
 
 using granular_system_t = granular_system_neighbor_list<Eigen::Vector3d, double, rotational_velocity_verlet_half,
-        rotational_step_handler, binary_force_container_t, unary_force_container_t>;
+        fixed_rotational_step_handler, binary_force_container_t, unary_force_container_t>;
 
 int main(int argc, const char ** argv) {
 
@@ -122,8 +171,12 @@ int main(int argc, const char ** argv) {
     // Parameters for the applied force model
     const long applied_particle_i = get_integer_parameter(parameter_store, "applied_particle_i");
     const long applied_particle_j = get_integer_parameter(parameter_store, "applied_particle_j");
-    const double applied_force_magnitude = get_real_parameter(parameter_store, "applied_force_magnitude");
-    const double applied_force_ramp_time = get_real_parameter(parameter_store, "applied_force_ramp_time");
+    const double applied_velocity_magnitude = get_real_parameter(parameter_store, "applied_velocity_magnitude");
+    const double applied_velocity_ramp_time = get_real_parameter(parameter_store, "applied_velocity_ramp_time");
+
+    const auto velocity_fun = [&applied_velocity_magnitude, &applied_velocity_ramp_time](const double t) -> double {
+        return std::min(t * applied_velocity_magnitude / applied_velocity_ramp_time, applied_velocity_magnitude);
+    };
 
     // Parameters for neck breakage
     const double neck_radius = get_real_parameter(parameter_store, "neck_radius");
@@ -161,19 +214,24 @@ int main(int argc, const char ** argv) {
             d_crit, A, h0, x0, x0.size(),
             r_part, mass, inertia, dt, Eigen::Vector3d::Zero(), 0.0};
             
-    applied_force_model_t applied_force_model(applied_particle_i, applied_particle_j,
-        mass, Eigen::Vector3d::Zero(), AppliedForceRamp(applied_force_ramp_time, applied_force_magnitude));
-
     binary_force_container_t binary_force_functors {aggregate_model};
 
-    unary_force_container_t unary_force_functors {applied_force_model};
+    unary_force_container_t unary_force_functors {};
 
     rotational_step_handler<std::vector<Eigen::Vector3d>, Eigen::Vector3d>
             step_handler_instance;
 
+    // Configure deformation driver
+    std::vector fixed_particles(x0.size(), false);
+    fixed_particles[applied_particle_i] = true;
+    fixed_particles[applied_particle_j] = true;
+    // Particle i will be fixed, particle j will be moving away from it
+    Eigen::Vector3d particle_j_velocity_dir = (x0[applied_particle_j] - x0[applied_particle_i]).normalized();
+    fixed_rotational_step_handler custom_handler_instance(fixed_particles, step_handler_instance);
+
     granular_system_t system(x0.size(), r_verlet, x0,
                              v0, theta0, omega0, 0.0, Eigen::Vector3d::Zero(), 0.0,
-                             step_handler_instance, binary_force_functors, unary_force_functors);
+                             custom_handler_instance, binary_force_functors, unary_force_functors);
 
     seed_random_engine(rng_seed);
 
@@ -195,17 +253,46 @@ int main(int argc, const char ** argv) {
         shear_yield_forces[i] = std::numbers::pi * neck_radius * neck_radius * shear_strength;
     }
 
+    // Check if there is a weak neck defined in this simulation
+    if (has_integer_parameter(parameter_store, "weak_neck_id")) {
+        long neck_id = get_integer_parameter(parameter_store, "weak_neck_id");
+        long weak_neck_i = neck_id / x0.size();
+        long weak_neck_j = neck_id % x0.size();
+
+        double weak_neck_shear_strength = get_real_parameter(parameter_store, "weak_neck_shear_strength");
+        double weak_neck_normal_strength = get_real_parameter(parameter_store, "weak_neck_normal_strength");
+
+        size_t neck_strengths_index = 0;
+        for (size_t i = 0; i < x0.size() - 1; i ++) {
+            for (size_t j = i + 1; j < x0.size(); j ++) {
+                if (!aggregate_model.get_bonded_contacts()[i * x0.size() + j])
+                    continue;
+
+                if (i == weak_neck_i && j == weak_neck_j) {
+                    normal_yield_forces[neck_strengths_index] = std::numbers::pi * neck_radius * neck_radius * weak_neck_normal_strength;
+                    shear_yield_forces[neck_strengths_index] = std::numbers::pi * neck_radius * neck_radius * weak_neck_shear_strength;
+                    break;
+                }
+
+                neck_strengths_index ++;
+            }
+        }
+    }
+
     // TODO: REMOVE BEFORE PRODUCTION
     // BREAKS ALL NECKS
     // std::fill(aggregate_model.get_bonded_contacts().begin(), aggregate_model.get_bonded_contacts().end(), false);
 
     std::filesystem::create_directory("run");
 
-    std::ofstream applied_force_log("applied_force_log.csv");
+    std::ofstream applied_force_log("stress_strain.csv");
 
-    applied_force_log << "t, applied_i_x, applied_i_y, applied_i_z, applied_j_x, applied_j_y, applied_j_z, net_i_x, net_i_y, net_i_z, net_j_x, net_j_y, net_j_z\n";
+    applied_force_log << "t, dx, dy, dz, net_i_x, net_i_y, net_i_z, net_j_x, net_j_y, net_j_z\n";
 
     for (long n = 0; n < n_steps; n ++) {
+        // Update velocity of particle j
+        system.get_v()[applied_particle_j] = particle_j_velocity_dir * velocity_fun(static_cast<double>(n) * dt);
+
         if (n % neighbor_update_period == 0) {
             system.update_neighbor_list();
         }
@@ -226,26 +313,20 @@ int main(int argc, const char ** argv) {
                        k_n_bond, k_t_bond, k_r_bond, k_o_bond, aggregate_model.get_sinter_model().get_contact_springs(), x0.size());
 
             double t = static_cast<double>(n) * dt;
-            auto [applied_a_i, applied_alpha_i] = applied_force_model(applied_particle_i, system.get_x(), system.get_v(), system.get_theta(), system.get_omega(), t);
-            auto [applied_a_j, applied_alpha_j] = applied_force_model(applied_particle_j, system.get_x(), system.get_v(), system.get_theta(), system.get_omega(), t);
-            auto applied_force_i = applied_a_i * mass;
-            auto applied_force_j = applied_a_j * mass;
+            auto distance_ij = system.get_x()[applied_particle_j] - system.get_x()[applied_particle_i];
             auto net_force_i = system.get_a()[applied_particle_i] * mass;
             auto net_force_j = system.get_a()[applied_particle_j] * mass;
 
             applied_force_log << t << ", "
-                                << applied_force_i[0] << ", "
-                                << applied_force_i[1] << ", "
-                                << applied_force_i[2] << ", "
-                                << applied_force_j[0] << ", "
-                                << applied_force_j[1] << ", "
-                                << applied_force_j[2] << ", "
+                                << distance_ij[0] << ", "
+                                << distance_ij[1] << ", "
+                                << distance_ij[2] << ", "
                                 << net_force_i[0] << ", "
                                 << net_force_i[1] << ", "
                                 << net_force_i[2] << ", "
                                 << net_force_j[0] << ", "
                                 << net_force_j[1] << ", "
-                                << net_force_j[2] << std::endl;
+                                << net_force_j[2] << "\n";
         }
 
         system.do_step(dt);

@@ -56,9 +56,9 @@ void break_strained_necks(aggregate<field_value_t, real_t> & aggregate_model,
             }
 
             if (normal_force >= normal_yield_forces[neck_strengths_index])
-                std::cout << "Breaking based on normal criterion " << i * n_part + j << "\n";
+                std::cout << "Breaking based on normal criterion " << i * n_part + j << " " << i << " " << j <<  "\n";
             else
-                std::cout << "Breaking based on shear criterion "  << i * n_part + j << "\n";
+                std::cout << "Breaking based on shear criterion "  << i * n_part + j << " " << i << " " << j <<  "\n";
 
             aggregate_model.get_bonded_contacts()[i * n_part + j] = false;
             aggregate_model.get_bonded_contacts()[j * n_part + i] = false;
