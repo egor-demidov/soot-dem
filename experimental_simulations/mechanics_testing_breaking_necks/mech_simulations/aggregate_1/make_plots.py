@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 
 
-strong_path = Path('config_3_strong/stress_strain.csv')
+strong_path = Path('config_3_strong_focused/stress_strain.csv')
 weak_path = Path('config_3_weak/stress_strain.csv')
 
 def get_force_curve(data_path):
@@ -11,8 +11,19 @@ def get_force_curve(data_path):
 
     displacement = data[:, 1:4] - data[0, 1:4]
     force_j = data[:, 7:10]
+    f_n = data[:, 10:13]
+    f_t = data[:, 13:16]
+    f_r = data[:, 16:19]
+    f_o = data[:, 19:]
+
+    f_shear = f_t + f_r + f_o
+
     displacement_mag = np.linalg.norm(displacement, axis=1, keepdims=True)
     force_j_mag = np.linalg.norm(force_j, axis=1, keepdims=True)
+    fracture_idx = np.argmax(force_j_mag)
+
+    print(f_n[fracture_idx, :])
+    print(f_shear[fracture_idx, :])
 
     return displacement_mag, force_j_mag
 

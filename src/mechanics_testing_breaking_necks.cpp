@@ -254,10 +254,13 @@ int main(int argc, const char ** argv) {
     }
 
     // Check if there is a weak neck defined in this simulation
-    if (has_integer_parameter(parameter_store, "weak_neck_id")) {
+    const bool weak_neck_focus = has_integer_parameter(parameter_store, "weak_neck_id");
+    long weak_neck_i = 0;
+    long weak_neck_j = 0;
+    if (weak_neck_focus) {
         long neck_id = get_integer_parameter(parameter_store, "weak_neck_id");
-        long weak_neck_i = neck_id / x0.size();
-        long weak_neck_j = neck_id % x0.size();
+        weak_neck_i = neck_id / x0.size();
+        weak_neck_j = neck_id % x0.size();
 
         double weak_neck_shear_strength = get_real_parameter(parameter_store, "weak_neck_shear_strength");
         double weak_neck_normal_strength = get_real_parameter(parameter_store, "weak_neck_normal_strength");
@@ -287,7 +290,11 @@ int main(int argc, const char ** argv) {
 
     std::ofstream applied_force_log("stress_strain.csv");
 
-    applied_force_log << "t, dx, dy, dz, net_i_x, net_i_y, net_i_z, net_j_x, net_j_y, net_j_z\n";
+    if (weak_neck_focus)
+        applied_force_log << "t, dx, dy, dz, net_i_x, net_i_y, net_i_z, net_j_x, net_j_y, net_j_z, "
+                         "f_n_x, f_n_y, f_n_z, f_t_x, f_t_y, f_t_z, f_r_x, f_r_y, f_r_z, f_o_x, f_o_y, f_o_z\n";
+    else
+        applied_force_log << "t, dx, dy, dz, net_i_x, net_i_y, net_i_z, net_j_x, net_j_y, net_j_z\n";
 
     for (long n = 0; n < n_steps; n ++) {
         // Update velocity of particle j
@@ -317,16 +324,52 @@ int main(int argc, const char ** argv) {
             auto net_force_i = system.get_a()[applied_particle_i] * mass;
             auto net_force_j = system.get_a()[applied_particle_j] * mass;
 
-            applied_force_log << t << ", "
-                                << distance_ij[0] << ", "
-                                << distance_ij[1] << ", "
-                                << distance_ij[2] << ", "
-                                << net_force_i[0] << ", "
-                                << net_force_i[1] << ", "
-                                << net_force_i[2] << ", "
-                                << net_force_j[0] << ", "
-                                << net_force_j[1] << ", "
-                                << net_force_j[2] << "\n";
+            if (weak_neck_focus) {
+                auto const & x = system.get_x();
+                Eigen::Vector3d xi_n = ((x[weak_neck_i] - x[weak_neck_j]).norm() - 2.0 * r_part) * (x[weak_neck_j] - x[weak_neck_i]).normalized();
+                auto [xi_t, xi_r, xi_o] =
+                    aggregate_model.get_sinter_model().get_contact_springs()[weak_neck_i * x0.size() + weak_neck_j];
+
+                auto f_n = k_n_bond * xi_n;
+                auto f_t = k_t_bond * xi_t;
+                auto f_r = k_r_bond * xi_r;
+                auto f_o = k_o_bond * xi_o;
+
+                applied_force_log << t << ", "
+                                    << distance_ij[0] << ", "
+                                    << distance_ij[1] << ", "
+                                    << distance_ij[2] << ", "
+                                    << net_force_i[0] << ", "
+                                    << net_force_i[1] << ", "
+                                    << net_force_i[2] << ", "
+                                    << net_force_j[0] << ", "
+                                    << net_force_j[1] << ", "
+                                    << net_force_j[2] << ", "
+                                    << f_n[0] << ", "
+                                    << f_n[1] << ", "
+                                    << f_n[2] << ", "
+                                    << f_t[0] << ", "
+                                    << f_t[1] << ", "
+                                    << f_t[2] << ", "
+                                    << f_r[0] << ", "
+                                    << f_r[1] << ", "
+                                    << f_r[2] << ", "
+                                    << f_o[0] << ", "
+                                    << f_o[1] << ", "
+                                    << f_o[2] << "\n";
+            } else {
+                applied_force_log << t << ", "
+                                    << distance_ij[0] << ", "
+                                    << distance_ij[1] << ", "
+                                    << distance_ij[2] << ", "
+                                    << net_force_i[0] << ", "
+                                    << net_force_i[1] << ", "
+                                    << net_force_i[2] << ", "
+                                    << net_force_j[0] << ", "
+                                    << net_force_j[1] << ", "
+                                    << net_force_j[2] << "\n";
+            }
+
         }
 
         system.do_step(dt);
