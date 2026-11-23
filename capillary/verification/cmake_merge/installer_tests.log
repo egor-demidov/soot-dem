@@ -1,0 +1,45 @@
+test_does_not_replace_unknown_project (test_soot_cmake_merge.MergeTests.test_does_not_replace_unknown_project) ... ok
+test_preserves_working_custom_targets_and_is_idempotent (test_soot_cmake_merge.MergeTests.test_preserves_working_custom_targets_and_is_idempotent) ... ok
+test_recovers_earlier_original_when_replacement_was_committed (test_soot_cmake_merge.MergeTests.test_recovers_earlier_original_when_replacement_was_committed) ... ok
+test_recovers_original_git_head_after_accidental_replacement (test_soot_cmake_merge.MergeTests.test_recovers_original_git_head_after_accidental_replacement) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.040s
+
+OK
+{
+  "repository": "/tmp/tmpsm5otafv/soot",
+  "original_cmake_source": "working tree",
+  "backup": "/tmp/tmpsm5otafv/soot/CMakeLists.txt.before-capillary-merge",
+  "existing_targets_preserved": true,
+  "component": "capillary"
+}
+Configure: cmake -S . -B build -DPF_BUILD_SPHINXSYS_VALIDATION=OFF
+Build: cmake --build build --target pf_soot_dem pf_soot_dem_test -j 6
+{
+  "repository": "/tmp/tmpsm5otafv/soot",
+  "original_cmake_source": "working tree",
+  "backup": null,
+  "existing_targets_preserved": true,
+  "component": "capillary"
+}
+Configure: cmake -S . -B build -DPF_BUILD_SPHINXSYS_VALIDATION=OFF
+Build: cmake --build build --target pf_soot_dem pf_soot_dem_test -j 6
+{
+  "repository": "/tmp/tmprdfv19f9/soot",
+  "original_cmake_source": "Git 65b1257c65ea407efec35fd83a3e237226a2b2a9",
+  "backup": "/tmp/tmprdfv19f9/soot/CMakeLists.txt.before-capillary-merge",
+  "existing_targets_preserved": true,
+  "component": "capillary"
+}
+Configure: cmake -S . -B build -DPF_BUILD_SPHINXSYS_VALIDATION=OFF
+Build: cmake --build build --target pf_soot_dem pf_soot_dem_test -j 6
+{
+  "repository": "/tmp/tmp1a3xpw7v/soot",
+  "original_cmake_source": "Git HEAD",
+  "backup": "/tmp/tmp1a3xpw7v/soot/CMakeLists.txt.before-capillary-merge",
+  "existing_targets_preserved": true,
+  "component": "capillary"
+}
+Configure: cmake -S . -B build -DPF_BUILD_SPHINXSYS_VALIDATION=OFF
+Build: cmake --build build --target pf_soot_dem pf_soot_dem_test -j 6

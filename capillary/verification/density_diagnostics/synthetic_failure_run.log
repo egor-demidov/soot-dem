@@ -1,0 +1,3 @@
+pf_dem: built without TBB; running serially
+pf_dem: 2 DEM particles, 2200 liquid samples, 186 boundary samples; threads=1. Fluid parameters provisional.
+pf_dem: DEM-SPH state exceeds density/Mach operating screen: rhoMin/rho0=0.68999999999999995 rhoMax/rho0=1 maxSpeed=0 Mach=0; see density_extrema.csv and failure_*.vtp; checkpoint is the latest saved checkpoint

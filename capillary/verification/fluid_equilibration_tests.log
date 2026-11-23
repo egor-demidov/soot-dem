@@ -1,0 +1,8 @@
+Initial fluid equilibration verification
+
+Passed dependency-free pf_dem_regression and native soot-dem pf_soot_dem_regression (ctest, 0.01 seconds total).
+Passed 3 test_fluid_equilibration Python tests, including native event/restart smoke (0.1 seconds).
+Passed 7 legacy XML, 3 density-option, 4 CMake-merge, 5 DEM-runner, 4 soot-input tests.
+No long trajectories or calibration benchmarks run.
+
+Regression coverage: exact fixed pose/zero spin during hold; fluid evolution; release of configured initial motion and permanent fixity; support linear/angular impulse balance; mid-hold and post-release checkpoints; paused native neck/spring history; mechanical updates after release; invalid XML and restart duration conflicts.

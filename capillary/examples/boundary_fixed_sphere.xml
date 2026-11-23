@@ -1,0 +1,12 @@
+<pf_dem>
+  <fluid dx="1.75e-9" rho0="1258" sound_speed="1000"
+         viscosity="0.001" sff="0.002" sfs="0.012"/>
+  <particle x="0" y="0" z="0" radius="14e-9" density="1700" fixed="true"/>
+  <liquid mode="droplets">
+    <droplet x="0" y="0" z="22e-9" radius="18e-9"/>
+  </liquid>
+  <domain margin="10e-9" max_samples="250000"/>
+  <run end_time="4e-10" dt_scale="0.75" max_steps="100000"
+       record_every_steps="300" dump_every_steps="3000"
+       checkpoint_every_steps="1000" threads="10"/>
+</pf_dem>

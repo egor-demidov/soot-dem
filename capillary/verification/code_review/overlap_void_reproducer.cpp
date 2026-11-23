@@ -1,0 +1,3 @@
+#include "../../src/pf_dem.h"
+#include <iostream>
+int main(){using namespace pf_dem;Parameters p;p.dx=.1;Sphere a;a.center={-.1,0,0};a.radius=.3;a.mass=1;Sphere b=a;b.center={.1,0,0};std::vector<Sample>s={{{0,.31,0},{},1,.001,false},{{},{},1,.001,true},{{},{},1,.001,true}};System sys(p,s,1,{a,b},{{1,0,{0,0,0}},{2,1,{0,0,0}}});size_t active=99;sys.evaluator=[&](const auto&state,const auto&pairs,const auto&){active=pairs.size();return pf_liquid::empty_rates(state.size());};auto r=sys.rates();std::cout<<"Unmasked neighbors "<<pf_neighbors::brute_force(sys.state,1,p.support()).size()<<" active neighbors "<<active<<'\n';return active==0?0:1;}

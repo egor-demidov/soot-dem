@@ -1,0 +1,20 @@
+{
+  "status": "short_checks_passed",
+  "physics_validated": false,
+  "cases": [
+    {
+      "case": "two",
+      "steps": 1,
+      "linear_error": 1.095271102182215e-19,
+      "angular_error": 2.668294073682935e-21
+    },
+    {
+      "case": "levelset",
+      "steps": 4,
+      "linear_error": 2.911283005760749e-22,
+      "angular_error": 3.629064482691729e-22
+    }
+  ],
+  "restart_endpoint_exact": true,
+  "rejects_changed_geometry": true
+}

@@ -1,0 +1,3 @@
+pf_dem: 3 DEM particles, 16 liquid samples, 81 boundary samples; threads=1. Fluid parameters provisional.
+DEM-SPH step=0 time=0 linearError=0 angularError=0
+DEM-SPH step=1 time=1e-18 linearError=6.17444e-43 angularError=1.35949e-50

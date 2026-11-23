@@ -1,0 +1,11 @@
+<pf_dem>
+  <!-- SI units. Match dx, rho0, sound speed, viscosity and sff to the aggregate run. -->
+  <fluid dx="1.75e-9" rho0="1258" sound_speed="1000"
+         viscosity="0.001" sff="0.002" sfs="0"/>
+  <liquid mode="droplets">
+    <droplet x="0" y="0" z="0" radius="28e-9"/>
+  </liquid>
+  <run end_time="2e-9" dt_scale="0.75" threads="4"
+       record_every_steps="100" dump_every_steps="1000"
+       checkpoint_every_steps="1000"/>
+</pf_dem>

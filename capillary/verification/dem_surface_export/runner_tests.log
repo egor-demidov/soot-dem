@@ -1,0 +1,10 @@
+test_examples_and_initial_dry_particle (test_pf_dem_runner.InputTests.test_examples_and_initial_dry_particle) ... ok
+test_particle_csv_velocities_ignored_by_default (test_pf_dem_runner.InputTests.test_particle_csv_velocities_ignored_by_default) ... ok
+test_rejects_bad_geometry_and_typos (test_pf_dem_runner.InputTests.test_rejects_bad_geometry_and_typos) ... ok
+test_relative_executable_survives_output_directory_change (test_pf_dem_runner.InputTests.test_relative_executable_survives_output_directory_change) ... ok
+test_vtk_aggregate_positions_and_radii (test_pf_dem_runner.InputTests.test_vtk_aggregate_positions_and_radii) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.049s
+
+OK

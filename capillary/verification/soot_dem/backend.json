@@ -1,0 +1,11 @@
+{
+  "soot_dem_source": "/workspace/scratch/4f83a2312afc/soot-dem-integration",
+  "commit": "88ae15b513468aa352f0baf6784e9fb567a3bddf",
+  "fingerprint": "904a69be530048630dce2aa3b13c18a47eddaaea1c99ae771a1de44aa424efca",
+  "modifications": [
+    "transactional history access",
+    "variable spring update dt",
+    "axial torsion-history projection"
+  ],
+  "source_checkout_modified": false
+}

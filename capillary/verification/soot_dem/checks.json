@@ -1,0 +1,35 @@
+{
+  "status": "short_checks_passed",
+  "physics_validated": false,
+  "cases": [
+    {
+      "case": "droplet",
+      "steps": 3,
+      "linear_error": 1.1404502671132226e-20,
+      "angular_error": 3.550283801029681e-21,
+      "necks": 2
+    },
+    {
+      "case": "droplet_resumed",
+      "steps": 6,
+      "linear_error": 2.9204580287932313e-19,
+      "angular_error": 7.211838273287318e-21,
+      "necks": 2
+    },
+    {
+      "case": "levelset",
+      "steps": 3,
+      "linear_error": 1.5589521229532563e-22,
+      "angular_error": 7.059037476179352e-23,
+      "necks": 2
+    },
+    {
+      "case": "levelset_resumed",
+      "steps": 6,
+      "linear_error": 2.61620774920193e-21,
+      "angular_error": 1.155214220033602e-22,
+      "necks": 2
+    }
+  ],
+  "restart_motion_and_model_loads_exact": true
+}

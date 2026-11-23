@@ -1,0 +1,1 @@
+Native pf_soot_dem rebuilt. CTest soot-dem and density diagnostic regressions: 2/2 passed. Six XML compatibility tests passed. Single SI coupled step passed. Injected rho/rho0=0.69 snapshot/CSV failure path passed. No long benchmark run.

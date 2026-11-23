@@ -1,0 +1,11 @@
+test_point_cloud_roundtrip_and_compact_support (test_dem_surface_export.SurfaceIOTests.test_point_cloud_roundtrip_and_compact_support) ... ok
+test_series_times_stride_and_output_guard (test_dem_surface_export.SurfaceIOTests.test_series_times_stride_and_output_guard) ... liquid_0000000000.vtp: 3 surface vertices, 1 triangles
+liquid_0000000004.vtp: 3 surface vertices, 1 triangles
+ok
+test_surface_normals_and_connectivity (test_dem_surface_export.SurfaceIOTests.test_surface_normals_and_connectivity) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.011s
+
+OK
+Open in ParaView: /tmp/tmpld4gecqe/surfaces/liquid_surface.pvd

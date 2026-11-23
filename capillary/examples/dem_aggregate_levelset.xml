@@ -1,0 +1,10 @@
+<pf_dem>
+  <fluid dx="0.08" sound_speed="10" viscosity="0.05" sff="0.001" sfs="0.003"/>
+  <contacts stiffness="100" damping="0.02" friction="0.2" slip_speed="0.01"/>
+  <!-- File paths are relative to this XML. ASCII VTK/VTP positions also accepted. -->
+  <particles file="dem_aggregate.csv" density="2" ignore_velocities="true"/>
+  <liquid mode="levelset" alpha="0.3" threshold="0.5" rm="0.25"/>
+  <domain margin="0.32" max_samples="2000000"/>
+  <run end_time="0.5" dt_scale="0.75" record_every_steps="100" dump_every_steps="500"
+       checkpoint_every_steps="500" threads="6"/>
+</pf_dem>

@@ -110,3 +110,6 @@ target_link_libraries(09_sintering ${LIBRARY_LIST})
 target_link_libraries(tensile_deformation ${LIBRARY_LIST})
 target_link_libraries(shear_deformation ${LIBRARY_LIST})
 target_link_libraries(torsion_deformation ${LIBRARY_LIST})
+
+# PF-SPH fluid coupling, in addition to all original soot-dem targets.
+include("${CMAKE_CURRENT_LIST_DIR}/cmake/SootCapillaryCoupling.cmake")

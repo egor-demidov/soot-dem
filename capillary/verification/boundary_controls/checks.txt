@@ -1,0 +1,1 @@
+Three boundary runner/audit tests passed. Twelve existing DEM runner/export tests passed. Independent C++ force/rate evaluation matched read-only Python checkpoint audit to roundoff. Two single-step native controls passed. No long runs performed.

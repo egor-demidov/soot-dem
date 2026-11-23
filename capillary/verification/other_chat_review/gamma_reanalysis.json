@@ -1,0 +1,137 @@
+{
+  "status": "not_converged",
+  "failed_checks": [
+    "stationary_droplets",
+    "pressure_offset"
+  ],
+  "dx": 0.05,
+  "sff": 0.001,
+  "gamma": 0.046679786094212555,
+  "pressure_offset": -0.025123210766302563,
+  "rms_fit_residual": 0.0008842762955174279,
+  "relative_fit_residual": 0.01965296729528637,
+  "relative_pressure_offset": 0.2632509773849412,
+  "published_model_mapping_comparison": 0.03096,
+  "relative_deviation_from_published_mapping": 0.5077450288828345,
+  "notes": [
+    "Gamma is the fitted slope of total core virial pressure against 2/R.",
+    "The fitted intercept tests for a spurious pressure offset; it is not forced to zero.",
+    "The published 30.96 coefficient is a comparison, not a substituted measurement.",
+    "Passing numerical gates does not establish grid-independent material properties."
+  ],
+  "droplets": [
+    {
+      "folder": "droplet_r0p65",
+      "dx": 0.05,
+      "sff": 0.001,
+      "radius_initial": 0.65,
+      "volume_radius": 0.6458175568052841,
+      "pressure": {
+        "mean": 0.11994412224370928,
+        "standard_deviation": 0.00022213122353001262,
+        "range": 0.0009100794115818739,
+        "slope_per_time": 0.00033908601191563384,
+        "drift_over_window": 0.0006706241461873094
+      },
+      "eos_pressure": {
+        "mean": 4.116123452420469,
+        "standard_deviation": 0.000272591517876402,
+        "range": 0.001133658674289606,
+        "slope_per_time": -0.0004296967121080198,
+        "drift_over_window": 0.0008498285996788085
+      },
+      "core_samples_min": 528,
+      "radius_stability": {
+        "mean": 0.6458175568052841,
+        "standard_deviation": 6.085969809417907e-07,
+        "range": 2.121066860372167e-06,
+        "slope_per_time": 1.0265455805479132e-06,
+        "drift_over_window": 2.0302407922641877e-06
+      },
+      "tail_mach": 0.0001674135645252873,
+      "tail_density_error": 0.042396948075993146,
+      "pressure_relative_drift": 0.005591138053640488,
+      "pressure_relative_standard_deviation": 0.0018519558889152883,
+      "stationarity_failures": [],
+      "stationary": true,
+      "completed": true,
+      "note": "Virial pressure includes EOS + conservative PF interaction; exterior pressure is zero in this gas-free model."
+    },
+    {
+      "folder": "droplet_r0p8",
+      "dx": 0.05,
+      "sff": 0.001,
+      "radius_initial": 0.8,
+      "volume_radius": 0.7926851310209321,
+      "pressure": {
+        "mean": 0.09140963241874883,
+        "standard_deviation": 0.0031609332405257958,
+        "range": 0.014633350123119213,
+        "slope_per_time": 0.0007006410745727295,
+        "drift_over_window": 0.0013924836247477825
+      },
+      "eos_pressure": {
+        "mean": 4.085735167941364,
+        "standard_deviation": 0.003429481154758449,
+        "range": 0.015942905018723863,
+        "slope_per_time": 0.00011000699477968041,
+        "drift_over_window": 0.00021863254153609962
+      },
+      "core_samples_min": 2080,
+      "radius_stability": {
+        "mean": 0.7926851310209321,
+        "standard_deviation": 2.792936226591401e-06,
+        "range": 1.2843232558568118e-05,
+        "slope_per_time": 6.966474664314073e-07,
+        "drift_over_window": 1.3845465594767492e-06
+      },
+      "tail_mach": 0.0002753156508105639,
+      "tail_density_error": 0.04138659334722661,
+      "pressure_relative_drift": 0.015233445184078579,
+      "pressure_relative_standard_deviation": 0.03457987038002205,
+      "stationarity_failures": [],
+      "stationary": true,
+      "completed": true,
+      "note": "Virial pressure includes EOS + conservative PF interaction; exterior pressure is zero in this gas-free model."
+    },
+    {
+      "folder": "droplet_r0p95",
+      "dx": 0.05,
+      "sff": 0.001,
+      "radius_initial": 0.95,
+      "volume_radius": 0.9398332668193945,
+      "pressure": {
+        "mean": 0.07494957855821117,
+        "standard_deviation": 0.022156565078428687,
+        "range": 0.0899724455804054,
+        "slope_per_time": -0.0012935092750566124,
+        "drift_over_window": 0.0025859348285348395
+      },
+      "eos_pressure": {
+        "mean": 4.067696792322419,
+        "standard_deviation": 0.02388019175787222,
+        "range": 0.09690601461710013,
+        "slope_per_time": -0.0015753632763578606,
+        "drift_over_window": 0.0031494066896043337
+      },
+      "core_samples_min": 5424,
+      "radius_stability": {
+        "mean": 0.9398332668193945,
+        "standard_deviation": 2.5061102783878833e-05,
+        "range": 0.00010111916600041848,
+        "slope_per_time": 2.249189201726316e-06,
+        "drift_over_window": 4.496493998818831e-06
+      },
+      "tail_mach": 0.0006340838686542531,
+      "tail_density_error": 0.04109577609147852,
+      "pressure_relative_drift": 0.034502326474409976,
+      "pressure_relative_standard_deviation": 0.29561960860420744,
+      "stationarity_failures": [
+        "pressure_fluctuations"
+      ],
+      "stationary": false,
+      "completed": true,
+      "note": "Virial pressure includes EOS + conservative PF interaction; exterior pressure is zero in this gas-free model."
+    }
+  ]
+}

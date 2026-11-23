@@ -1,0 +1,16 @@
+<pf_dem>
+  <!-- Provisional model units; convert all DEM and fluid inputs consistently. -->
+  <fluid dx="0.08" rho0="1" sound_speed="10" viscosity="0.05" sff="0.001" sfs="0.003"/>
+  <particles file="soot_aggregate.csv" ignore_velocities="true"/>
+  <soot_dem k_n="100" gamma_n="0.02" k_t="20" gamma_t="0" mu_t="0.5" phi_t="0.8"
+            k_r="5" gamma_r="0" mu_r="0.1" phi_r="0.8" k_o="5" gamma_o="0" mu_o="0.1" phi_o="0.8"
+            k_n_bond="100" gamma_n_bond="0.02" k_t_bond="20" gamma_t_bond="0"
+            k_r_bond="5" gamma_r_bond="0" k_o_bond="5" gamma_o_bond="0"
+            d_crit="0.02" A="0" h0="0.01" max_dt="0.0001"
+            normal_yield="0" shear_yield="0"/>
+  <necks file="soot_necks.csv"/>
+  <liquid mode="droplets"><droplet x="0" y="0" z="0" radius="0.6"/></liquid>
+  <domain margin="0.32" max_samples="2000000"/>
+  <run end_time="0.5" dt_scale="0.75" record_every_steps="100" dump_every_steps="500"
+       checkpoint_every_steps="500" threads="6"/>
+</pf_dem>

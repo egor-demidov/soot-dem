@@ -1,0 +1,9 @@
+{
+  "repository": "/workspace/scratch/4f83a2312afc/soot-dem-integration",
+  "original_cmake_source": "working tree",
+  "backup": null,
+  "existing_targets_preserved": true,
+  "component": "capillary"
+}
+Configure: cmake -S . -B build -DPF_BUILD_SPHINXSYS_VALIDATION=OFF
+Build: cmake --build build --target pf_soot_dem pf_soot_dem_test -j 6

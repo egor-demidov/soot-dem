@@ -1,0 +1,44 @@
+[
+  {
+    "case": "no_solid_pf",
+    "sfs": 0.0,
+    "runner_exit": 0,
+    "last_record": {
+      "step": "1",
+      "time": "1.0000000000000001e-18",
+      "liquid_mass": "2.7804394625001862e-20",
+      "liquid_volume": "2.2102062500000942e-23",
+      "linear_error": "3.0833559679050629e-40",
+      "angular_error": "7.0536807203491112e-48",
+      "kinetic_energy": "1.6620038625586424e-29",
+      "builtin_contact_energy": "0",
+      "max_density_error": "7.9936057773011271e-15",
+      "max_speed": "5.4750650267258249e-05",
+      "neighbor_builds": "1",
+      "neighbor_reuses": "2",
+      "neck_count": "0"
+    },
+    "audit_exit": 0
+  },
+  {
+    "case": "ratio3",
+    "sfs": 0.006,
+    "runner_exit": 0,
+    "last_record": {
+      "step": "1",
+      "time": "1.0000000000000001e-18",
+      "liquid_mass": "2.7804394625001862e-20",
+      "liquid_volume": "2.2102062500000942e-23",
+      "linear_error": "2.4166444956279678e-40",
+      "angular_error": "2.3588293549765607e-48",
+      "kinetic_energy": "1.5662509816742343e-29",
+      "builtin_contact_energy": "0",
+      "max_density_error": "7.1054273576010019e-15",
+      "max_speed": "5.4750650268568575e-05",
+      "neighbor_builds": "1",
+      "neighbor_reuses": "2",
+      "neck_count": "0"
+    },
+    "audit_exit": 0
+  }
+]

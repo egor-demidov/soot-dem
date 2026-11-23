@@ -1,0 +1,14 @@
+<include_file>
+  <!-- NEW provisional neck coefficients: review for your material. Zero yields disable neck breakage. Necks have no fluid volume. -->
+  <let id="k_n_bond" type="real">10000</let>
+  <let id="gamma_n_bond" type="real">5e-09</let>
+  <let id="k_t_bond" type="real">10000</let>
+  <let id="gamma_t_bond" type="real">1e-09</let>
+  <let id="k_r_bond" type="real">10000</let>
+  <let id="gamma_r_bond" type="real">2.5e-10</let>
+  <let id="k_o_bond" type="real">10000</let>
+  <let id="gamma_o_bond" type="real">2.5e-10</let>
+  <let id="d_crit" type="real">1e-09</let>
+  <let id="normal_yield" type="real">0</let>
+  <let id="shear_yield" type="real">0</let>
+</include_file>

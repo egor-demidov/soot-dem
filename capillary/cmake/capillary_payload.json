@@ -1,0 +1,794 @@
+[
+  {
+    "source": ".gitignore",
+    "destination": ".gitignore"
+  },
+  {
+    "source": "BULK_PRESSURE_AND_OVERLAP_FIX.md",
+    "destination": "BULK_PRESSURE_AND_OVERLAP_FIX.md"
+  },
+  {
+    "source": "CAPILLARY_COUPLING_DESIGN.md",
+    "destination": "CAPILLARY_COUPLING_DESIGN.md"
+  },
+  {
+    "source": "CODE_REVIEW_2026_11_06.md",
+    "destination": "CODE_REVIEW_2026_11_06.md"
+  },
+  {
+    "source": "DENSITY_CHECK_OPTION.md",
+    "destination": "DENSITY_CHECK_OPTION.md"
+  },
+  {
+    "source": "DENSITY_DIAGNOSTICS.md",
+    "destination": "DENSITY_DIAGNOSTICS.md"
+  },
+  {
+    "source": "FIXED_BOUNDARY_AUDIT.md",
+    "destination": "FIXED_BOUNDARY_AUDIT.md"
+  },
+  {
+    "source": "FLUID_EQUILIBRATION.md",
+    "destination": "FLUID_EQUILIBRATION.md"
+  },
+  {
+    "source": "LOCAL_VERIFICATION.md",
+    "destination": "LOCAL_VERIFICATION.md"
+  },
+  {
+    "source": "PF_BRIDGE_MATRIX.md",
+    "destination": "PF_BRIDGE_MATRIX.md"
+  },
+  {
+    "source": "PF_CALIBRATION_STAGE.md",
+    "destination": "PF_CALIBRATION_STAGE.md"
+  },
+  {
+    "source": "PF_CONDENSATION_RESTART.md",
+    "destination": "PF_CONDENSATION_RESTART.md"
+  },
+  {
+    "source": "PF_CURRENT_STATUS.md",
+    "destination": "PF_CURRENT_STATUS.md"
+  },
+  {
+    "source": "PF_DEM_COUPLING.md",
+    "destination": "PF_DEM_COUPLING.md"
+  },
+  {
+    "source": "PF_LIQUID_RUNS.md",
+    "destination": "PF_LIQUID_RUNS.md"
+  },
+  {
+    "source": "PF_MOVING_DEM_STAGE.md",
+    "destination": "PF_MOVING_DEM_STAGE.md"
+  },
+  {
+    "source": "PF_NEIGHBOR_ACCELERATION.md",
+    "destination": "PF_NEIGHBOR_ACCELERATION.md"
+  },
+  {
+    "source": "PF_RESTART_AND_SPEED_STAGE.md",
+    "destination": "PF_RESTART_AND_SPEED_STAGE.md"
+  },
+  {
+    "source": "PF_SPH_IMPLEMENTATION.md",
+    "destination": "PF_SPH_IMPLEMENTATION.md"
+  },
+  {
+    "source": "PF_TWO_SPHERE_BRIDGE_STAGE.md",
+    "destination": "PF_TWO_SPHERE_BRIDGE_STAGE.md"
+  },
+  {
+    "source": "PF_XML_CALIBRATION.md",
+    "destination": "PF_XML_CALIBRATION.md"
+  },
+  {
+    "source": "README.md",
+    "destination": "README.md"
+  },
+  {
+    "source": "SOOT_BUILD_MERGE.md",
+    "destination": "SOOT_BUILD_MERGE.md"
+  },
+  {
+    "source": "SOOT_DEM_COUPLING.md",
+    "destination": "SOOT_DEM_COUPLING.md"
+  },
+  {
+    "source": "UPSTREAM_AUDIT.md",
+    "destination": "UPSTREAM_AUDIT.md"
+  },
+  {
+    "source": "VALIDATION_DESIGN.md",
+    "destination": "VALIDATION_DESIGN.md"
+  },
+  {
+    "source": "WALL_FORCE_AUDIT.md",
+    "destination": "WALL_FORCE_AUDIT.md"
+  },
+  {
+    "source": "XML_INPUT_COMPATIBILITY.md",
+    "destination": "XML_INPUT_COMPATIBILITY.md"
+  },
+  {
+    "source": "cmake/CapillaryStandalone.cmake",
+    "destination": "CMakeLists.txt"
+  },
+  {
+    "source": "cmake/SootCapillaryCoupling.cmake",
+    "destination": "cmake/SootCapillaryCoupling.cmake"
+  },
+  {
+    "source": "cmake/capillary_payload.json",
+    "destination": "cmake/capillary_payload.json"
+  },
+  {
+    "source": "cmake/soot-dem.CMakeLists.merged",
+    "destination": "cmake/soot-dem.CMakeLists.merged"
+  },
+  {
+    "source": "examples/boundary_fixed_sphere.xml",
+    "destination": "examples/boundary_fixed_sphere.xml"
+  },
+  {
+    "source": "examples/dem_aggregate.csv",
+    "destination": "examples/dem_aggregate.csv"
+  },
+  {
+    "source": "examples/dem_aggregate_levelset.xml",
+    "destination": "examples/dem_aggregate_levelset.xml"
+  },
+  {
+    "source": "examples/dem_two_particles.xml",
+    "destination": "examples/dem_two_particles.xml"
+  },
+  {
+    "source": "examples/soot_aggregate.csv",
+    "destination": "examples/soot_aggregate.csv"
+  },
+  {
+    "source": "examples/soot_dem_droplet.xml",
+    "destination": "examples/soot_dem_droplet.xml"
+  },
+  {
+    "source": "examples/soot_dem_levelset.xml",
+    "destination": "examples/soot_dem_levelset.xml"
+  },
+  {
+    "source": "examples/soot_necks.csv",
+    "destination": "examples/soot_necks.csv"
+  },
+  {
+    "source": "inputs/calibration_gamma_21nm.xml",
+    "destination": "inputs/calibration_gamma_21nm.xml"
+  },
+  {
+    "source": "inputs/calibration_gamma_24p5nm.xml",
+    "destination": "inputs/calibration_gamma_24p5nm.xml"
+  },
+  {
+    "source": "inputs/calibration_gamma_28nm.xml",
+    "destination": "inputs/calibration_gamma_28nm.xml"
+  },
+  {
+    "source": "inputs/calibration_sessile.xml",
+    "destination": "inputs/calibration_sessile.xml"
+  },
+  {
+    "source": "inputs/capillary_contacts.xml",
+    "destination": "inputs/capillary_contacts.xml"
+  },
+  {
+    "source": "inputs/capillary_dem.xml",
+    "destination": "inputs/capillary_dem.xml"
+  },
+  {
+    "source": "inputs/capillary_levelset.xml",
+    "destination": "inputs/capillary_levelset.xml"
+  },
+  {
+    "source": "inputs/capillary_necks.xml",
+    "destination": "inputs/capillary_necks.xml"
+  },
+  {
+    "source": "requirements.txt",
+    "destination": "requirements.txt"
+  },
+  {
+    "source": "research/capillary_energy_reference.py",
+    "destination": "research/capillary_energy_reference.py"
+  },
+  {
+    "source": "src/pf_bridge.h",
+    "destination": "src/pf_bridge.h"
+  },
+  {
+    "source": "src/pf_capillary.h",
+    "destination": "src/pf_capillary.h"
+  },
+  {
+    "source": "src/pf_dem.cpp",
+    "destination": "src/pf_dem.cpp"
+  },
+  {
+    "source": "src/pf_dem.h",
+    "destination": "src/pf_dem.h"
+  },
+  {
+    "source": "src/pf_dem_add_liquid.h",
+    "destination": "src/pf_dem_add_liquid.h"
+  },
+  {
+    "source": "src/pf_dem_initial.h",
+    "destination": "src/pf_dem_initial.h"
+  },
+  {
+    "source": "src/pf_dem_io.h",
+    "destination": "src/pf_dem_io.h"
+  },
+  {
+    "source": "src/pf_density_diagnostics.h",
+    "destination": "src/pf_density_diagnostics.h"
+  },
+  {
+    "source": "src/pf_liquid.h",
+    "destination": "src/pf_liquid.h"
+  },
+  {
+    "source": "src/pf_mechanics.h",
+    "destination": "src/pf_mechanics.h"
+  },
+  {
+    "source": "src/pf_neighbors.h",
+    "destination": "src/pf_neighbors.h"
+  },
+  {
+    "source": "src/pf_parallel.h",
+    "destination": "src/pf_parallel.h"
+  },
+  {
+    "source": "src/pf_restart.h",
+    "destination": "src/pf_restart.h"
+  },
+  {
+    "source": "src/pf_rigid.h",
+    "destination": "src/pf_rigid.h"
+  },
+  {
+    "source": "src/pf_snapshot.h",
+    "destination": "src/pf_snapshot.h"
+  },
+  {
+    "source": "src/pf_soot_dem.h",
+    "destination": "src/pf_soot_dem.h"
+  },
+  {
+    "source": "src/pf_soot_settings.h",
+    "destination": "src/pf_soot_settings.h"
+  },
+  {
+    "source": "src/pf_validation.cpp",
+    "destination": "src/pf_validation.cpp"
+  },
+  {
+    "source": "src/time_window.h",
+    "destination": "src/time_window.h"
+  },
+  {
+    "source": "src/validation.cpp",
+    "destination": "src/validation.cpp"
+  },
+  {
+    "source": "src/viscous_stability.h",
+    "destination": "src/viscous_stability.h"
+  },
+  {
+    "source": "tests/test_angle_diagnostics.py",
+    "destination": "tests/test_angle_diagnostics.py"
+  },
+  {
+    "source": "tests/test_boundary_controls.py",
+    "destination": "tests/test_boundary_controls.py"
+  },
+  {
+    "source": "tests/test_bulk_balance.py",
+    "destination": "tests/test_bulk_balance.py"
+  },
+  {
+    "source": "tests/test_capillary_energy.py",
+    "destination": "tests/test_capillary_energy.py"
+  },
+  {
+    "source": "tests/test_dem_surface_export.py",
+    "destination": "tests/test_dem_surface_export.py"
+  },
+  {
+    "source": "tests/test_density_check_option.py",
+    "destination": "tests/test_density_check_option.py"
+  },
+  {
+    "source": "tests/test_fluid_equilibration.py",
+    "destination": "tests/test_fluid_equilibration.py"
+  },
+  {
+    "source": "tests/test_force_audit.py",
+    "destination": "tests/test_force_audit.py"
+  },
+  {
+    "source": "tests/test_legacy_sph_input.py",
+    "destination": "tests/test_legacy_sph_input.py"
+  },
+  {
+    "source": "tests/test_pf_bridge.cpp",
+    "destination": "tests/test_pf_bridge.cpp"
+  },
+  {
+    "source": "tests/test_pf_bridge_runner.py",
+    "destination": "tests/test_pf_bridge_runner.py"
+  },
+  {
+    "source": "tests/test_pf_calibration.py",
+    "destination": "tests/test_pf_calibration.py"
+  },
+  {
+    "source": "tests/test_pf_capillary.cpp",
+    "destination": "tests/test_pf_capillary.cpp"
+  },
+  {
+    "source": "tests/test_pf_dem.cpp",
+    "destination": "tests/test_pf_dem.cpp"
+  },
+  {
+    "source": "tests/test_pf_dem_runner.py",
+    "destination": "tests/test_pf_dem_runner.py"
+  },
+  {
+    "source": "tests/test_pf_density_diagnostics.cpp",
+    "destination": "tests/test_pf_density_diagnostics.cpp"
+  },
+  {
+    "source": "tests/test_pf_interface.py",
+    "destination": "tests/test_pf_interface.py"
+  },
+  {
+    "source": "tests/test_pf_liquid.cpp",
+    "destination": "tests/test_pf_liquid.cpp"
+  },
+  {
+    "source": "tests/test_pf_moving_runner.py",
+    "destination": "tests/test_pf_moving_runner.py"
+  },
+  {
+    "source": "tests/test_pf_neighbor_benchmark.py",
+    "destination": "tests/test_pf_neighbor_benchmark.py"
+  },
+  {
+    "source": "tests/test_pf_neighbors.cpp",
+    "destination": "tests/test_pf_neighbors.cpp"
+  },
+  {
+    "source": "tests/test_pf_pressure_audit.py",
+    "destination": "tests/test_pf_pressure_audit.py"
+  },
+  {
+    "source": "tests/test_pf_restart.cpp",
+    "destination": "tests/test_pf_restart.cpp"
+  },
+  {
+    "source": "tests/test_pf_rigid.cpp",
+    "destination": "tests/test_pf_rigid.cpp"
+  },
+  {
+    "source": "tests/test_pf_snapshot.cpp",
+    "destination": "tests/test_pf_snapshot.cpp"
+  },
+  {
+    "source": "tests/test_pf_soot_dem.cpp",
+    "destination": "tests/test_pf_soot_dem.cpp"
+  },
+  {
+    "source": "tests/test_pf_wetting_runner.py",
+    "destination": "tests/test_pf_wetting_runner.py"
+  },
+  {
+    "source": "tests/test_reference.py",
+    "destination": "tests/test_reference.py"
+  },
+  {
+    "source": "tests/test_soot_cmake_merge.py",
+    "destination": "tests/test_soot_cmake_merge.py"
+  },
+  {
+    "source": "tests/test_soot_dem_inputs.py",
+    "destination": "tests/test_soot_dem_inputs.py"
+  },
+  {
+    "source": "tests/test_time_window.cpp",
+    "destination": "tests/test_time_window.cpp"
+  },
+  {
+    "source": "tests/test_viscous_stability.cpp",
+    "destination": "tests/test_viscous_stability.cpp"
+  },
+  {
+    "source": "tests/test_wall_balance.py",
+    "destination": "tests/test_wall_balance.py"
+  },
+  {
+    "source": "tools/analyze.py",
+    "destination": "tools/analyze.py"
+  },
+  {
+    "source": "tools/audit_boundary_checkpoint.py",
+    "destination": "tools/audit_boundary_checkpoint.py"
+  },
+  {
+    "source": "tools/benchmark_pf_neighbors.py",
+    "destination": "tools/benchmark_pf_neighbors.py"
+  },
+  {
+    "source": "tools/bootstrap.py",
+    "destination": "tools/bootstrap.py"
+  },
+  {
+    "source": "tools/check_pf_dem.py",
+    "destination": "tools/check_pf_dem.py"
+  },
+  {
+    "source": "tools/check_pf_soot_dem.py",
+    "destination": "tools/check_pf_soot_dem.py"
+  },
+  {
+    "source": "tools/export_dem_surface.py",
+    "destination": "tools/export_dem_surface.py"
+  },
+  {
+    "source": "tools/force_audit.py",
+    "destination": "tools/force_audit.py"
+  },
+  {
+    "source": "tools/install_into_soot_dem.py",
+    "destination": "tools/install_into_soot_dem.py"
+  },
+  {
+    "source": "tools/legacy_sph_input.py",
+    "destination": "tools/legacy_sph_input.py"
+  },
+  {
+    "source": "tools/pf_bridge_matrix.py",
+    "destination": "tools/pf_bridge_matrix.py"
+  },
+  {
+    "source": "tools/pf_bulk_balance.py",
+    "destination": "tools/pf_bulk_balance.py"
+  },
+  {
+    "source": "tools/pf_calibrate.py",
+    "destination": "tools/pf_calibrate.py"
+  },
+  {
+    "source": "tools/pf_calibrate_xml.py",
+    "destination": "tools/pf_calibrate_xml.py"
+  },
+  {
+    "source": "tools/pf_calibration_core.py",
+    "destination": "tools/pf_calibration_core.py"
+  },
+  {
+    "source": "tools/pf_interface.py",
+    "destination": "tools/pf_interface.py"
+  },
+  {
+    "source": "tools/pf_pressure_audit.py",
+    "destination": "tools/pf_pressure_audit.py"
+  },
+  {
+    "source": "tools/pf_wall_balance.py",
+    "destination": "tools/pf_wall_balance.py"
+  },
+  {
+    "source": "tools/prepare_soot_backend.py",
+    "destination": "tools/prepare_soot_backend.py"
+  },
+  {
+    "source": "tools/run_boundary_controls.py",
+    "destination": "tools/run_boundary_controls.py"
+  },
+  {
+    "source": "tools/run_contact_angle.py",
+    "destination": "tools/run_contact_angle.py"
+  },
+  {
+    "source": "tools/run_density_restart.sh",
+    "destination": "tools/run_density_restart.sh"
+  },
+  {
+    "source": "tools/run_pf_bridge_smoke.py",
+    "destination": "tools/run_pf_bridge_smoke.py"
+  },
+  {
+    "source": "tools/run_pf_dem.py",
+    "destination": "tools/run_pf_dem.py"
+  },
+  {
+    "source": "tools/run_pf_moving_smoke.py",
+    "destination": "tools/run_pf_moving_smoke.py"
+  },
+  {
+    "source": "tools/run_pf_resume.py",
+    "destination": "tools/run_pf_resume.py"
+  },
+  {
+    "source": "tools/run_pf_validation.py",
+    "destination": "tools/run_pf_validation.py"
+  },
+  {
+    "source": "tools/run_pf_wetting_checks.py",
+    "destination": "tools/run_pf_wetting_checks.py"
+  },
+  {
+    "source": "tools/run_validation.py",
+    "destination": "tools/run_validation.py"
+  },
+  {
+    "source": "tools/young_laplace.py",
+    "destination": "tools/young_laplace.py"
+  },
+  {
+    "source": "verification/boundary_controls/checks.txt",
+    "destination": "verification/boundary_controls/checks.txt"
+  },
+  {
+    "source": "verification/boundary_controls/single_step_summary.json",
+    "destination": "verification/boundary_controls/single_step_summary.json"
+  },
+  {
+    "source": "verification/bulk_overlap/checks.txt",
+    "destination": "verification/bulk_overlap/checks.txt"
+  },
+  {
+    "source": "verification/cmake_merge/build.log",
+    "destination": "verification/cmake_merge/build.log"
+  },
+  {
+    "source": "verification/cmake_merge/configure.log",
+    "destination": "verification/cmake_merge/configure.log"
+  },
+  {
+    "source": "verification/cmake_merge/ctest.log",
+    "destination": "verification/cmake_merge/ctest.log"
+  },
+  {
+    "source": "verification/cmake_merge/driver_build.log",
+    "destination": "verification/cmake_merge/driver_build.log"
+  },
+  {
+    "source": "verification/cmake_merge/install.log",
+    "destination": "verification/cmake_merge/install.log"
+  },
+  {
+    "source": "verification/cmake_merge/installer_tests.log",
+    "destination": "verification/cmake_merge/installer_tests.log"
+  },
+  {
+    "source": "verification/cmake_merge/original_targets.json",
+    "destination": "verification/cmake_merge/original_targets.json"
+  },
+  {
+    "source": "verification/cmake_merge/targets.log",
+    "destination": "verification/cmake_merge/targets.log"
+  },
+  {
+    "source": "verification/code_review/overlap_void_reproducer.cpp",
+    "destination": "verification/code_review/overlap_void_reproducer.cpp"
+  },
+  {
+    "source": "verification/dem_coupling/checks.json",
+    "destination": "verification/dem_coupling/checks.json"
+  },
+  {
+    "source": "verification/dem_coupling/cpp_tests.log",
+    "destination": "verification/dem_coupling/cpp_tests.log"
+  },
+  {
+    "source": "verification/dem_coupling/executable_tests.log",
+    "destination": "verification/dem_coupling/executable_tests.log"
+  },
+  {
+    "source": "verification/dem_coupling/input_tests.log",
+    "destination": "verification/dem_coupling/input_tests.log"
+  },
+  {
+    "source": "verification/dem_coupling/levelset/dem_history.csv",
+    "destination": "verification/dem_coupling/levelset/dem_history.csv"
+  },
+  {
+    "source": "verification/dem_coupling/levelset/dem_particles.csv",
+    "destination": "verification/dem_coupling/levelset/dem_particles.csv"
+  },
+  {
+    "source": "verification/dem_coupling/levelset/dem_run.json",
+    "destination": "verification/dem_coupling/levelset/dem_run.json"
+  },
+  {
+    "source": "verification/dem_coupling/levelset/run.log",
+    "destination": "verification/dem_coupling/levelset/run.log"
+  },
+  {
+    "source": "verification/dem_coupling/two/dem_history.csv",
+    "destination": "verification/dem_coupling/two/dem_history.csv"
+  },
+  {
+    "source": "verification/dem_coupling/two/dem_particles.csv",
+    "destination": "verification/dem_coupling/two/dem_particles.csv"
+  },
+  {
+    "source": "verification/dem_coupling/two/dem_run.json",
+    "destination": "verification/dem_coupling/two/dem_run.json"
+  },
+  {
+    "source": "verification/dem_coupling/two/run.log",
+    "destination": "verification/dem_coupling/two/run.log"
+  },
+  {
+    "source": "verification/dem_surface_export/runner_tests.log",
+    "destination": "verification/dem_surface_export/runner_tests.log"
+  },
+  {
+    "source": "verification/dem_surface_export/tests.log",
+    "destination": "verification/dem_surface_export/tests.log"
+  },
+  {
+    "source": "verification/density_diagnostics/checks.txt",
+    "destination": "verification/density_diagnostics/checks.txt"
+  },
+  {
+    "source": "verification/density_diagnostics/synthetic_failure_density_extrema.csv",
+    "destination": "verification/density_diagnostics/synthetic_failure_density_extrema.csv"
+  },
+  {
+    "source": "verification/density_diagnostics/synthetic_failure_run.log",
+    "destination": "verification/density_diagnostics/synthetic_failure_run.log"
+  },
+  {
+    "source": "verification/density_option/checks.txt",
+    "destination": "verification/density_option/checks.txt"
+  },
+  {
+    "source": "verification/fluid_equilibration_tests.log",
+    "destination": "verification/fluid_equilibration_tests.log"
+  },
+  {
+    "source": "verification/other_chat_review/droplet_r0p65.json",
+    "destination": "verification/other_chat_review/droplet_r0p65.json"
+  },
+  {
+    "source": "verification/other_chat_review/droplet_r0p8.json",
+    "destination": "verification/other_chat_review/droplet_r0p8.json"
+  },
+  {
+    "source": "verification/other_chat_review/droplet_r0p95.json",
+    "destination": "verification/other_chat_review/droplet_r0p95.json"
+  },
+  {
+    "source": "verification/other_chat_review/gamma_reanalysis.json",
+    "destination": "verification/other_chat_review/gamma_reanalysis.json"
+  },
+  {
+    "source": "verification/other_chat_review/pressure_audit.json",
+    "destination": "verification/other_chat_review/pressure_audit.json"
+  },
+  {
+    "source": "verification/other_chat_review/pressure_core_sensitivity.png",
+    "destination": "verification/other_chat_review/pressure_core_sensitivity.png"
+  },
+  {
+    "source": "verification/other_chat_review/tests.log",
+    "destination": "verification/other_chat_review/tests.log"
+  },
+  {
+    "source": "verification/soot_dem/backend.json",
+    "destination": "verification/soot_dem/backend.json"
+  },
+  {
+    "source": "verification/soot_dem/base_regression.log",
+    "destination": "verification/soot_dem/base_regression.log"
+  },
+  {
+    "source": "verification/soot_dem/checks.json",
+    "destination": "verification/soot_dem/checks.json"
+  },
+  {
+    "source": "verification/soot_dem/cpp_tests.log",
+    "destination": "verification/soot_dem/cpp_tests.log"
+  },
+  {
+    "source": "verification/soot_dem/droplet/dem_history.csv",
+    "destination": "verification/soot_dem/droplet/dem_history.csv"
+  },
+  {
+    "source": "verification/soot_dem/droplet/dem_particles.csv",
+    "destination": "verification/soot_dem/droplet/dem_particles.csv"
+  },
+  {
+    "source": "verification/soot_dem/droplet/dem_run.json",
+    "destination": "verification/soot_dem/droplet/dem_run.json"
+  },
+  {
+    "source": "verification/soot_dem/droplet/run.log",
+    "destination": "verification/soot_dem/droplet/run.log"
+  },
+  {
+    "source": "verification/soot_dem/droplet_resumed/dem_history.csv",
+    "destination": "verification/soot_dem/droplet_resumed/dem_history.csv"
+  },
+  {
+    "source": "verification/soot_dem/droplet_resumed/dem_particles.csv",
+    "destination": "verification/soot_dem/droplet_resumed/dem_particles.csv"
+  },
+  {
+    "source": "verification/soot_dem/droplet_resumed/dem_run.json",
+    "destination": "verification/soot_dem/droplet_resumed/dem_run.json"
+  },
+  {
+    "source": "verification/soot_dem/droplet_resumed/run.log",
+    "destination": "verification/soot_dem/droplet_resumed/run.log"
+  },
+  {
+    "source": "verification/soot_dem/executable_tests.log",
+    "destination": "verification/soot_dem/executable_tests.log"
+  },
+  {
+    "source": "verification/soot_dem/input_tests.log",
+    "destination": "verification/soot_dem/input_tests.log"
+  },
+  {
+    "source": "verification/soot_dem/levelset/dem_history.csv",
+    "destination": "verification/soot_dem/levelset/dem_history.csv"
+  },
+  {
+    "source": "verification/soot_dem/levelset/dem_particles.csv",
+    "destination": "verification/soot_dem/levelset/dem_particles.csv"
+  },
+  {
+    "source": "verification/soot_dem/levelset/dem_run.json",
+    "destination": "verification/soot_dem/levelset/dem_run.json"
+  },
+  {
+    "source": "verification/soot_dem/levelset/run.log",
+    "destination": "verification/soot_dem/levelset/run.log"
+  },
+  {
+    "source": "verification/soot_dem/levelset_resumed/dem_history.csv",
+    "destination": "verification/soot_dem/levelset_resumed/dem_history.csv"
+  },
+  {
+    "source": "verification/soot_dem/levelset_resumed/dem_particles.csv",
+    "destination": "verification/soot_dem/levelset_resumed/dem_particles.csv"
+  },
+  {
+    "source": "verification/soot_dem/levelset_resumed/dem_run.json",
+    "destination": "verification/soot_dem/levelset_resumed/dem_run.json"
+  },
+  {
+    "source": "verification/soot_dem/levelset_resumed/run.log",
+    "destination": "verification/soot_dem/levelset_resumed/run.log"
+  },
+  {
+    "source": "verification/soot_dem/runner_tests.log",
+    "destination": "verification/soot_dem/runner_tests.log"
+  },
+  {
+    "source": "verification/wall_balance/checks.txt",
+    "destination": "verification/wall_balance/checks.txt"
+  },
+  {
+    "source": "verification/xml_compatibility/droplet_native.log",
+    "destination": "verification/xml_compatibility/droplet_native.log"
+  },
+  {
+    "source": "verification/xml_compatibility/levelset_native.log",
+    "destination": "verification/xml_compatibility/levelset_native.log"
+  }
+]

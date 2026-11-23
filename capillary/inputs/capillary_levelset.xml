@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<simulation type="capillary_sph_dem">
+  <let id="dt" type="real">5e-13</let>
+  <let id="t_tot" type="real">5e-08</let>
+  <let id="rho" type="real">1700</let>
+  <let id="r_part" type="real">1.4e-08</let>
+  <let id="liquid_density" type="real">1258</let>
+  <let id="liquid_dynamic_viscosity" type="real">0.001</let>
+  <let id="liquid_surface_tension" type="real">0.063</let>
+  <let id="liquid_contact_angle_deg" type="real">60</let>
+
+  <include>capillary_contacts.xml</include>
+  <include>capillary_necks.xml</include>
+  <initialization>
+    <!-- Original soot-dem VTK positions are in primary-radius units.
+         Use length_unit="m" or "nm" instead if the file uses those units. -->
+    <aggregate file="aggregate_bank/aggregate_1/final_aggregate.vtk"
+               format="vtk" length_unit="primary_radius" />
+    <liquid mode="levelset" alpha="0.5" threshold="0.5" rm="14" length_unit="nm" />
+    <necks mode="auto" />
+  </initialization>
+
+  <!-- Explicit provisional SPH strengths, NOT a contact-angle calibration.
+       sff = target gamma / 30.96 is only an initial estimate; sfs/sff = 3
+       does NOT impose the target angle recorded above. SI quantities. -->
+  <sph particles_per_primary_diameter="16" sound_speed="2000"
+       sff="0.0020348837209302325" sfs="0.006104651162790698"
+       dt_scale="0.75" max_steps="10000000" max_samples="2000000" threads="6" />
+  <domain_margin x="10" y="10" z="10" length_unit="nm" />
+  <!-- Surface meshes are generated offline from the saved liquid frames. -->
+  <output surface_every_sph_steps="100" fluid_every_sph_steps="100"
+          particle_every_sph_steps="100" dem_every_sph_steps="100"
+          log_every_sph_steps="100" checkpoint_every_sph_steps="2000" />
+</simulation>

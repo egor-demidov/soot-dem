@@ -1,0 +1,4 @@
+pf_dem: built without TBB; running serially
+pf_dem: 3 DEM particles, 64 liquid samples, 279 boundary samples; threads=1. Fluid parameters provisional.
+DEM-SPH step=0 time=0 linearError=0 angularError=0
+DEM-SPH step=4 time=0.0002 linearError=2.91128e-22 angularError=3.62906e-22

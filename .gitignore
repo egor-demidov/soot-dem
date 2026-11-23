@@ -38,3 +38,9 @@
 !experimental_simulations/mechanics_testing_breaking_necks/mech_simulations/
 !experimental_simulations/mechanics_testing_breaking_necks/mech_simulations/aggregate_*/
 !experimental_simulations/mechanics_testing_breaking_necks/mech_simulations/aggregate_*/config_*/
+
+!cmake/
+!cmake/SootCapillaryCoupling.cmake
+
+!capillary/
+!capillary/**

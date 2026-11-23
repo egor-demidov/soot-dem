@@ -1,0 +1,1 @@
+Four static bulk/wall tests passed. Polynomial and Wendland-gradient integrals verified independently by numerical quadrature. Driver message change compiled; --help passed. No dynamics trajectory run. Authors Julia code inspected at 1164577b1b879fb9f5d3e971caa5bf89c89afa0b.
